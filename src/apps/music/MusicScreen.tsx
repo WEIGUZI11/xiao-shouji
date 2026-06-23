@@ -30,6 +30,7 @@
 } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import { Character, ChatMessage, MusicPlaylist, MusicTrack, useAppStore } from '../../store';
+import { buildHttpErrorMessage, readHttpErrorDetail } from '../../lib/httpErrors';
 import { cn } from '../../lib/utils';
 import {
   buildMiniMaxMusicGenerationRequest,
@@ -81,8 +82,13 @@ async function requestChatCompletion({
     }),
   });
   if (!response.ok) {
-    useAppStore.getState().addAppLog?.({ type: 'error', title: 'AI 接口失败', detail: `${endpoint}\n${response.status}` });
-    throw new Error(`聊天接口失败：${response.status}`);
+    const message = buildHttpErrorMessage('聊天接口失败', {
+      status: response.status,
+      statusText: response.statusText,
+      detail: await readHttpErrorDetail(response),
+    });
+    useAppStore.getState().addAppLog?.({ type: 'error', title: 'AI 接口失败', detail: `${endpoint}\n${message}` });
+    throw new Error(message);
   }
   const data = await response.json();
   const content = data?.choices?.[0]?.message?.content || '';
@@ -138,8 +144,8 @@ function Header({
   return (
     <header className="sticky top-0 z-30 bg-[var(--phone-bg)] px-4 pb-4 pt-6">
       <div className="grid grid-cols-[48px_1fr_56px] items-center">
-        <button onClick={onBack || goBack} className="circle-button">
-          <ChevronLeft className="h-7 w-7" />
+        <button onClick={onBack || goBack} className="circle-button" aria-label="返回">
+          <ChevronLeft className="h-7 w-7" aria-hidden />
         </button>
         <div className="min-w-0 text-center">
           <h1 className="truncate text-2xl font-black">{title}</h1>

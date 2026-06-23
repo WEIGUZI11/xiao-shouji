@@ -229,6 +229,8 @@ export function XiaohongshuApp() {
       galleryPhotos,
       presetPrompt: xiaohongshuPresetPrompt,
     });
+    setHomeTab('recommend');
+    setActiveTag('全部');
     replaceXiaohongshuGeneratedNotes(generated);
     setRefreshHint(`已刷新 ${generated.length} 条角色和世界笔记`);
     setView('feed');

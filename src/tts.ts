@@ -1,14 +1,18 @@
 /**
- * TTS provider helpers for browser, local HTTP, OpenAI, Gemini, and MiniMax speech.
+ * TTS provider helpers for browser, local HTTP, OpenAI, Gemini, MiniMax, and Doubao speech.
  * Main functions: buildExternalTtsRequest, speakWithConfiguredTts, speakWithBrowserTts.
+ * Dependencies: createId from src/lib/utils.
  * Maintenance note: keep provider-specific request shapes here instead of spreading them through App.tsx.
  */
-export type TtsProvider = 'browser' | 'local' | 'openai' | 'gemini' | 'minimax';
+import { createId } from './lib/utils';
+
+export type TtsProvider = 'browser' | 'local' | 'openai' | 'gemini' | 'minimax' | 'doubao';
 
 export interface TtsConfig {
   provider: TtsProvider;
   baseUrl: string;
   apiKey: string;
+  appId?: string;
   model: string;
   voiceId: string;
 }
@@ -17,11 +21,12 @@ export const defaultTtsConfig: TtsConfig = {
   provider: 'browser',
   baseUrl: '',
   apiKey: '',
+  appId: '',
   model: 'gpt-4o-mini-tts',
   voiceId: 'alloy',
 };
 
-export type TtsResponseType = 'auto' | 'audio' | 'gemini-json' | 'minimax-json';
+export type TtsResponseType = 'auto' | 'audio' | 'gemini-json' | 'minimax-json' | 'doubao-json' | 'doubao-stream-json';
 
 export interface BuiltTtsRequest {
   url: string;
@@ -48,6 +53,27 @@ function normalizeMiniMaxTtsUrl(url: string) {
   if (/\/v1\/t2a_v2$/i.test(base)) return base;
   if (base.endsWith('/v1')) return `${base}/t2a_v2`;
   return `${base}/v1/t2a_v2`;
+}
+
+function normalizeDoubaoTtsUrl(url: string) {
+  return trimSlash(url) || 'https://openspeech.bytedance.com/api/v1/tts';
+}
+
+function normalizeDoubaoArkTtsUrl(url: string) {
+  const base = trimSlash(url);
+  if (!base || /\/api\/v1\/tts$/i.test(base)) return 'https://openspeech.bytedance.com/api/v3/tts/unidirectional';
+  if (/\/api\/v3\/tts\/unidirectional$/i.test(base)) return base;
+  return `${base}/api/v3/tts/unidirectional`;
+}
+
+function shouldUseLegacyDoubaoTts(config: TtsConfig) {
+  const base = trimSlash(config.baseUrl);
+  const model = config.model.trim().toLowerCase();
+  return Boolean(config.appId?.trim()) || model === 'volcano_tts' || /\/api\/v1\/tts$/i.test(base);
+}
+
+function createRequestId() {
+  return createId('tts');
 }
 
 export function buildExternalTtsRequest(config: TtsConfig, text: string): BuiltTtsRequest | null {
@@ -127,6 +153,75 @@ export function buildExternalTtsRequest(config: TtsConfig, text: string): BuiltT
       },
     };
   }
+  if (config.provider === 'doubao') {
+    const token = config.apiKey.trim();
+    const appid = config.appId?.trim() || '';
+    if (!shouldUseLegacyDoubaoTts(config)) {
+      const resourceId = config.model.trim() || 'seed-tts-2.0';
+      return {
+        url: normalizeDoubaoArkTtsUrl(config.baseUrl),
+        responseType: 'doubao-stream-json',
+        init: {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'X-Api-Key': token } : {}),
+            'X-Api-Resource-Id': resourceId,
+            'X-Api-Request-Id': createRequestId(),
+          },
+          body: JSON.stringify({
+            user: {
+              uid: 'xiaophone-user',
+            },
+            req_params: {
+              text: input,
+              speaker: config.voiceId.trim(),
+              audio_params: {
+                format: 'mp3',
+                sample_rate: 24000,
+              },
+            },
+          }),
+        },
+      };
+    }
+    return {
+      url: normalizeDoubaoTtsUrl(config.baseUrl),
+      responseType: 'doubao-json',
+      init: {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer;${token}` } : {}),
+        },
+        body: JSON.stringify({
+          app: {
+            appid,
+            token,
+            cluster: config.model.trim() || 'volcano_tts',
+          },
+          user: {
+            uid: 'xiaophone-user',
+          },
+          audio: {
+            voice_type: config.voiceId.trim() || 'BV001_streaming',
+            encoding: 'mp3',
+            speed_ratio: 1,
+            volume_ratio: 1,
+            pitch_ratio: 1,
+          },
+          request: {
+            reqid: createRequestId(),
+            text: input,
+            text_type: 'plain',
+            operation: 'query',
+            with_frontend: 1,
+            frontend_type: 'unitTson',
+          },
+        }),
+      },
+    };
+  }
   return {
     url: config.baseUrl.trim(),
     responseType: 'auto',
@@ -152,13 +247,30 @@ export function speakWithBrowserTts(text: string) {
   window.speechSynthesis.speak(utterance);
 }
 
-function base64ToBlob(base64: string, mimeType: string) {
+function base64ToBytes(base64: string) {
   const binary = atob(base64);
   const bytes = new Uint8Array(binary.length);
   for (let index = 0; index < binary.length; index += 1) {
     bytes[index] = binary.charCodeAt(index);
   }
+  return bytes;
+}
+
+function base64ToBlob(base64: string, mimeType: string) {
+  const bytes = base64ToBytes(base64);
   return new Blob([bytes], { type: mimeType || 'audio/wav' });
+}
+
+function base64ChunksToBlob(chunks: string[], mimeType: string) {
+  const byteChunks = chunks.map(base64ToBytes);
+  const totalLength = byteChunks.reduce((sum, bytes) => sum + bytes.length, 0);
+  const merged = new Uint8Array(totalLength);
+  let offset = 0;
+  for (const bytes of byteChunks) {
+    merged.set(bytes, offset);
+    offset += bytes.length;
+  }
+  return new Blob([merged], { type: mimeType || 'audio/mpeg' });
 }
 
 function hexToBlob(hex: string, mimeType: string) {
@@ -234,6 +346,68 @@ async function playMiniMaxJsonAudio(data: unknown) {
   return playAudioBlob(hexToBlob(audioHex, 'audio/mpeg'));
 }
 
+async function playDoubaoJsonAudio(data: unknown) {
+  const value = data as {
+    code?: number;
+    message?: string;
+    data?: string;
+  };
+  if (typeof value.code === 'number' && value.code !== 3000) {
+    throw new Error(value.message || `豆包 TTS 失败：${value.code}`);
+  }
+  if (!value.data) {
+    throw new Error(value.message || '豆包 TTS 没有返回可播放音频。');
+  }
+  return playAudioBlob(base64ToBlob(value.data, 'audio/mpeg'));
+}
+
+export function extractDoubaoStreamAudioChunks(text: string) {
+  const chunks: string[] = [];
+  let start = -1;
+  let depth = 0;
+  let inString = false;
+  let escaping = false;
+
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index];
+    if (inString) {
+      if (escaping) escaping = false;
+      else if (char === '\\') escaping = true;
+      else if (char === '"') inString = false;
+      continue;
+    }
+    if (char === '"') {
+      inString = true;
+      continue;
+    }
+    if (char === '{') {
+      if (depth === 0) start = index;
+      depth += 1;
+      continue;
+    }
+    if (char === '}') {
+      depth -= 1;
+      if (depth === 0 && start >= 0) {
+        const packet = JSON.parse(text.slice(start, index + 1)) as { code?: number; message?: string; data?: string | null };
+        if (typeof packet.code === 'number' && packet.code !== 0 && packet.code !== 20000000) {
+          throw new Error(packet.message || `豆包 TTS 失败：${packet.code}`);
+        }
+        if (typeof packet.data === 'string' && packet.data) chunks.push(packet.data);
+        start = -1;
+      }
+    }
+  }
+  return chunks;
+}
+
+async function playDoubaoStreamJsonAudio(text: string) {
+  const chunks = extractDoubaoStreamAudioChunks(text);
+  if (!chunks.length) {
+    throw new Error('豆包 TTS 没有返回可播放音频。');
+  }
+  return playAudioBlob(base64ChunksToBlob(chunks, 'audio/mpeg'));
+}
+
 export async function speakWithConfiguredTts(text: string, config: TtsConfig) {
   if (config.provider === 'browser') {
     speakWithBrowserTts(text);
@@ -251,6 +425,14 @@ export async function speakWithConfiguredTts(text: string, config: TtsConfig) {
   }
   if (request.responseType === 'minimax-json') {
     await playMiniMaxJsonAudio(await response.json());
+    return;
+  }
+  if (request.responseType === 'doubao-json') {
+    await playDoubaoJsonAudio(await response.json());
+    return;
+  }
+  if (request.responseType === 'doubao-stream-json') {
+    await playDoubaoStreamJsonAudio(await response.text());
     return;
   }
   await playJsonAudio(await response.json());

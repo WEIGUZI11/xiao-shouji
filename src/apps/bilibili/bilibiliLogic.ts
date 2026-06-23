@@ -27,8 +27,19 @@ export interface BilibiliFallbackOptions {
   upName?: string;
 }
 
-function compactText(value: unknown) {
-  return typeof value === 'string' ? value.trim().replace(/\s+/g, ' ') : '';
+function compactText(value: unknown, max = 0) {
+  const text = typeof value === 'string' ? value.trim().replace(/\s+/g, ' ') : '';
+  return max > 0 && text.length > max ? `${text.slice(0, max)}...` : text;
+}
+
+function looksLikeInternalPrompt(value: string) {
+  return /<[^>]+>|#\s*(SFW|NSFW|Core|Background)|\b(name|age|gender|identities|system|prompt|content|entries)\s*:|{{user}}|发布风格|输出严格|结构：|人物设定|世界背景|角色卡|不要逐字|你正在为小手机|笔记要像真实用户|图片描述/i.test(value);
+}
+
+function publicSearchHint(value: unknown, max = 36) {
+  const text = compactText(value);
+  if (!text || looksLikeInternalPrompt(text)) return '';
+  return compactText(text, max);
 }
 
 function toTextList(value: unknown) {
@@ -92,8 +103,8 @@ export function normalizeBilibiliEntries(entries: RawBilibiliEntry[], query: str
 export function buildBilibiliRefreshQuery(characters: BilibiliRefreshCharacter[]) {
   const character = characters.find((item) => item.name.trim());
   if (!character) return '现实生活 日常 刷到的视频';
-  const details = [character.name, character.description, character.personality]
-    .map((item) => compactText(item))
+  const details = [character.name, publicSearchHint(character.description), publicSearchHint(character.personality)]
+    .map((item) => compactText(item, 36))
     .filter(Boolean)
     .join(' ');
   return `${details} 相关 B站视频`;

@@ -1,0 +1,1037 @@
+/**
+ * Gothic theme visual layer.
+ * Split from src/index.css without visual changes.
+ */
+
+.theme-gothic {
+  --phone-bg: #070707;
+  --phone-text: #fffdf7;
+  --panel-bg: rgba(10, 10, 10, 0.9);
+  --accent: #e60012;
+}
+
+.theme-gothic .lock-screen.has-default-lock-art {
+  background:
+    linear-gradient(124deg, transparent 0 18%, rgba(216, 15, 31, 0.94) 18.3% 39%, transparent 39.4%),
+    linear-gradient(146deg, transparent 0 69%, rgba(255, 248, 238, 0.95) 69.3% 73%, rgba(216, 15, 31, 0.92) 73.3% 82%, transparent 82.3%),
+    #070707;
+}
+
+.theme-gothic .browser-app {
+  background:
+    radial-gradient(circle at 74% 8%, rgba(255, 255, 255, 0.18), transparent 22%),
+    linear-gradient(180deg, rgba(26, 26, 26, 0.96), rgba(7, 7, 7, 0.98));
+  color: #f7f4ee;
+}
+
+.theme-gothic .browser-tabs,
+.theme-gothic .browser-toolbar {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(10, 10, 10, 0.88);
+  color: #f7f4ee;
+}
+
+.theme-gothic .browser-tab,
+.theme-gothic .browser-window-button,
+.theme-gothic .browser-tool,
+.theme-gothic .browser-address,
+.theme-gothic .browser-home-search,
+.theme-gothic .browser-result-header button,
+.theme-gothic .browser-history button {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.08);
+  color: #f7f4ee;
+}
+
+.theme-gothic .browser-address input,
+.theme-gothic .browser-home-search input {
+  color: #f7f4ee;
+}
+
+.theme-gothic .browser-address input::placeholder,
+.theme-gothic .browser-home-search input::placeholder {
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.theme-gothic .browser-logo,
+.theme-gothic .browser-result-header h2,
+.theme-gothic .browser-site-line span {
+  color: #f7f4ee;
+}
+
+.theme-gothic .browser-logo span,
+.theme-gothic .browser-result-card h3 {
+  color: #9dbbff;
+}
+
+.theme-gothic .browser-result-header,
+.theme-gothic .browser-result-card {
+  border-color: rgba(255, 255, 255, 0.11);
+}
+
+.theme-gothic .browser-summary {
+  background: rgba(126, 14, 17, 0.35);
+  color: #f2ddd7;
+}
+
+.theme-gothic .browser-result-card p,
+.theme-gothic .browser-status,
+.theme-gothic .browser-result-header p {
+  color: rgba(247, 244, 238, 0.68);
+}
+
+.theme-gothic .browser-page-view,
+.theme-gothic .browser-worldbook-input,
+.theme-gothic .browser-setting-input {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.08);
+  color: #f7f4ee;
+}
+
+.theme-gothic .browser-page-view h2,
+.theme-gothic .browser-history-row span {
+  color: #f7f4ee;
+}
+
+.theme-gothic .browser-page-view > p,
+.theme-gothic .browser-article-body p,
+.theme-gothic .browser-history-row small {
+  color: rgba(247, 244, 238, 0.68);
+}
+
+.theme-gothic .browser-article-body,
+.theme-gothic .browser-history-row {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.theme-gothic header {
+  background:
+    linear-gradient(180deg, rgba(5, 5, 5, 0.96), rgba(5, 5, 5, 0.78)),
+    var(--phone-bg);
+}
+
+.theme-gothic .dock {
+  border: 2px solid rgba(244, 241, 234, 0.82);
+  background: rgba(5, 5, 5, 0.86);
+  box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.52);
+}
+
+.theme-gothic .app-icon,
+.theme-gothic .dock-icon,
+.theme-gothic .app-chip {
+  background:
+    linear-gradient(135deg, rgba(244, 241, 234, 0.96) 0 48%, #7e1114 48.5% 57%, #161616 57.5%);
+  color: #050505;
+}
+
+.theme-gothic .app-button:nth-of-type(even) .app-icon,
+.theme-gothic .dock button:nth-child(even) .dock-icon {
+  background:
+    linear-gradient(135deg, #111 0 44%, rgba(244, 241, 234, 0.96) 44.5% 77%, #7e1114 77.5%);
+  color: #f4f1ea;
+}
+
+.theme-gothic .image-bed,
+.theme-gothic .time-card,
+.theme-gothic .hand-panel,
+.theme-gothic .theme-card,
+.theme-gothic .hand-input,
+.theme-gothic .feature-tile,
+.theme-gothic .custom-widget,
+.theme-gothic .guide-panel,
+.theme-gothic .notification-sheet,
+.theme-gothic .notification-card,
+.theme-gothic .lock-empty-card {
+  border-color: #f4f1ea;
+  background:
+    linear-gradient(135deg, rgba(244, 241, 234, 0.96), rgba(244, 241, 234, 0.88));
+  color: #050505;
+  box-shadow: 4px 4px 0 rgba(126, 17, 20, 0.8);
+}
+
+.theme-gothic .time-card,
+.theme-gothic .theme-card.active,
+.theme-gothic .pill.active,
+.theme-gothic .fetch-button {
+  background:
+    linear-gradient(135deg, #f4f1ea 0 62%, #7e1114 62.5%);
+}
+
+.theme-gothic .circle-button,
+.theme-gothic .save-button,
+.theme-gothic .pill,
+.theme-gothic .call-button,
+.theme-gothic .layout-toggle,
+.theme-gothic .hand-bubble,
+.theme-gothic .shell-notification-button,
+.theme-gothic .lock-unlock-button {
+  border-color: #f4f1ea;
+  background: #050505;
+  color: #f4f1ea;
+  box-shadow: 3px 3px 0 rgba(126, 17, 20, 0.85);
+}
+
+.theme-gothic .hand-note,
+.theme-gothic .widget-status {
+  border-color: #f4f1ea;
+  background: #7e1114;
+  color: #f7f7f2;
+}
+
+.theme-gothic .widget-photo {
+  background:
+    repeating-linear-gradient(-12deg, rgba(255, 255, 255, 0.12) 0 2px, transparent 2px 8px),
+    #141414;
+  color: #f4f1ea;
+}
+
+.theme-gothic .desktop-canvas.snap-grid {
+  background-image:
+    linear-gradient(rgba(244, 241, 234, 0.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(244, 241, 234, 0.12) 1px, transparent 1px);
+}
+
+.theme-gothic .page-dots button::before {
+  background: rgba(244, 241, 234, 0.38);
+}
+
+.theme-gothic .page-dots button.active::before {
+  background: #7e1114;
+}
+
+.theme-gothic .guide-mark {
+  color: #f4f1ea;
+  -webkit-text-stroke-color: #7e1114;
+}
+
+.theme-gothic {
+  --phone-bg: #070707;
+  --phone-text: #fffdf7;
+  --panel-bg: rgba(10, 10, 10, 0.9);
+  --accent: #e60012;
+  background:
+    linear-gradient(118deg, #e60012 0 34%, #050505 34.3% 42%, #fffdf7 42.3% 46%, #e60012 46.3%),
+    #e60012;
+  font-family: Inter, "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+}
+
+.theme-gothic .phone-shell {
+  border: 8px solid #050505 !important;
+  background:
+    linear-gradient(132deg, #e60012 0 18%, transparent 18.3% 100%),
+    #050505;
+  box-shadow:
+    10px 10px 0 #e60012,
+    -5px -5px 0 #fffdf7,
+    0 34px 78px rgba(0, 0, 0, 0.55);
+}
+
+.theme-gothic .qq-home-screen,
+.theme-gothic .qq-chat-screen {
+  --qq-bg:
+    linear-gradient(126deg, transparent 0 58%, rgba(230, 0, 18, 0.86) 58.4% 72%, transparent 72.4%),
+    linear-gradient(180deg, #111111, #050505);
+  --qq-header-bg: linear-gradient(180deg, rgba(5, 5, 5, 0.96), rgba(5, 5, 5, 0.82));
+  --qq-text: #fffdf7;
+  --qq-heading: #fffdf7;
+  --qq-muted: rgba(255, 253, 247, 0.64);
+  --qq-accent: #e60012;
+  --qq-accent-soft: rgba(230, 0, 18, 0.2);
+  --qq-surface: rgba(15, 15, 15, 0.9);
+  --qq-surface-strong: #111111;
+  --qq-line: rgba(255, 253, 247, 0.18);
+  --qq-shadow: 5px 5px 0 #e60012;
+  --qq-active-shadow: 6px 6px 0 #e60012;
+  --qq-badge: #e60012;
+  --qq-avatar-bg:
+    linear-gradient(135deg, #fffdf7 0 42%, #e60012 42.5% 68%, #050505 68.5%);
+  --qq-radius: 8px;
+}
+
+.theme-gothic .qq-home-avatar,
+.theme-gothic .qq-header-action,
+.theme-gothic .qq-search-bar,
+.theme-gothic .qq-quick-action,
+.theme-gothic .qq-row,
+.theme-gothic .qq-empty-state {
+  border: 3px solid #fffdf7;
+}
+
+.theme-gothic .qq-home-profile h1,
+.theme-gothic .qq-section-heading {
+  font-style: italic;
+  text-shadow: 3px 3px 0 #e60012;
+}
+
+.theme-gothic .qq-row .h-12.w-12 {
+  border: 2px solid #fffdf7;
+  border-radius: 8px;
+}
+
+.theme-gothic .phone-shell::before {
+  content: "9:41";
+  position: absolute;
+  left: 34px;
+  top: 25px;
+  z-index: 80;
+  color: rgba(255, 255, 255, 0.9);
+  font-family: Inter, "Microsoft YaHei", system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0;
+  pointer-events: none;
+}
+
+.theme-gothic .phone-shell::after {
+  content: "▮▮▮  WiFi  ▭";
+  position: absolute;
+  right: 34px;
+  top: 25px;
+  z-index: 80;
+  color: rgba(255, 255, 255, 0.88);
+  font-family: Arial, system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0;
+  pointer-events: none;
+}
+
+.theme-gothic .phone-shell.screen-wechat::before,
+.theme-gothic .phone-shell.screen-wechat::after,
+.theme-gothic .phone-shell.screen-chat::before,
+.theme-gothic .phone-shell.screen-chat::after,
+.theme-gothic .phone-shell.screen-browser::before,
+.theme-gothic .phone-shell.screen-browser::after {
+  display: none;
+}
+
+.theme-gothic .phone-shell:not(.screen-desktop)::before,
+.theme-gothic .phone-shell:not(.screen-desktop)::after {
+  display: none;
+}
+
+.theme-gothic .phone-shell:has(.lock-screen)::before,
+.theme-gothic .phone-shell:has(.lock-screen)::after {
+  display: none;
+}
+
+.theme-gothic .cream-screen {
+  padding-top: 76px;
+  background:
+    radial-gradient(circle at 74% 18%, #fffdf7 0 1.3px, transparent 1.5px 100%),
+    radial-gradient(circle at 74% 18%, #fffdf7 0 1.3px, transparent 1.5px 100%),
+    linear-gradient(126deg, #050505 0 28%, #fffdf7 28.3% 34%, #e60012 34.3% 48%, #050505 48.3% 100%),
+    linear-gradient(146deg, transparent 0 69%, #e60012 69.3% 79%, transparent 79.3%),
+    #050505;
+  background-position: 0 0, 5px 5px, center, center, center;
+  background-size: 10px 10px, 10px 10px, auto, auto, auto;
+}
+
+.theme-gothic .cream-screen::before {
+  left: -28px;
+  top: 86px;
+  width: 310px;
+  height: 430px;
+  border: 0;
+  background:
+    linear-gradient(132deg, #e60012 0 42%, #050505 42.4% 50%, #fffdf7 50.4% 58%, #e60012 58.4%);
+  clip-path: polygon(0 0, 74% 7%, 42% 32%, 100% 44%, 34% 58%, 78% 100%, 0 84%);
+  opacity: 1;
+  mix-blend-mode: normal;
+  transform: rotate(-7deg);
+}
+
+.theme-gothic .cream-screen::after {
+  right: -120px;
+  bottom: 70px;
+  width: 420px;
+  height: 360px;
+  border: 0;
+  background:
+    radial-gradient(circle at 42% 38%, #050505 0 2px, transparent 2.4px),
+    linear-gradient(120deg, #fffdf7 0 36%, #e60012 36.4% 63%, #050505 63.4%);
+  background-size: 15px 15px, auto;
+  clip-path: polygon(14% 0, 100% 8%, 76% 35%, 100% 56%, 56% 64%, 24% 100%, 0 72%, 24% 48%);
+  opacity: 1;
+  mix-blend-mode: normal;
+  transform: rotate(12deg);
+}
+
+.theme-gothic h1,
+.theme-gothic h2,
+.theme-gothic h3,
+.theme-gothic .time-text,
+.theme-gothic .guide-mark {
+  font-family: Inter, "Arial Black", "Microsoft YaHei", system-ui, sans-serif;
+  font-weight: 900;
+}
+
+.theme-gothic header {
+  background: linear-gradient(180deg, rgba(7, 7, 7, 0.88), rgba(7, 7, 7, 0));
+}
+
+.theme-gothic header h1 {
+  font-size: 24px;
+  font-style: italic;
+  text-shadow: 3px 3px 0 #e60012, -1px -1px 0 #050505;
+}
+
+.theme-gothic .dock {
+  left: 28px;
+  right: 28px;
+  bottom: 22px;
+  border: 3px solid #050505;
+  border-radius: 0;
+  background:
+    linear-gradient(112deg, #fffdf7 0 62%, #e60012 62.4% 76%, #050505 76.4%),
+    #fffdf7;
+  padding: 13px 16px;
+  box-shadow: 6px 6px 0 #e60012, 0 12px 28px rgba(0, 0, 0, 0.42);
+  transform: skew(-5deg);
+}
+
+.theme-gothic .app-icon,
+.theme-gothic .dock-icon {
+  border: 3px solid #050505;
+  border-radius: 0;
+  background:
+    linear-gradient(135deg, #fffdf7 0 46%, #e60012 46.5% 66%, #050505 66.5%),
+    #fffdf7;
+  color: #050505;
+  box-shadow: 5px 5px 0 #e60012;
+  transform: skew(-8deg) rotate(-3deg);
+}
+
+.theme-gothic .app-button:nth-of-type(even) .app-icon,
+.theme-gothic .dock button:nth-child(even) .dock-icon {
+  background:
+    linear-gradient(135deg, #050505 0 47%, #fffdf7 47.5% 68%, #e60012 68.5%),
+    #050505;
+  color: #fffdf7;
+  transform: skew(8deg) rotate(3deg);
+}
+
+.theme-gothic .dock-icon {
+  height: 48px;
+  width: 48px;
+}
+
+.theme-gothic .layout-controls {
+  top: max(44px, calc(env(safe-area-inset-top, 0px) + 22px));
+  right: 18px;
+}
+
+.theme-gothic .shell-notification-button {
+  top: max(44px, calc(env(safe-area-inset-top, 0px) + 22px));
+  border: 3px solid #050505;
+  border-radius: 0;
+  background: #fffdf7;
+  color: #050505;
+  box-shadow: 4px 4px 0 #e60012;
+  transform: skew(-8deg);
+}
+
+.theme-gothic .shell-notification-button > * {
+  transform: skew(8deg);
+}
+
+.theme-gothic .shell-notification-button b {
+  background: #e60012;
+  color: #fffdf7;
+}
+
+.theme-gothic .lock-empty-card,
+.theme-gothic .notification-card,
+.theme-gothic .notification-sheet {
+  border: 3px solid #050505;
+  border-radius: 0;
+  background:
+    linear-gradient(124deg, #fffdf7 0 76%, #e60012 76.4% 88%, #050505 88.4%),
+    #fffdf7;
+  color: #050505;
+  box-shadow: 6px 6px 0 #e60012;
+}
+
+.theme-gothic .lock-unlock-button {
+  border: 3px solid #fffdf7;
+  border-radius: 0;
+  background: #050505;
+  color: #fffdf7;
+  box-shadow: 5px 5px 0 #e60012;
+  transform: skew(-8deg);
+}
+
+.theme-gothic .lock-unlock-button > * {
+  transform: skew(8deg);
+}
+
+.theme-gothic .app-label,
+.theme-gothic .dock span:last-child {
+  color: #fffdf7;
+  font-family: Inter, "Microsoft YaHei", system-ui, sans-serif;
+  font-weight: 1000;
+  text-shadow: 2px 2px 0 #050505, 4px 4px 0 #e60012;
+}
+
+.theme-gothic .image-bed {
+  border: 3px solid #050505;
+  border-radius: 0;
+  background:
+    radial-gradient(circle at 72% 72%, #050505 0 9%, transparent 9.5%),
+    linear-gradient(128deg, #fffdf7 0 42%, #e60012 42.5% 66%, #050505 66.5%);
+  color: #050505;
+  box-shadow: 6px 6px 0 #e60012, 0 14px 26px rgba(0, 0, 0, 0.32);
+  transform: rotate(-1deg) skew(-3deg);
+}
+
+.theme-gothic .time-card,
+.theme-gothic .hand-panel,
+.theme-gothic .theme-card,
+.theme-gothic .hand-input,
+.theme-gothic .feature-tile,
+.theme-gothic .custom-widget,
+.theme-gothic .guide-panel {
+  border: 3px solid #050505;
+  border-radius: 0;
+  background:
+    linear-gradient(126deg, #fffdf7 0 72%, #e60012 72.4% 84%, #050505 84.4%),
+    #fffdf7;
+  color: #050505;
+  box-shadow: 6px 6px 0 #e60012, 0 14px 28px rgba(0, 0, 0, 0.34);
+}
+
+.theme-gothic .time-card {
+  height: 86px;
+  background:
+    radial-gradient(circle at 88% 28%, #050505 0 2px, transparent 2.4px),
+    linear-gradient(118deg, #fffdf7 0 58%, #e60012 58.4% 75%, #050505 75.4%);
+  background-size: 12px 12px, auto;
+}
+
+.theme-gothic .time-text {
+  font-size: 34px;
+  font-style: italic;
+  color: #050505;
+  text-shadow: 3px 3px 0 #e60012, -1px -1px 0 #fffdf7;
+}
+
+.theme-gothic .date-text {
+  font-family: Inter, "Microsoft YaHei", system-ui, sans-serif;
+  font-weight: 500;
+  opacity: 0.72;
+}
+
+.theme-gothic .theme-card.active,
+.theme-gothic .pill.active,
+.theme-gothic .fetch-button {
+  background:
+    linear-gradient(118deg, #e60012 0 62%, #050505 62.5%),
+    #e60012;
+  color: #fffdf7;
+}
+
+.theme-gothic .circle-button,
+.theme-gothic .save-button,
+.theme-gothic .pill,
+.theme-gothic .call-button,
+.theme-gothic .layout-toggle,
+.theme-gothic .hand-bubble {
+  border: 3px solid #050505;
+  border-radius: 0;
+  background: #e60012;
+  color: #fffdf7;
+  box-shadow: 4px 4px 0 #050505, 0 8px 18px rgba(0, 0, 0, 0.3);
+}
+
+.theme-gothic .layout-toggle,
+.theme-gothic .pill,
+.theme-gothic .save-button {
+  font-family: Inter, "Microsoft YaHei", system-ui, sans-serif;
+  font-weight: 500;
+}
+
+.theme-gothic .hand-input,
+.theme-gothic .widget-input {
+  background: #fffdf7;
+  color: #050505;
+}
+
+.theme-gothic .hand-input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.theme-gothic .list-row {
+  border-bottom-color: rgba(255, 255, 255, 0.12);
+}
+
+.theme-gothic .hand-note,
+.theme-gothic .widget-status {
+  background:
+    repeating-linear-gradient(92deg, rgba(255, 255, 255, 0.04) 0 1px, transparent 1px 7px),
+    linear-gradient(135deg, rgba(126, 14, 17, 0.84), rgba(19, 19, 19, 0.88));
+}
+
+.theme-gothic .widget-photo {
+  background:
+    linear-gradient(132deg, #fffdf7 0 38%, #050505 38.5% 51%, #e60012 51.5% 100%),
+    #101010;
+}
+
+.theme-gothic .guide-mark {
+  color: #ffffff;
+  font-size: 38px;
+  font-style: italic;
+  -webkit-text-stroke: 0;
+  text-shadow: 0 0 14px rgba(255, 255, 255, 0.5);
+}
+
+.theme-gothic .lock-screen {
+  background:
+    radial-gradient(circle at 74% 18%, #fffdf7 0 1.3px, transparent 1.5px 100%),
+    radial-gradient(circle at 74% 18%, #fffdf7 0 1.3px, transparent 1.5px 100%),
+    linear-gradient(126deg, #050505 0 28%, #fffdf7 28.3% 34%, #e60012 34.3% 48%, #050505 48.3% 100%),
+    linear-gradient(146deg, transparent 0 69%, #e60012 69.3% 79%, transparent 79.3%),
+    #050505;
+  background-position: 0 0, 5px 5px, center, center, center;
+  background-size: 10px 10px, 10px 10px, auto, auto, auto;
+}
+
+.theme-gothic .lock-status-row,
+.theme-gothic .lock-clock {
+  color: #fffdf7;
+  text-shadow: 4px 4px 0 #e60012, -1px -1px 0 #050505;
+}
+
+/* Calmer red-black pass: fewer patterns, stronger shapes, readable surfaces. */
+.theme-gothic {
+  --phone-bg: #090909;
+  --phone-text: #fff8ee;
+  --panel-bg: #101010;
+  --accent: #d80f1f;
+  background:
+    linear-gradient(132deg, #d80f1f 0 46%, #070707 46.3% 54%, #fff8ee 54.3% 58%, #d80f1f 58.3%),
+    #d80f1f;
+}
+
+.theme-gothic .phone-shell {
+  border: 8px solid #080808 !important;
+  background: #090909;
+  box-shadow:
+    8px 8px 0 #d80f1f,
+    -3px -3px 0 #fff8ee,
+    0 28px 64px rgba(0, 0, 0, 0.56);
+}
+
+.theme-gothic .cream-screen,
+.theme-gothic .lock-screen {
+  background:
+    linear-gradient(126deg, transparent 0 18%, rgba(216, 15, 31, 0.96) 18.2% 39%, transparent 39.3%),
+    linear-gradient(148deg, transparent 0 70%, rgba(216, 15, 31, 0.9) 70.2% 78%, transparent 78.3%),
+    radial-gradient(circle at 90% 14%, rgba(255, 248, 238, 0.2), transparent 16%),
+    #090909;
+  background-size: auto;
+}
+
+.theme-gothic .cream-screen::before {
+  left: -90px;
+  top: 72px;
+  width: 360px;
+  height: 520px;
+  background: #d80f1f;
+  clip-path: polygon(34% 0, 100% 0, 66% 100%, 0 100%);
+  opacity: 0.96;
+  transform: rotate(8deg);
+}
+
+.theme-gothic .cream-screen::after {
+  right: -132px;
+  bottom: 72px;
+  width: 360px;
+  height: 210px;
+  background: #fff8ee;
+  clip-path: polygon(18% 0, 100% 0, 82% 100%, 0 100%);
+  opacity: 0.96;
+  transform: rotate(-13deg);
+}
+
+.theme-gothic .app-icon,
+.theme-gothic .dock-icon {
+  border: 3px solid #fff8ee;
+  border-radius: 16px;
+  background:
+    linear-gradient(135deg, rgba(216, 15, 31, 0.95) 0 34%, transparent 34.5%),
+    #111;
+  color: #fff8ee;
+  box-shadow: 4px 4px 0 #d80f1f;
+  transform: none;
+}
+
+.theme-gothic .app-button:nth-of-type(even) .app-icon,
+.theme-gothic .dock button:nth-child(even) .dock-icon {
+  background:
+    linear-gradient(135deg, #fff8ee 0 28%, transparent 28.5%),
+    #111;
+  color: #fff8ee;
+  transform: none;
+}
+
+.theme-gothic .dock {
+  border: 3px solid #fff8ee;
+  border-radius: 22px;
+  background:
+    linear-gradient(124deg, transparent 0 72%, rgba(216, 15, 31, 0.86) 72.3%),
+    rgba(8, 8, 8, 0.94);
+  box-shadow: 6px 6px 0 #d80f1f, 0 14px 28px rgba(0, 0, 0, 0.42);
+  transform: none;
+}
+
+.theme-gothic .time-card,
+.theme-gothic .hand-panel,
+.theme-gothic .theme-card,
+.theme-gothic .feature-tile,
+.theme-gothic .custom-widget,
+.theme-gothic .guide-panel,
+.theme-gothic .notification-sheet,
+.theme-gothic .notification-card,
+.theme-gothic .lock-empty-card {
+  border: 3px solid #fff8ee;
+  border-radius: 14px;
+  background:
+    linear-gradient(130deg, transparent 0 76%, rgba(216, 15, 31, 0.86) 76.4%),
+    #101010;
+  color: #fff8ee;
+  box-shadow: 5px 5px 0 #d80f1f, 0 12px 24px rgba(0, 0, 0, 0.34);
+}
+
+.theme-gothic .time-card {
+  background:
+    linear-gradient(126deg, transparent 0 64%, rgba(216, 15, 31, 0.9) 64.3% 78%, transparent 78.3%),
+    #101010;
+}
+
+.theme-gothic .time-text {
+  color: #fff8ee;
+  text-shadow: 3px 3px 0 #d80f1f;
+}
+
+.theme-gothic .circle-button,
+.theme-gothic .save-button,
+.theme-gothic .pill,
+.theme-gothic .call-button,
+.theme-gothic .layout-toggle,
+.theme-gothic .hand-bubble,
+.theme-gothic .shell-notification-button,
+.theme-gothic .lock-unlock-button {
+  border: 3px solid #fff8ee;
+  border-radius: 12px;
+  background: #111;
+  color: #fff8ee;
+  box-shadow: 4px 4px 0 #d80f1f;
+  transform: none;
+}
+
+.theme-gothic .shell-notification-button > *,
+.theme-gothic .lock-unlock-button > * {
+  transform: none;
+}
+
+.theme-gothic .theme-card.active,
+.theme-gothic .pill.active,
+.theme-gothic .fetch-button {
+  border-color: #fff8ee;
+  background: #d80f1f;
+  color: #fff8ee;
+}
+
+.theme-gothic .hand-input,
+.theme-gothic .widget-input {
+  border-color: #fff8ee;
+  background: #111;
+  color: #fff8ee;
+}
+
+.theme-gothic .lock-empty-card {
+  width: min(100%, 310px);
+  justify-self: center;
+}
+
+.theme-gothic .lock-clock {
+  text-shadow: 4px 4px 0 #d80f1f, 0 2px 16px rgba(0, 0, 0, 0.56);
+}
+
+.theme-gothic .wechat-shell,
+.theme-gothic .wechat-chat-screen {
+  --wechat-bg: var(--phone-bg);
+  --wechat-surface: color-mix(in srgb, var(--phone-bg) 88%, var(--panel-bg));
+  --wechat-surface-2: color-mix(in srgb, var(--phone-bg) 76%, var(--accent));
+  --wechat-text: var(--phone-text);
+  --wechat-muted: color-mix(in srgb, var(--phone-text) 54%, var(--phone-bg));
+  --wechat-line: color-mix(in srgb, var(--phone-text) 13%, transparent);
+  --wechat-active: var(--accent);
+  --wechat-active-text: var(--phone-text);
+  --wechat-user-bubble: color-mix(in srgb, var(--accent) 84%, var(--phone-bg));
+  --wechat-model-bubble: color-mix(in srgb, var(--phone-bg) 82%, var(--panel-bg));
+  --wechat-badge: var(--accent);
+  --wechat-shadow: none;
+  background: var(--wechat-bg);
+  color: var(--wechat-text);
+  font-family: "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+}
+
+.theme-gothic .wechat-page {
+  background: var(--wechat-bg);
+  color: var(--wechat-text);
+}
+
+.theme-gothic .wechat-topbar {
+  border-bottom: 1px solid var(--wechat-line);
+  background: color-mix(in srgb, var(--wechat-surface) 94%, transparent);
+  color: var(--wechat-text);
+}
+
+.theme-gothic .wechat-icon-button {
+  color: var(--wechat-text);
+}
+
+.theme-gothic .wechat-chat-row,
+.theme-gothic .wechat-contact-row,
+.theme-gothic .wechat-menu-row,
+.theme-gothic .wechat-empty-card,
+.theme-gothic .wechat-me-hero,
+.theme-gothic .wechat-photo-wall {
+  border-bottom-color: var(--wechat-line);
+  background: var(--wechat-surface);
+  color: var(--wechat-text);
+  box-shadow: var(--wechat-shadow);
+}
+
+.theme-gothic .wechat-add-menu {
+  background: var(--wechat-surface);
+  color: var(--wechat-text);
+}
+
+.theme-gothic .wechat-add-menu::before {
+  border-bottom-color: var(--wechat-surface);
+}
+
+.theme-gothic .wechat-add-menu button {
+  border-bottom-color: var(--wechat-line);
+}
+
+.theme-gothic .wechat-chat-row p,
+.theme-gothic .wechat-contact-row p,
+.theme-gothic .wechat-menu-row span,
+.theme-gothic .wechat-photo-wall h2 {
+  color: var(--wechat-text);
+}
+
+.theme-gothic .wechat-chat-row p:last-child,
+.theme-gothic .wechat-contact-row p:last-child,
+.theme-gothic .wechat-section-title,
+.theme-gothic .wechat-empty-card,
+.theme-gothic .wechat-photo-wall p,
+.theme-gothic .wechat-row-meta {
+  color: var(--wechat-muted);
+}
+
+.theme-gothic .wechat-avatar {
+  border: 1px solid var(--wechat-line);
+  background: var(--wechat-surface-2);
+  box-shadow: none;
+}
+
+.theme-gothic .wechat-topbar h1,
+.theme-gothic .wechat-chat-header h2 {
+  font-family: "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+  font-size: 18px;
+  font-style: normal;
+  font-weight: 650;
+  text-shadow: none;
+}
+
+.theme-gothic .wechat-shell,
+.theme-gothic .wechat-chat-screen {
+  font-family: "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+}
+
+.theme-gothic .wechat-tabs {
+  border-top-color: var(--wechat-line);
+  background: var(--wechat-surface);
+}
+
+.theme-gothic .wechat-tab-button {
+  color: var(--wechat-muted);
+}
+
+.theme-gothic .wechat-tab-button.active {
+  color: var(--wechat-active);
+}
+
+.theme-gothic .wechat-tab-badge,
+.theme-gothic .wechat-profile-chips .dot {
+  background: var(--wechat-badge);
+}
+
+.theme-gothic .wechat-profile-status {
+  color: var(--wechat-active);
+}
+
+.theme-gothic .wechat-profile-name,
+.theme-gothic .wechat-profile-id,
+.theme-gothic .wechat-profile-id input {
+  color: var(--wechat-text);
+}
+
+.theme-gothic .wechat-profile-id span {
+  color: var(--wechat-muted);
+}
+
+.theme-gothic .wechat-profile-chips span {
+  border-color: var(--wechat-line);
+  background: var(--wechat-surface-2);
+  color: var(--wechat-muted);
+}
+
+.theme-gothic .wechat-mini-button {
+  background: var(--wechat-surface-2);
+  color: var(--wechat-active);
+}
+
+.theme-gothic .wechat-photo-add,
+.theme-gothic .wechat-photo-item {
+  background: var(--wechat-surface-2);
+  color: var(--wechat-muted);
+}
+
+.theme-gothic .wechat-message-list {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--wechat-surface) 42%, transparent), transparent 70px),
+    var(--wechat-bg);
+}
+
+.theme-gothic .wechat-input-bar,
+.theme-gothic .wechat-chat-header {
+  border-color: var(--wechat-line);
+  background: var(--wechat-surface);
+  color: var(--wechat-text);
+}
+
+.theme-gothic .wechat-input-bar .hand-input {
+  background: var(--wechat-surface-2);
+  color: var(--wechat-text);
+}
+
+.theme-gothic .wechat-input-bar .circle-button {
+  background: var(--wechat-surface-2);
+  color: var(--wechat-text);
+}
+
+.theme-gothic .wechat-input-bar .wechat-compose-button-active,
+.theme-gothic .wechat-input-bar .wechat-compose-send {
+  background: var(--wechat-active);
+  color: var(--wechat-active-text);
+}
+
+.theme-gothic .wechat-text-wrap.bg-white,
+.theme-gothic .wechat-text-model,
+.theme-gothic .wechat-voice-model {
+  background: var(--wechat-model-bubble);
+  color: var(--wechat-text);
+}
+
+.theme-gothic .wechat-text-wrap.bg-\[\#d7efc7\],
+.theme-gothic .wechat-text-user,
+.theme-gothic .wechat-voice-user {
+  background: var(--wechat-user-bubble);
+  color: var(--wechat-active-text);
+}
+
+.theme-gothic .wechat-voice-model::before {
+  border-right-color: var(--wechat-model-bubble);
+}
+
+.theme-gothic .wechat-voice-user::before {
+  border-left-color: var(--wechat-user-bubble);
+}
+
+.theme-gothic .xhs-app {
+  --xhs-bg: #0b0b0b;
+  --xhs-surface: rgba(20, 20, 20, 0.78);
+  --xhs-surface-2: rgba(255, 255, 255, 0.08);
+  --xhs-text: #f7f4ee;
+  --xhs-muted: rgba(247, 244, 238, 0.64);
+  --xhs-line: rgba(255, 255, 255, 0.12);
+  --xhs-accent: #9f151c;
+  background:
+    radial-gradient(circle at 82% 7%, rgba(255, 255, 255, 0.16), transparent 18%),
+    radial-gradient(circle at 16% 30%, rgba(126, 14, 17, 0.44), transparent 25%),
+    repeating-linear-gradient(95deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 8px),
+    linear-gradient(180deg, #171717, #080808) !important;
+  font-family: Inter, "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+}
+
+.theme-gothic .xhs-topbar,
+.theme-gothic .xhs-bottom,
+.theme-gothic .xhs-surface,
+.theme-gothic .xhs-note-card,
+.theme-gothic .xhs-detail,
+.theme-gothic .xhs-input,
+.theme-gothic .xhs-refresh-button {
+  border-color: var(--xhs-line) !important;
+  background: linear-gradient(180deg, rgba(35, 35, 35, 0.82), rgba(9, 9, 9, 0.86)) !important;
+  box-shadow:
+    inset 0 1px 14px rgba(255, 255, 255, 0.08),
+    0 10px 24px rgba(0, 0, 0, 0.22) !important;
+  color: var(--xhs-text) !important;
+  backdrop-filter: blur(16px);
+}
+
+.theme-gothic .xhs-note-card {
+  border: 1px solid var(--xhs-line);
+}
+
+.theme-gothic .xhs-icon-button,
+.theme-gothic .xhs-soft,
+.theme-gothic .xhs-tag,
+.theme-gothic .xhs-following {
+  border: 1px solid var(--xhs-line);
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: var(--xhs-muted) !important;
+}
+
+.theme-gothic .xhs-primary-button,
+.theme-gothic .xhs-tag-active,
+.theme-gothic .xhs-tab-line {
+  background:
+    radial-gradient(circle at 80% 25%, rgba(255, 255, 255, 0.42), transparent 16%),
+    linear-gradient(145deg, rgba(126, 14, 17, 0.95), rgba(16, 16, 16, 0.92)) !important;
+  color: #fff7f2 !important;
+}
+
+.theme-gothic .xhs-app h1,
+.theme-gothic .xhs-app h2,
+.theme-gothic .xhs-title,
+.theme-gothic .xhs-tab.active {
+  color: var(--xhs-text) !important;
+  font-family: Inter, "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+  font-weight: 850;
+}
+
+.theme-gothic .xhs-muted,
+.theme-gothic .xhs-tab,
+.theme-gothic .xhs-bottom {
+  color: var(--xhs-muted) !important;
+}
+
+.theme-gothic .lock-screen.has-default-lock-art {
+  background:
+    linear-gradient(124deg, transparent 0 18%, rgba(216, 15, 31, 0.94) 18.3% 39%, transparent 39.4%),
+    linear-gradient(146deg, transparent 0 69%, rgba(255, 248, 238, 0.95) 69.3% 73%, rgba(216, 15, 31, 0.92) 73.3% 82%, transparent 82.3%),
+    #070707 !important;
+}
+
+.theme-gothic .lock-screen.has-default-lock-art .lock-clock,
+.theme-gothic .lock-screen.has-default-lock-art .lock-status-row {
+  color: #fff8ee;
+  text-shadow: 3px 3px 0 #d80f1f;
+}

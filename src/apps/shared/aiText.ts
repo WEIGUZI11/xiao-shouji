@@ -1,5 +1,6 @@
 import type { CalendarEvent, Character, ChatMessage, DiaryEntry, GalleryPhoto, MemoEntry } from '../../store';
 import { useAppStore } from '../../store';
+import { buildHttpErrorMessage, readHttpErrorDetail } from '../../lib/httpErrors';
 import { buildXiaohongshuContext } from '../xiaohongshu/xiaohongshuLogic';
 import type { XiaohongshuNote } from '../xiaohongshu/types';
 
@@ -46,8 +47,13 @@ export async function requestChatCompletion({
     }),
   });
   if (!response.ok) {
-    useAppStore.getState().addAppLog?.({ type: 'error', title: 'AI 接口失败', detail: `${endpoint}\n${response.status}` });
-    throw new Error(`AI request failed: ${response.status}`);
+    const message = buildHttpErrorMessage('AI 接口失败', {
+      status: response.status,
+      statusText: response.statusText,
+      detail: await readHttpErrorDetail(response),
+    });
+    useAppStore.getState().addAppLog?.({ type: 'error', title: 'AI 接口失败', detail: `${endpoint}\n${message}` });
+    throw new Error(message);
   }
   const data = await response.json();
   const content = data?.choices?.[0]?.message?.content ?? '';
@@ -94,9 +100,17 @@ export async function requestChatCompletionStream({
       stream: true,
     }),
   });
-  if (!response.ok || !response.body) {
-    useAppStore.getState().addAppLog?.({ type: 'error', title: 'AI 流式接口失败', detail: `${endpoint}\n${response.status}` });
-    throw new Error(`AI stream failed: ${response.status}`);
+  if (!response.ok) {
+    const message = buildHttpErrorMessage('AI 流式接口失败', {
+      status: response.status,
+      statusText: response.statusText,
+      detail: await readHttpErrorDetail(response),
+    });
+    useAppStore.getState().addAppLog?.({ type: 'error', title: 'AI 流式接口失败', detail: `${endpoint}\n${message}` });
+    throw new Error(message);
+  }
+  if (!response.body) {
+    throw new Error('AI 流式接口失败：响应体为空。');
   }
   const reader = response.body.getReader();
   const decoder = new TextDecoder();

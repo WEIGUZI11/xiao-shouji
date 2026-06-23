@@ -30,6 +30,8 @@ const requiredApps = [
   'ai-context',
   'active-events',
   'contacts',
+  'user-info',
+  'backup',
 ];
 
 assert(existsSync(appsDir), 'src/apps directory must exist');
@@ -56,6 +58,10 @@ assert(existsSync(join(appsDir, 'peek', 'peekLogic.test.ts')), 'Peek readable su
 assert(existsSync(join(appsDir, 'memo', 'MemoScreen.tsx')), 'Memo screen must live under src/apps/memo');
 assert(existsSync(join(appsDir, 'browser', 'BrowserScreen.tsx')), 'Browser screen must live under src/apps/browser');
 assert(existsSync(join(appsDir, 'qq', 'QQScreen.tsx')), 'QQ screen must live under src/apps/qq');
+assert(existsSync(join(appsDir, 'qq', 'messages', 'QQMessages.tsx')), 'QQ messages must live under src/apps/qq/messages');
+assert(existsSync(join(appsDir, 'qq', 'channels', 'QQChannels.tsx')), 'QQ channels must live under src/apps/qq/channels');
+assert(existsSync(join(appsDir, 'qq', 'contacts', 'QQContacts.tsx')), 'QQ contacts must live under src/apps/qq/contacts');
+assert(existsSync(join(appsDir, 'qq', 'dynamic', 'QQDynamic.tsx')), 'QQ dynamic must live under src/apps/qq/dynamic');
 assert(existsSync(join(appsDir, 'video', 'VideoCallScreen.tsx')), 'Video call screen must live under src/apps/video');
 assert(existsSync(join(appsDir, 'settings', 'SettingsScreen.tsx')), 'Settings screen must live under src/apps/settings');
 assert(existsSync(join(appsDir, 'themes', 'ThemesScreen.tsx')), 'Themes screen must live under src/apps/themes');
@@ -65,5 +71,13 @@ assert(existsSync(join(appsDir, 'ai-context', 'AIContextScreen.tsx')), 'AI conte
 assert(existsSync(join(appsDir, 'active-events', 'ActiveEventsScreen.tsx')), 'Active events screen must live under src/apps/active-events');
 assert(existsSync(join(appsDir, 'active-events', 'activeEventsLogic.ts')), 'Active event logic must live under src/apps/active-events');
 assert(existsSync(join(appsDir, 'contacts', 'ContactsScreen.tsx')), 'Contacts screen must live under src/apps/contacts');
+assert(existsSync(join(appsDir, 'user-info', 'UserInfoScreen.tsx')), 'User info screen must live under src/apps/user-info');
+assert(existsSync(join(appsDir, 'user-info', 'userProfilePrompt.ts')), 'User profile prompt logic must live under src/apps/user-info');
+assert(existsSync(join(appsDir, 'backup', 'BackupScreen.tsx')), 'Backup screen must live under src/apps/backup');
+assert(existsSync(join(srcDir, 'shell', 'FeatureRouter.tsx')), 'Feature router must live under src/shell');
+assert(existsSync(join(srcDir, 'shell', 'Desktop.tsx')), 'Desktop shell must live under src/shell');
+assert(existsSync(join(srcDir, 'shell', 'GlobalMusicAudio.tsx')), 'Global music audio must live under src/shell');
+assert(existsSync(join(srcDir, 'shell', 'LockScreen.tsx')), 'Lock screen must live under src/shell');
+assert(existsSync(join(srcDir, 'shell', 'NotificationCenter.tsx')), 'Notification center must live under src/shell');
 
 console.log('apps folder structure ok');

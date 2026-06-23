@@ -16,6 +16,44 @@ $jsFile = Get-ChildItem -Path $assets -Filter "*.js" | Select-Object -First 1
 $css = Get-Content -Path $cssFile.FullName -Raw -Encoding utf8
 $js = Get-Content -Path $jsFile.FullName -Raw -Encoding utf8
 
+function Resolve-PublicAssetPath([string]$assetRelative) {
+  $assetClean = [Uri]::UnescapeDataString($assetRelative)
+  if ($assetClean.Contains("?")) {
+    $assetClean = $assetClean.Split("?")[0]
+  }
+
+  $assetPath = Join-Path $projectRoot "public"
+  foreach ($part in ($assetClean -split "/")) {
+    if ($part -and $part -ne "." -and $part -ne "..") {
+      $assetPath = Join-Path $assetPath $part
+    }
+  }
+
+  return $assetPath
+}
+
+# The APK WebView loads this HTML offline, so public theme assets must be embedded.
+$css = [regex]::Replace($css, 'url\(([''"]?)(?:\.\./|\.\/|/)?(guofeng-[^''")]+)\1\)', {
+  param($match)
+  $assetPath = Resolve-PublicAssetPath $match.Groups[2].Value
+  if (-not (Test-Path -LiteralPath $assetPath -PathType Leaf)) {
+    return $match.Value
+  }
+
+  $extension = [IO.Path]::GetExtension($assetPath).ToLowerInvariant()
+  $mimeType = switch ($extension) {
+    ".png" { "image/png" }
+    ".jpg" { "image/jpeg" }
+    ".jpeg" { "image/jpeg" }
+    ".webp" { "image/webp" }
+    ".svg" { "image/svg+xml" }
+    ".gif" { "image/gif" }
+    default { "application/octet-stream" }
+  }
+  $base64 = [Convert]::ToBase64String([IO.File]::ReadAllBytes($assetPath))
+  return "url(""data:$mimeType;base64,$base64"")"
+})
+
 $inline = @"
 <!doctype html>
 <html lang="zh-CN">

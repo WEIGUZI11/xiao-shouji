@@ -1,5 +1,5 @@
 ﻿import { strict as assert } from 'node:assert';
-import { filterPhoneRecordsForView, getPhoneListConfig } from './PhoneScreen';
+import { filterPhoneRecordsForView, getPhoneApiConnectionIssue, getPhoneListConfig } from './PhoneScreen';
 import type { PhoneCallRecord } from '../../store';
 
 const baseRecord = {
@@ -32,5 +32,10 @@ assert.equal(getPhoneListConfig('recent').title, '最近通话');
 assert.equal(getPhoneListConfig('missed').title, '未接来电');
 assert.equal(getPhoneListConfig('outgoing').title, '拨出电话');
 assert.equal(getPhoneListConfig('incoming').title, '来电记录');
+
+assert.match(getPhoneApiConnectionIssue({ apiBaseUrl: '', selectedModel: '' }), /API 未连接/);
+assert.match(getPhoneApiConnectionIssue({ apiBaseUrl: '', selectedModel: 'model-a' }), /接口地址/);
+assert.match(getPhoneApiConnectionIssue({ apiBaseUrl: 'https://example.test/v1', selectedModel: '' }), /模型/);
+assert.equal(getPhoneApiConnectionIssue({ apiBaseUrl: 'https://example.test/v1', selectedModel: 'model-a' }), '');
 
 console.log('phone list views ok');

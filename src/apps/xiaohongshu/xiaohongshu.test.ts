@@ -192,9 +192,14 @@ assert.equal(useAppStore.getState().xiaohongshuNotes.length, 0);
 
 const xiaohongshuAppSource = readFileSync(new URL('./XiaohongshuApp.tsx', import.meta.url), 'utf8');
 const globalCss = readFileSync(new URL('../../index.css', import.meta.url), 'utf8');
+const gothicCss = readFileSync(new URL('../../themes/gothic/index.css', import.meta.url), 'utf8');
 
 assert.match(xiaohongshuAppSource, /xhs-app/);
-assert.match(globalCss, /\.theme-gothic \.xhs-app/);
+assert.match(
+  xiaohongshuAppSource,
+  /setHomeTab\('recommend'\)[\s\S]*setActiveTag\('全部'\)[\s\S]*replaceXiaohongshuGeneratedNotes/,
+);
+assert.match(`${globalCss}\n${gothicCss}`, /\.theme-gothic \.xhs-app/);
 assert.doesNotMatch(xiaohongshuAppSource, /bg-\[#222\]/);
 
 console.log('xiaohongshu logic ok');

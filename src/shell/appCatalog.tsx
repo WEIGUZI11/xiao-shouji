@@ -6,7 +6,6 @@
  */
 import {
   BookOpen,
-  Bot,
   CalendarDays,
   CircleUserRound,
   Clapperboard,
@@ -14,6 +13,7 @@ import {
   Image as ImageIcon,
   Import,
   LockKeyhole,
+  Mail,
   MessageCircle,
   Music,
   Palette,
@@ -48,7 +48,7 @@ export interface DockCatalogApp {
 
 export const pageApps: DesktopCatalogApp[] = [
   { id: 'wechat', page: 0, screen: 'wechat', label: '微信', icon: <MessageCircle />, color: 'bg-[#dceecd]', x: 22, y: 22 },
-  { id: 'qq', page: 0, screen: 'qq', label: 'QQ', icon: <Bot />, color: 'bg-[#cfe5ef]', x: 106, y: 22 },
+  { id: 'qq', page: 0, screen: 'qq', label: 'QQ', icon: <Mail />, color: 'bg-[#cfe5ef]', x: 106, y: 22 },
   { id: 'gallery', page: 0, screen: 'gallery', label: '相册', icon: <ImageIcon />, color: 'bg-[#f4edbd]', x: 22, y: 126 },
   { id: 'calendar', page: 0, screen: 'calendar', label: '日历', icon: <CalendarDays />, color: 'bg-white', x: 106, y: 126 },
   { id: 'diary', page: 0, screen: 'diary', label: '日记', icon: <BookOpen />, color: 'bg-[#e9c4d5]', x: 44, y: 352 },
@@ -64,6 +64,7 @@ export const pageApps: DesktopCatalogApp[] = [
   { id: 'logs', page: 1, screen: 'logs', label: '报错', icon: <FileText />, color: 'bg-[#ffd6d6]', x: 264, y: 132 },
   { id: 'char-active', page: 1, screen: 'char-active', label: 'char主动', icon: <Sparkles />, color: 'bg-[#efe7a9]', x: 24, y: 240 },
   { id: 'backup', page: 1, screen: 'backup', label: '数据备份', icon: <Import />, color: 'bg-[#dceecd]', x: 104, y: 240 },
+  { id: 'user-info', page: 1, screen: 'user-info', label: 'User信息', icon: <CircleUserRound />, color: 'bg-[#f4edbd]', x: 184, y: 240 },
 ];
 
 export const dockApps: DockCatalogApp[] = [

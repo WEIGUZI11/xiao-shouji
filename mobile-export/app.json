@@ -3,7 +3,7 @@
     "name": "小手机",
     "slug": "small-phone",
     "scheme": "smallphone",
-    "version": "1.01",
+    "version": "1.06",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -14,16 +14,22 @@
     },
     "android": {
       "package": "com.smallphone.app",
+      "usesCleartextTraffic": true,
+      "permissions": [
+        "POST_NOTIFICATIONS"
+      ],
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#101010"
       },
-      "versionCode": 19
+      "versionCode": 24
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": [],
+    "plugins": [
+      "expo-notifications"
+    ],
     "extra": {
       "eas": {
         "projectId": "924a1d08-13eb-455e-88ee-f6910f7d70ee"

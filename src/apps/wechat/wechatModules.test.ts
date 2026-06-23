@@ -7,7 +7,10 @@ const expectedModules = [
   'src/apps/wechat/chats/WeChatChats.tsx',
   'src/apps/wechat/contacts/WeChatContacts.tsx',
   'src/apps/wechat/discover/WeChatDiscover.tsx',
+  'src/apps/wechat/groups/WeChatGroups.tsx',
   'src/apps/wechat/me/WeChatMe.tsx',
+  'src/apps/wechat/moments/WeChatMoments.tsx',
+  'src/apps/wechat/moments/momentsLogic.ts',
 ];
 
 for (const modulePath of expectedModules) {

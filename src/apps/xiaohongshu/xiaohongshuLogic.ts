@@ -65,16 +65,35 @@ function summarize(value: string, max = 120) {
   return compact.length > max ? `${compact.slice(0, max)}...` : compact;
 }
 
+function looksLikeInternalPrompt(value: string) {
+  return /<[^>]+>|#\s*(SFW|NSFW|Core|Background)|\b(name|age|gender|identities|system|prompt|content|entries)\s*:|{{user}}|发布风格|输出严格|结构：|人物设定|世界背景|角色卡|不要逐字|你正在为小手机|笔记要像真实用户|图片描述/i.test(value);
+}
+
+function displayHint(value: string, fallback: string, max = 42) {
+  const compact = value.replace(/\s+/g, ' ').trim();
+  if (!compact || looksLikeInternalPrompt(compact)) return fallback;
+  return summarize(compact, max);
+}
+
+function sanitizeGeneratedContent(content: string, fallback: string) {
+  const cleaned = content
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter((line) => line && !looksLikeInternalPrompt(line))
+    .map((line) => summarize(line, 92));
+  return cleaned.length > 0 ? cleaned.join('\n') : fallback;
+}
+
 function stringifyWorldBook(worldBook: unknown) {
   if (!worldBook) return '';
-  if (typeof worldBook === 'string') return summarize(worldBook, 90);
+  if (typeof worldBook === 'string') return displayHint(worldBook, '', 90);
   try {
     const raw = JSON.stringify(worldBook);
     const parsed = JSON.parse(raw) as { entries?: Array<{ content?: string }> };
     if (Array.isArray(parsed.entries)) {
-      return summarize(parsed.entries.map((entry) => entry.content).filter(Boolean).join(' '), 90);
+      return displayHint(parsed.entries.map((entry) => entry.content).filter(Boolean).join(' '), '', 90);
     }
-    return summarize(raw.replace(/[{}[\]":,]/g, ' '), 90);
+    return displayHint(raw.replace(/[{}[\]":,]/g, ' '), '', 90);
   } catch {
     return '';
   }
@@ -168,7 +187,7 @@ export function buildGeneratedXiaohongshuNotes({
 }: GenerateInput): XiaohongshuNote[] {
   const profile = normalizeXiaohongshuProfile(userProfile);
   const worldHint = summarize(browserWorldBook.replace(/^世界书[:：]\s*/, ''), 90);
-  const presetHint = summarize(presetPrompt, 70);
+  const presetHint = displayHint(presetPrompt, '', 70);
   const photos = galleryPool(galleryPhotos);
   const notes: XiaohongshuNote[] = [];
   const topicPool = [
@@ -266,7 +285,10 @@ export function buildGeneratedXiaohongshuNotes({
     });
   });
 
-  return notes;
+  return notes.map((note) => ({
+    ...note,
+    content: sanitizeGeneratedContent(note.content, `${note.authorName}今天也在手机里留下一点生活痕迹。`),
+  }));
 }
 
 export function getSortedXiaohongshuNotes(notes: XiaohongshuNote[]) {

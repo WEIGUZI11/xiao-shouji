@@ -23,6 +23,7 @@ import {
 import React, { useEffect, useMemo, useState } from 'react';
 import { Character, PhoneCallRecord, PhoneCallStatus, PhoneCallTranscriptLine, useAppStore } from '../../store';
 import { cn, createId } from '../../lib/utils';
+import { buildHttpErrorMessage, readHttpErrorDetail } from '../../lib/httpErrors';
 import { speakWithConfiguredTts } from '../../tts';
 
 type PhoneListView = 'recent' | 'missed' | 'outgoing' | 'incoming';
@@ -58,6 +59,21 @@ function normalizeApiBaseUrl(url: string) {
   const trimmed = url.trim().replace(/\/+$/, '');
   if (!trimmed) return '';
   return trimmed.endsWith('/v1') ? trimmed : `${trimmed}/v1`;
+}
+
+export function getPhoneApiConnectionIssue({
+  apiBaseUrl,
+  selectedModel,
+}: {
+  apiBaseUrl?: string;
+  selectedModel?: string;
+}) {
+  const missing = [
+    !apiBaseUrl?.trim() ? '接口地址' : '',
+    !selectedModel?.trim() ? '模型' : '',
+  ].filter(Boolean);
+  if (missing.length === 0) return '';
+  return `电话 API 未连接：请先在设置里填写${missing.join('和')}。`;
 }
 
 function getCharacterPhonePrompt(character: Character) {
@@ -118,21 +134,15 @@ async function requestPhoneLine({
       ],
     }),
   });
-  if (!response.ok) throw new Error(`电话 AI 失败：${response.status}`);
+  if (!response.ok) {
+    throw new Error(buildHttpErrorMessage('电话 AI 失败', {
+      status: response.status,
+      statusText: response.statusText,
+      detail: await readHttpErrorDetail(response),
+    }));
+  }
   const data = await response.json();
   return String(data?.choices?.[0]?.message?.content || '').trim();
-}
-
-function fallbackPhoneLine(character: Character, transcript: PhoneCallTranscriptLine[]) {
-  const lines = [
-    '喂，我在听。',
-    '嗯，你说，我这边听得到。',
-    '刚刚有点杂音，你再说一遍？',
-    '我没走神，真的在听。',
-    '好，那你慢慢说。',
-    `${character.name ? '嗯' : '嗯'}，我知道了。`,
-  ];
-  return lines[transcript.length % lines.length];
 }
 
 function formatDuration(seconds: number) {
@@ -290,19 +300,21 @@ export function PhoneScreen() {
     setGenerating(true);
     setStatus('听筒里安静了一下...');
     try {
-      let text = '';
-      if (apiBaseUrl && selectedModel) {
-        text = await requestPhoneLine({
-          baseUrl: apiBaseUrl,
-          apiKey,
-          model: selectedModel,
-          character: liveCharacter,
-          transcript: baseTranscript,
-          userDraft: draft,
-          presetPrompt: phonePresetPrompt,
-        });
+      const connectionIssue = getPhoneApiConnectionIssue({ apiBaseUrl, selectedModel });
+      if (connectionIssue) {
+        setStatus(connectionIssue);
+        addAppLog({ type: 'error', title: '电话 API 未连接', detail: connectionIssue });
+        return;
       }
-      const finalText = text || fallbackPhoneLine(liveCharacter, baseTranscript);
+      const finalText = await requestPhoneLine({
+        baseUrl: apiBaseUrl,
+        apiKey,
+        model: selectedModel,
+        character: liveCharacter,
+        transcript: baseTranscript,
+        userDraft: draft,
+        presetPrompt: phonePresetPrompt,
+      });
       setTranscript([...baseTranscript, { speaker: 'char', text: finalText.slice(0, 80), timestamp: Date.now() }]);
       if (ttsEnabled) {
         void speakWithConfiguredTts(finalText, ttsConfig).catch((error) => {
@@ -314,12 +326,10 @@ export function PhoneScreen() {
         });
       }
       setUserDraft('');
-      setStatus(apiBaseUrl && selectedModel ? '已听到回复' : '本地短句回复');
+      setStatus('已听到回复');
     } catch (error) {
-      const finalText = fallbackPhoneLine(liveCharacter, baseTranscript);
-      setTranscript([...baseTranscript, { speaker: 'char', text: finalText, timestamp: Date.now() }]);
       setUserDraft('');
-      setStatus('电话 AI 暂时失败，已用本地短句。');
+      setStatus(error instanceof Error ? error.message : '电话 AI 暂时失败。');
       addAppLog({
         type: 'error',
         title: '电话 AI 失败',
@@ -458,7 +468,7 @@ export function PhoneScreen() {
         {characters.length === 0 && <Empty text="还没有角色。先去通讯录导入角色卡。" />}
         <div className="grid gap-3">
           {characters.map((character) => (
-            <button key={character.id} onClick={() => setSelectedId(character.id)} className={cn('theme-card', selectedId === character.id && 'active')}>
+            <button key={character.id} onClick={() => setSelectedId(character.id)} className={cn('phone-contact-card', selectedId === character.id && 'active')}>
               <div className="flex items-center gap-3">
                 <Avatar character={character} />
                 <div className="min-w-0 text-left">
@@ -616,8 +626,8 @@ function Header({ title, subtitle, onBack }: { title: string; subtitle?: string;
   return (
     <header className="sticky top-0 z-30 bg-[var(--phone-bg)] px-4 pb-4 pt-6">
       <div className="grid grid-cols-[48px_1fr_48px] items-center">
-        <button onClick={onBack} className="circle-button">
-          <ChevronLeft className="h-7 w-7" />
+        <button onClick={onBack} className="circle-button" aria-label="返回">
+          <ChevronLeft className="h-7 w-7" aria-hidden />
         </button>
         <div className="min-w-0 text-center">
           <h1 className="truncate text-2xl font-black">{title}</h1>

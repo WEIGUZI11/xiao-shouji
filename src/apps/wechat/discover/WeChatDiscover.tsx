@@ -2,14 +2,14 @@
 import React, { useRef, useState } from 'react';
 import { cn } from '../../../lib/utils';
 import { useAppStore } from '../../../store';
+import { WeChatMoments } from '../moments/WeChatMoments';
 import { WeChatTopBar } from '../shared/WeChatShared';
 
 export function WeChatDiscover() {
-  const { wechatPhotos, addWechatPhoto, removeWechatPhoto, wechatMoments, addWechatMoment, stickers, addSticker, updateStickerLabel, deleteSticker, toggleStickerFavorite } = useAppStore();
+  const { wechatPhotos, addWechatPhoto, removeWechatPhoto, wechatMoments, stickers, addSticker, updateStickerLabel, deleteSticker, toggleStickerFavorite } = useAppStore();
   const inputRef = useRef<HTMLInputElement>(null);
   const stickerInputRef = useRef<HTMLInputElement>(null);
   const [discoverView, setDiscoverView] = useState<'home' | 'moments' | 'photos' | 'stickers'>('home');
-  const [momentDraft, setMomentDraft] = useState('');
   const [stickerLabel, setStickerLabel] = useState('');
 
   const uploadPhoto = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -37,21 +37,14 @@ export function WeChatDiscover() {
     event.target.value = '';
   };
 
-  const publishMoment = () => {
-    const content = momentDraft.trim();
-    if (!content) return;
-    addWechatMoment(content);
-    setMomentDraft('');
-  };
-
   return (
     <div className="wechat-page">
       <WeChatTopBar
         title={discoverView === 'home' ? '发现' : discoverView === 'moments' ? '朋友圈' : discoverView === 'photos' ? '照片墙' : '表情包'}
         onBack={discoverView === 'home' ? undefined : () => setDiscoverView('home')}
-        right={discoverView === 'home' ? <Camera className="h-5 w-5" /> : <button type="button" onClick={() => setDiscoverView('home')} className="wechat-mini-button">返回</button>}
+        right={discoverView === 'home' ? <Camera className="h-5 w-5" /> : <button type="button" onClick={() => setDiscoverView('home')} className="wechat-mini-button wechat-return-button">返回</button>}
       />
-      <div className="wechat-list">
+      <div className={cn('wechat-list', discoverView === 'home' && 'wechat-discover-home')}>
         {discoverView === 'home' && (
           <>
             <button type="button" onClick={() => setDiscoverView('moments')} className="wechat-menu-row">
@@ -72,24 +65,7 @@ export function WeChatDiscover() {
           </>
         )}
         {discoverView === 'moments' && (
-          <section className="wechat-photo-wall">
-            <div className="mb-3 flex items-center justify-between">
-              <div>
-                <h2>朋友圈</h2>
-                <p>先保留本机动态，后面可接角色评论。</p>
-              </div>
-              <button type="button" onClick={publishMoment} className="wechat-mini-button">发表</button>
-            </div>
-            <textarea value={momentDraft} onChange={(event) => setMomentDraft(event.target.value)} placeholder="写一条朋友圈..." className="wechat-moment-input" />
-            <div className="mt-3 grid gap-2">
-              {wechatMoments.length === 0 && <p className="wechat-muted-text">还没有朋友圈。</p>}
-              {wechatMoments.map((moment, index) => (
-                <article key={`${moment}-${index}`} className="wechat-moment-card">
-                  <p>{moment}</p>
-                </article>
-              ))}
-            </div>
-          </section>
+          <WeChatMoments />
         )}
         {discoverView === 'photos' && (
           <section className="wechat-photo-wall">

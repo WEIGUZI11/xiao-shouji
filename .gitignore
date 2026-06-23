@@ -4,6 +4,8 @@ dist/
 char-phone-export/
 char-phone-export.zip
 coverage/
+data/proactive-reminders.json
+work/
 .DS_Store
 *.log
 .env*
@@ -17,6 +19,12 @@ mobile-export-web*.png
 phone-flow*.png
 phone-tts-preview*.png
 wechat-*.png
+/desktop-after-unlock.png
+/doubao-*.png
+/guofeng-layout-check.png
+/qa-*.png
+/qq-*.png
+/tmp-*.png
 dump-dom*.txt
 eas-build-failed.txt
 System.Drawing.Drawing2D.GraphicsPath

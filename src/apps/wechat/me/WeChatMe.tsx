@@ -242,8 +242,9 @@ export function WeChatMe() {
     <div className="wechat-page">
       <WeChatTopBar title="我" right={<Grid2X2 className="h-5 w-5" />} />
       <div className="wechat-me-hero">
-        <button type="button" onClick={() => avatarInputRef.current?.click()} className="shrink-0">
+        <button type="button" onClick={() => avatarInputRef.current?.click()} className="wechat-avatar-upload-button" aria-label="更换头像">
           <WeChatAvatar src={userAvatar} name={userName} large />
+          <span>换头像</span>
         </button>
         <input ref={avatarInputRef} type="file" accept="image/*" onChange={uploadAvatar} className="hidden" />
         <div className="min-w-0 flex-1">

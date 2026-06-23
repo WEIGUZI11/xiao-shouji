@@ -1,0 +1,2503 @@
+/**
+ * Guofeng theme visual layer.
+ * Split from src/index.css and the former src/themes/guofeng.css without visual changes.
+ */
+
+.theme-guofeng .lock-screen.has-default-lock-art {
+  background:
+    radial-gradient(circle at 78% 20%, color-mix(in srgb, var(--theme-muted, #4f7771) 16%, transparent), transparent 24%),
+    linear-gradient(90deg, transparent 0 20px, color-mix(in srgb, var(--theme-muted, #4f7771) 10%, transparent) 20px 21px, transparent 21px),
+    repeating-linear-gradient(180deg, transparent 0 32px, color-mix(in srgb, var(--theme-text, #24312f) 4%, transparent) 32px 33px),
+    color-mix(in srgb, var(--theme-panel, #fff8e8) 92%, var(--theme-bg, #f3ead7));
+}
+
+.theme-guofeng .lock-screen.has-default-lock-art .lock-clock::after {
+  content: "手札";
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 48px;
+  margin-top: 0;
+  border: 2px solid var(--theme-accent, #9b2f2f);
+  padding: 0;
+  color: var(--theme-accent, #9b2f2f);
+  font-size: 15px;
+  font-weight: 1000;
+  line-height: 1.1;
+  writing-mode: vertical-rl;
+}
+
+/*
+ * Guofeng theme visual layer.
+ * Scope: theme variables and UI styling only; no app state or business behavior.
+ */
+
+.theme-guofeng {
+  --theme-bg: #e8e3d6;
+  --theme-text: #2e3d34;
+  --theme-panel: #f4efe6;
+  --theme-accent: #a33a2f;
+  --theme-muted: #9bae9e;
+  --theme-gold: #d4af37;
+  --phone-bg: var(--theme-bg);
+  --phone-text: var(--theme-text);
+  --panel-bg: var(--theme-panel);
+  --accent: var(--theme-accent);
+  background:
+    radial-gradient(circle at 82% 10%, color-mix(in srgb, var(--theme-muted) 18%, transparent), transparent 24%),
+    linear-gradient(135deg, color-mix(in srgb, var(--theme-bg) 88%, var(--theme-muted)), var(--theme-bg));
+  color: var(--theme-text);
+  font-family: "Noto Serif SC", "Songti SC", "SimSun", "STSong", "Microsoft YaHei", "PingFang SC", serif;
+}
+
+/* Final desktop correction: cream-inspired layout, equal app objects, no stamps. */
+.theme-guofeng.theme-guofeng {
+  --guofeng-paper: rgba(252, 249, 240, 0.66);
+  --guofeng-paper-strong: rgba(255, 253, 247, 0.82);
+  --guofeng-ink: #24302d;
+  --guofeng-muted: #8d978f;
+  --guofeng-celadon: #b9c8bd;
+  --guofeng-cinnabar: #a74736;
+  --guofeng-line: rgba(36, 48, 45, 0.14);
+  --guofeng-shadow: 0 14px 34px rgba(30, 38, 34, 0.12);
+}
+
+.theme-guofeng.theme-guofeng .phone-shell {
+  border-color: #101513 !important;
+  background: #101513 !important;
+  box-shadow: 0 28px 76px rgba(0, 0, 0, 0.48) !important;
+}
+
+.theme-guofeng.theme-guofeng .cream-screen {
+  background:
+    radial-gradient(circle at 78% 14%, rgba(185, 200, 189, 0.22), transparent 28%),
+    radial-gradient(circle at 18% 84%, rgba(167, 71, 54, 0.045), transparent 30%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0) 38%),
+    #f4f1e9 !important;
+  color: var(--guofeng-ink);
+}
+
+.theme-guofeng.theme-guofeng .cream-screen::before {
+  pointer-events: none;
+  content: "" !important;
+  position: absolute;
+  inset: 118px 0 auto 0;
+  height: 145px;
+  background:
+    linear-gradient(152deg, transparent 0 18%, rgba(185, 200, 189, 0.2) 18.5% 41%, transparent 41.5%),
+    linear-gradient(24deg, transparent 0 26%, rgba(185, 200, 189, 0.26) 26.5% 54%, transparent 54.5%),
+    linear-gradient(168deg, transparent 0 52%, rgba(36, 48, 45, 0.045) 52.5% 53.5%, transparent 54%),
+    linear-gradient(180deg, transparent, rgba(185, 200, 189, 0.13));
+  opacity: 0.72;
+}
+
+.theme-guofeng.theme-guofeng .cream-screen::after {
+  pointer-events: none;
+  content: "" !important;
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(104deg, transparent 0 71%, rgba(36, 48, 45, 0.035) 71.4% 72%, transparent 72.4%),
+    repeating-linear-gradient(90deg, rgba(36, 48, 45, 0.018) 0 1px, transparent 1px 18px);
+}
+
+.theme-guofeng.theme-guofeng .cream-screen > * {
+  position: relative;
+  z-index: 1;
+}
+
+.theme-guofeng.theme-guofeng .app-icon,
+.theme-guofeng.theme-guofeng .dock-icon {
+  position: relative;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--guofeng-line) !important;
+  background:
+    linear-gradient(180deg, var(--guofeng-paper-strong), var(--guofeng-paper)),
+    #fbf8ee !important;
+  color: var(--guofeng-ink) !important;
+  box-shadow: var(--guofeng-shadow) !important;
+  overflow: hidden;
+  backdrop-filter: blur(14px);
+}
+
+.theme-guofeng.theme-guofeng .app-icon {
+  width: 58px !important;
+  height: 58px !important;
+  border-radius: 18px !important;
+}
+
+.theme-guofeng.theme-guofeng .app-icon::before,
+.theme-guofeng.theme-guofeng .app-icon::after,
+.theme-guofeng.theme-guofeng .dock-icon::before,
+.theme-guofeng.theme-guofeng .dock-icon::after {
+  content: none !important;
+  display: none !important;
+}
+
+.theme-guofeng.theme-guofeng .app-icon svg,
+.theme-guofeng.theme-guofeng .dock-icon svg {
+  width: 28px !important;
+  height: 28px !important;
+  opacity: 1 !important;
+  stroke-width: 1.8;
+  color: currentColor;
+}
+
+.theme-guofeng.theme-guofeng .app-label,
+.theme-guofeng.theme-guofeng .dock span:last-child,
+.theme-guofeng.theme-guofeng .image-bed > span {
+  color: var(--guofeng-ink) !important;
+  font-family: "Noto Serif SC", "Songti SC", "SimSun", serif;
+  font-size: 12px !important;
+  font-weight: 850 !important;
+  letter-spacing: 0 !important;
+  text-shadow: none !important;
+}
+
+.theme-guofeng.theme-guofeng .image-bed {
+  width: 70px !important;
+  height: 84px !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--guofeng-ink) !important;
+  gap: 7px !important;
+  overflow: visible !important;
+}
+
+.theme-guofeng.theme-guofeng .image-bed > svg,
+.theme-guofeng.theme-guofeng .image-bed > img {
+  width: 58px !important;
+  height: 58px !important;
+  flex: 0 0 58px !important;
+  margin: 0 !important;
+  border: 1px solid var(--guofeng-line) !important;
+  border-radius: 16px !important;
+  background:
+    linear-gradient(180deg, var(--guofeng-paper-strong), var(--guofeng-paper)),
+    #fbf8ee !important;
+  box-shadow: var(--guofeng-shadow) !important;
+  color: var(--guofeng-ink) !important;
+  object-fit: cover !important;
+}
+
+.theme-guofeng.theme-guofeng .image-bed > svg {
+  padding: 13px !important;
+}
+
+.theme-guofeng.theme-guofeng .time-card {
+  width: 282px !important;
+  height: 78px !important;
+  border: 1px solid rgba(36, 48, 45, 0.12) !important;
+  border-left: 3px solid var(--guofeng-cinnabar) !important;
+  border-radius: 22px !important;
+  background: rgba(255, 253, 247, 0.6) !important;
+  box-shadow: 0 16px 38px rgba(30, 38, 34, 0.1) !important;
+  backdrop-filter: blur(16px);
+}
+
+.theme-guofeng.theme-guofeng .time-text,
+.theme-guofeng.theme-guofeng .time-card .time-main {
+  color: var(--guofeng-ink) !important;
+  font-size: 30px !important;
+  letter-spacing: 0 !important;
+}
+
+.theme-guofeng.theme-guofeng .date-text,
+.theme-guofeng.theme-guofeng .time-card .time-sub {
+  color: var(--guofeng-muted) !important;
+  font-size: 12px !important;
+}
+
+.theme-guofeng.theme-guofeng .guide-mark,
+.theme-guofeng.theme-guofeng .time-card .time-seal {
+  width: 44px !important;
+  height: 44px !important;
+  min-width: 44px !important;
+  padding: 0 !important;
+  border: 1px solid rgba(167, 71, 54, 0.46) !important;
+  border-left: 1px solid rgba(167, 71, 54, 0.46) !important;
+  border-radius: 999px !important;
+  color: var(--guofeng-cinnabar) !important;
+  background: rgba(255, 253, 247, 0.46) !important;
+  font-size: 0 !important;
+  text-shadow: none !important;
+}
+
+.theme-guofeng.theme-guofeng .guide-mark svg {
+  display: none !important;
+}
+
+.theme-guofeng.theme-guofeng .guide-mark::before {
+  content: "静" !important;
+  display: grid !important;
+  place-items: center;
+  width: 100% !important;
+  height: 100% !important;
+  border: 0 !important;
+  color: var(--guofeng-cinnabar) !important;
+  font: 800 19px/1 "Noto Serif SC", "Songti SC", "SimSun", serif !important;
+}
+
+.theme-guofeng.theme-guofeng .dock {
+  border: 1px solid var(--guofeng-line) !important;
+  background: rgba(255, 253, 247, 0.72) !important;
+  box-shadow: 0 -16px 40px rgba(30, 38, 34, 0.1) !important;
+  backdrop-filter: blur(18px);
+}
+
+.theme-guofeng.theme-guofeng .dock-icon {
+  width: 50px !important;
+  height: 50px !important;
+  border-radius: 16px !important;
+}
+
+.theme-guofeng.theme-guofeng .dock-icon svg {
+  width: 24px !important;
+  height: 24px !important;
+}
+
+.theme-guofeng.theme-guofeng .page-dot {
+  background: rgba(36, 48, 45, 0.14) !important;
+}
+
+.theme-guofeng.theme-guofeng .page-dots button.active::before,
+.theme-guofeng.theme-guofeng .page-dot.active {
+  width: 22px !important;
+  border-radius: 999px !important;
+  background: rgba(36, 48, 45, 0.36) !important;
+}
+
+.theme-guofeng.theme-guofeng .page-dots button:not(.active)::before {
+  background: rgba(141, 151, 143, 0.3) !important;
+}
+
+.theme-guofeng .phone-shell {
+  border-color: color-mix(in srgb, var(--theme-text) 88%, black) !important;
+  background: var(--theme-bg);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--theme-panel) 42%, transparent),
+    0 24px 58px rgba(31, 41, 37, 0.34);
+}
+
+.theme-guofeng .cream-screen,
+.theme-guofeng .lock-screen {
+  background:
+    radial-gradient(circle at 82% 12%, color-mix(in srgb, var(--theme-muted) 16%, transparent), transparent 24%),
+    radial-gradient(circle at 18% 86%, color-mix(in srgb, var(--theme-accent) 9%, transparent), transparent 28%),
+    repeating-linear-gradient(92deg, color-mix(in srgb, var(--theme-text) 3%, transparent) 0 1px, transparent 1px 12px),
+    linear-gradient(180deg, var(--theme-panel), var(--theme-bg));
+  color: var(--theme-text);
+}
+
+.theme-guofeng .lock-status-row,
+.theme-guofeng .lock-clock {
+  color: var(--theme-text);
+  text-shadow: 0 1px 0 color-mix(in srgb, var(--theme-panel) 78%, transparent);
+}
+
+.theme-guofeng .lock-clock h1,
+.theme-guofeng .time-text,
+.theme-guofeng h1,
+.theme-guofeng h2,
+.theme-guofeng h3 {
+  font-family: "Songti SC", "SimSun", "STSong", "Microsoft YaHei", "PingFang SC", serif;
+  letter-spacing: 0;
+}
+
+.theme-guofeng header {
+  border-bottom: 1px solid color-mix(in srgb, var(--theme-text) 12%, transparent);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-panel) 96%, transparent), color-mix(in srgb, var(--theme-bg) 90%, transparent));
+  color: var(--theme-text);
+}
+
+.theme-guofeng .app-icon,
+.theme-guofeng .dock-icon,
+.theme-guofeng .app-chip {
+  border: 1px solid color-mix(in srgb, var(--theme-text) 34%, transparent);
+  border-radius: 13px;
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--theme-panel) 96%, var(--theme-muted)), var(--theme-bg));
+  color: var(--theme-text);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--theme-panel) 72%, transparent), 0 8px 18px rgba(31, 41, 37, 0.13);
+}
+
+.theme-guofeng .app-button:nth-of-type(3n + 1) .app-icon,
+.theme-guofeng .dock button:nth-child(3n + 1) .dock-icon {
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--theme-muted) 26%, var(--theme-panel)), var(--theme-panel));
+}
+
+.theme-guofeng .app-button:nth-of-type(3n + 2) .app-icon,
+.theme-guofeng .dock button:nth-child(3n + 2) .dock-icon {
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--theme-accent) 18%, var(--theme-panel)), var(--theme-panel));
+}
+
+.theme-guofeng .app-label,
+.theme-guofeng .dock span:last-child {
+  color: var(--theme-text);
+  font-weight: 800;
+  text-shadow: 0 1px 0 color-mix(in srgb, var(--theme-panel) 72%, transparent);
+}
+
+.theme-guofeng .dock {
+  border: 1px solid color-mix(in srgb, var(--theme-text) 24%, transparent);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--theme-panel) 90%, transparent);
+  box-shadow: 0 14px 30px rgba(31, 41, 37, 0.16);
+}
+
+.theme-guofeng .image-bed,
+.theme-guofeng .time-card,
+.theme-guofeng .hand-panel,
+.theme-guofeng .theme-card,
+.theme-guofeng .feature-tile,
+.theme-guofeng .custom-widget,
+.theme-guofeng .guide-panel,
+.theme-guofeng .notification-sheet,
+.theme-guofeng .notification-card,
+.theme-guofeng .lock-empty-card,
+.theme-guofeng .hand-note {
+  border: 1px solid color-mix(in srgb, var(--theme-text) 26%, transparent);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-panel) 98%, transparent), color-mix(in srgb, var(--theme-bg) 84%, var(--theme-panel))),
+    var(--theme-panel);
+  color: var(--theme-text);
+  box-shadow: 0 10px 24px rgba(31, 41, 37, 0.11);
+}
+
+.theme-guofeng .time-card {
+  height: 74px;
+  border-left: 4px solid var(--theme-accent);
+}
+
+.theme-guofeng .time-text {
+  color: var(--theme-text);
+  font-size: 30px;
+}
+
+.theme-guofeng .date-text,
+.theme-guofeng .hand-note,
+.theme-guofeng .widget-status {
+  color: var(--theme-muted);
+}
+
+.theme-guofeng .circle-button,
+.theme-guofeng .save-button,
+.theme-guofeng .pill,
+.theme-guofeng .call-button,
+.theme-guofeng .layout-toggle,
+.theme-guofeng .hand-bubble,
+.theme-guofeng .shell-notification-button,
+.theme-guofeng .lock-unlock-button {
+  border: 1px solid color-mix(in srgb, var(--theme-text) 28%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--theme-panel) 92%, var(--theme-bg));
+  color: var(--theme-text);
+  box-shadow: 0 8px 18px rgba(31, 41, 37, 0.12);
+}
+
+.theme-guofeng .fetch-button,
+.theme-guofeng .theme-card.active,
+.theme-guofeng .pill.active,
+.theme-guofeng .layout-toggle.active {
+  border-color: color-mix(in srgb, var(--theme-accent) 58%, var(--theme-text));
+  background: var(--theme-accent);
+  color: var(--theme-panel);
+}
+
+.theme-guofeng .fetch-button {
+  border-radius: 8px;
+}
+
+.theme-guofeng .hand-input,
+.theme-guofeng .widget-input,
+.theme-guofeng select,
+.theme-guofeng textarea {
+  border: 1px solid color-mix(in srgb, var(--theme-text) 24%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--theme-panel) 94%, white);
+  color: var(--theme-text);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--theme-panel) 76%, transparent);
+}
+
+.theme-guofeng .hand-input::placeholder,
+.theme-guofeng .widget-input::placeholder {
+  color: color-mix(in srgb, var(--theme-muted) 72%, transparent);
+}
+
+.theme-guofeng .list-row {
+  border-bottom-color: color-mix(in srgb, var(--theme-text) 12%, transparent);
+}
+
+.theme-guofeng .guide-mark {
+  color: var(--theme-accent);
+  font-size: 0;
+  -webkit-text-stroke: 0;
+  text-shadow: none;
+}
+
+.theme-guofeng .guide-mark svg {
+  display: none;
+}
+
+.theme-guofeng .guide-mark::before {
+  content: "札";
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 2px solid var(--theme-accent);
+  color: var(--theme-accent);
+  font: 800 27px/1 "Songti SC", "SimSun", serif;
+}
+
+.theme-guofeng .page-dots button::before {
+  background: color-mix(in srgb, var(--theme-muted) 36%, var(--theme-bg));
+}
+
+.theme-guofeng .page-dots button.active::before {
+  background: var(--theme-accent);
+}
+
+.theme-guofeng .shell-notification-button {
+  top: max(14px, calc(env(safe-area-inset-top, 0px) + 10px));
+  left: 16px;
+  min-height: 30px;
+  padding: 5px 9px;
+  background: color-mix(in srgb, var(--theme-panel) 88%, transparent);
+  backdrop-filter: blur(10px);
+}
+
+.theme-guofeng .shell-notification-button b,
+.theme-guofeng .shell-badge,
+.theme-guofeng .notification-count {
+  border-color: var(--theme-panel);
+  background: var(--theme-accent);
+  color: var(--theme-panel);
+}
+
+.theme-guofeng .notification-center {
+  background: color-mix(in srgb, var(--theme-text) 34%, transparent);
+}
+
+.theme-guofeng .notification-icon,
+.theme-guofeng .notification-icon.kind-call,
+.theme-guofeng .notification-icon.kind-calendar,
+.theme-guofeng .notification-icon.kind-memo {
+  background: color-mix(in srgb, var(--theme-muted) 20%, var(--theme-panel));
+  color: var(--theme-text);
+}
+
+.theme-guofeng .notification-title {
+  color: var(--theme-text);
+}
+
+.theme-guofeng .notification-body {
+  color: var(--theme-muted);
+  opacity: 1;
+}
+
+.theme-guofeng .wechat-shell,
+.theme-guofeng .wechat-chat-screen {
+  --wechat-bg: var(--theme-bg);
+  --wechat-surface: var(--theme-panel);
+  --wechat-surface-2: color-mix(in srgb, var(--theme-muted) 14%, var(--theme-panel));
+  --wechat-text: var(--theme-text);
+  --wechat-muted: var(--theme-muted);
+  --wechat-line: color-mix(in srgb, var(--theme-text) 12%, transparent);
+  --wechat-active: var(--theme-accent);
+  --wechat-active-text: var(--theme-panel);
+  --wechat-user-bubble: color-mix(in srgb, var(--theme-muted) 28%, var(--theme-panel));
+  --wechat-model-bubble: var(--theme-panel);
+  --wechat-badge: var(--theme-accent);
+  --wechat-shadow: none;
+  background: var(--wechat-bg);
+  color: var(--wechat-text);
+  font-family: "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+}
+
+.theme-guofeng .wechat-page {
+  background:
+    repeating-linear-gradient(92deg, color-mix(in srgb, var(--theme-text) 2.5%, transparent) 0 1px, transparent 1px 13px),
+    var(--wechat-bg);
+  color: var(--wechat-text);
+}
+
+.theme-guofeng .wechat-topbar,
+.theme-guofeng .wechat-tabs,
+.theme-guofeng .wechat-input-bar,
+.theme-guofeng .wechat-chat-header {
+  border-color: var(--wechat-line);
+  background: color-mix(in srgb, var(--wechat-surface) 94%, transparent);
+  color: var(--wechat-text);
+}
+
+.theme-guofeng .wechat-chat-row,
+.theme-guofeng .wechat-contact-row,
+.theme-guofeng .wechat-menu-row,
+.theme-guofeng .wechat-empty-card,
+.theme-guofeng .wechat-me-hero,
+.theme-guofeng .wechat-photo-wall {
+  border-bottom-color: var(--wechat-line);
+  background: var(--wechat-surface);
+  color: var(--wechat-text);
+  box-shadow: var(--wechat-shadow);
+}
+
+.theme-guofeng .wechat-chat-row p,
+.theme-guofeng .wechat-contact-row p,
+.theme-guofeng .wechat-menu-row span,
+.theme-guofeng .wechat-photo-wall h2,
+.theme-guofeng .wechat-profile-name,
+.theme-guofeng .wechat-profile-id,
+.theme-guofeng .wechat-profile-id input,
+.theme-guofeng .wechat-topbar h1,
+.theme-guofeng .wechat-chat-header h2 {
+  color: var(--wechat-text);
+}
+
+.theme-guofeng .wechat-row-meta,
+.theme-guofeng .wechat-section-title,
+.theme-guofeng .wechat-empty-card,
+.theme-guofeng .wechat-photo-wall p,
+.theme-guofeng .wechat-tab-button,
+.theme-guofeng .wechat-profile-id span,
+.theme-guofeng .wechat-chat-row p:last-child,
+.theme-guofeng .wechat-contact-row p:last-child {
+  color: var(--wechat-muted);
+}
+
+.theme-guofeng .wechat-tab-button.active,
+.theme-guofeng .wechat-profile-status,
+.theme-guofeng .wechat-mini-button,
+.theme-guofeng .wechat-icon-button {
+  color: var(--wechat-active);
+}
+
+.theme-guofeng .wechat-tab-badge,
+.theme-guofeng .wechat-profile-chips .dot {
+  background: var(--wechat-badge);
+}
+
+.theme-guofeng .wechat-avatar,
+.theme-guofeng .wechat-profile-chips span,
+.theme-guofeng .wechat-photo-add,
+.theme-guofeng .wechat-photo-item,
+.theme-guofeng .wechat-input-bar .hand-input,
+.theme-guofeng .wechat-input-bar .circle-button,
+.theme-guofeng .wechat-plus-panel,
+.theme-guofeng .wechat-plus-action {
+  border-color: var(--wechat-line);
+  background: var(--wechat-surface-2);
+  color: var(--wechat-text);
+  box-shadow: none;
+}
+
+.theme-guofeng .wechat-message-list {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--wechat-surface) 48%, transparent), transparent 72px),
+    repeating-linear-gradient(92deg, color-mix(in srgb, var(--theme-text) 2.5%, transparent) 0 1px, transparent 1px 13px),
+    var(--wechat-bg);
+}
+
+.theme-guofeng .wechat-input-bar .wechat-compose-button-active,
+.theme-guofeng .wechat-input-bar .wechat-compose-send {
+  background: var(--wechat-active);
+  color: var(--wechat-active-text);
+}
+
+.theme-guofeng .wechat-text-wrap.bg-white,
+.theme-guofeng .wechat-text-model,
+.theme-guofeng .wechat-voice-model {
+  border: 1px solid var(--wechat-line);
+  background: var(--wechat-model-bubble);
+  color: var(--wechat-text);
+}
+
+.theme-guofeng .wechat-text-wrap.bg-\[\#d7efc7\],
+.theme-guofeng .wechat-text-user,
+.theme-guofeng .wechat-voice-user {
+  border: 1px solid color-mix(in srgb, var(--theme-muted) 28%, transparent);
+  background: var(--wechat-user-bubble);
+  color: var(--wechat-text);
+}
+
+.theme-guofeng .wechat-voice-model::before {
+  border-right-color: var(--wechat-model-bubble);
+}
+
+.theme-guofeng .wechat-voice-user::before {
+  border-left-color: var(--wechat-user-bubble);
+}
+
+.theme-guofeng .wechat-add-menu {
+  border: 1px solid var(--wechat-line);
+  background: var(--wechat-surface);
+  color: var(--wechat-text);
+  box-shadow: 0 12px 24px rgba(31, 41, 37, 0.16);
+}
+
+.theme-guofeng .wechat-add-menu::before {
+  border-bottom-color: var(--wechat-surface);
+}
+
+.theme-guofeng .wechat-add-menu button {
+  border-bottom-color: var(--wechat-line);
+}
+
+.theme-guofeng .cream-screen::before,
+.theme-guofeng .lock-screen::before {
+  content: "";
+  position: absolute;
+  inset: 12px 13px 96px;
+  pointer-events: none;
+  border: 1px solid color-mix(in srgb, var(--theme-text) 10%, transparent);
+  border-top-color: color-mix(in srgb, var(--theme-accent) 18%, transparent);
+  background:
+    linear-gradient(90deg, transparent 0 16px, color-mix(in srgb, var(--theme-muted) 10%, transparent) 16px 17px, transparent 17px),
+    repeating-linear-gradient(180deg, transparent 0 30px, color-mix(in srgb, var(--theme-text) 4%, transparent) 30px 31px);
+  mask-image: linear-gradient(180deg, transparent 0, #000 18px, #000 calc(100% - 18px), transparent 100%);
+  z-index: 0;
+}
+
+.theme-guofeng .lock-screen::before {
+  inset: 14px 15px 22px;
+}
+
+.theme-guofeng .lock-clock {
+  position: relative;
+}
+
+.theme-guofeng .lock-clock::after {
+  content: "手札";
+  position: absolute;
+  right: 0;
+  top: -46px;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 48px;
+  border: 2px solid var(--theme-accent);
+  color: var(--theme-accent);
+  font: 800 15px/1.1 "Songti SC", "SimSun", serif;
+  opacity: 0.82;
+  writing-mode: vertical-rl;
+}
+
+.theme-guofeng .desktop-canvas,
+.theme-guofeng .dock,
+.theme-guofeng .page-dots,
+.theme-guofeng .layout-controls {
+  position: relative;
+  z-index: 1;
+}
+
+.theme-guofeng .app-icon,
+.theme-guofeng .dock-icon {
+  position: relative;
+  overflow: hidden;
+  border-radius: 10px;
+}
+
+.theme-guofeng .app-icon svg,
+.theme-guofeng .dock-icon svg {
+  opacity: 0;
+}
+
+.theme-guofeng .app-icon::before,
+.theme-guofeng .dock-icon::before {
+  content: "札";
+  position: absolute;
+  inset: 7px;
+  display: grid;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--theme-text) 18%, transparent);
+  color: var(--theme-text);
+  font: 800 26px/1 "Songti SC", "SimSun", serif;
+  background:
+    radial-gradient(circle at 70% 22%, color-mix(in srgb, var(--theme-panel) 86%, transparent), transparent 30%),
+    color-mix(in srgb, var(--theme-bg) 74%, var(--theme-panel));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--theme-panel) 70%, transparent);
+  z-index: 1;
+}
+
+.theme-guofeng .app-icon::after,
+.theme-guofeng .dock-icon::after {
+  content: "";
+  position: absolute;
+  right: 7px;
+  bottom: 7px;
+  width: 14px;
+  height: 14px;
+  border: 1px solid color-mix(in srgb, var(--theme-accent) 76%, transparent);
+  background: color-mix(in srgb, var(--theme-accent) 16%, transparent);
+  z-index: 2;
+}
+
+.theme-guofeng .app-icon[data-screen="wechat"]::before { content: "简"; }
+.theme-guofeng .app-icon[data-screen="qq"]::before { content: "讯"; }
+.theme-guofeng .app-icon[data-screen="gallery"]::before { content: "画"; }
+.theme-guofeng .app-icon[data-screen="calendar"]::before { content: "历"; }
+.theme-guofeng .app-icon[data-screen="diary"]::before { content: "卷"; }
+.theme-guofeng .app-icon[data-screen="memo"]::before { content: "笺"; }
+.theme-guofeng .app-icon[data-screen="peek"]::before { content: "锁"; }
+.theme-guofeng .app-icon[data-screen="xiaohongshu"]::before { content: "簪"; }
+.theme-guofeng .app-icon[data-screen="bilibili"]::before { content: "影"; }
+.theme-guofeng .app-icon[data-screen="theater"]::before { content: "戏"; }
+.theme-guofeng .app-icon[data-screen="music"]::before { content: "笛"; }
+.theme-guofeng .app-icon[data-screen="browser"]::before { content: "寻"; }
+.theme-guofeng .app-icon[data-screen="presets"]::before { content: "印"; }
+.theme-guofeng .app-icon[data-screen="ai-context"]::before { content: "策"; }
+.theme-guofeng .app-icon[data-screen="logs"]::before { content: "录"; }
+.theme-guofeng .app-icon[data-screen="active-events"]::before,
+.theme-guofeng .app-icon[data-screen="char-active"]::before { content: "辰"; }
+.theme-guofeng .dock-icon[data-screen="phone"]::before { content: "铃"; }
+.theme-guofeng .dock-icon[data-screen="settings"]::before { content: "枢"; }
+.theme-guofeng .dock-icon[data-screen="contacts"]::before { content: "名"; }
+.theme-guofeng .dock-icon[data-screen="themes"]::before { content: "染"; }
+
+.theme-guofeng .app-icon[data-screen="music"]::after {
+  right: 8px;
+  bottom: 16px;
+  width: 34px;
+  height: 5px;
+  border: 0;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 19% 50%, var(--theme-panel) 0 2px, transparent 2px),
+    radial-gradient(circle at 45% 50%, var(--theme-panel) 0 2px, transparent 2px),
+    radial-gradient(circle at 70% 50%, var(--theme-panel) 0 2px, transparent 2px),
+    var(--theme-accent);
+  transform: rotate(-24deg);
+}
+
+.theme-guofeng .app-icon[data-screen="presets"],
+.theme-guofeng .dock-icon[data-screen="themes"] {
+  background: color-mix(in srgb, var(--theme-accent) 16%, var(--theme-panel));
+}
+
+.theme-guofeng .app-icon[data-screen="presets"]::before,
+.theme-guofeng .dock-icon[data-screen="themes"]::before {
+  border-color: color-mix(in srgb, var(--theme-accent) 42%, transparent);
+  color: var(--theme-accent);
+}
+
+.theme-guofeng .shell-badge,
+.theme-guofeng .dock-badge {
+  z-index: 4;
+}
+
+.theme-guofeng .browser-app {
+  background:
+    repeating-linear-gradient(92deg, color-mix(in srgb, var(--theme-text) 2%, transparent) 0 1px, transparent 1px 13px),
+    var(--theme-bg) !important;
+  color: var(--theme-text) !important;
+}
+
+.theme-guofeng .browser-tabs,
+.theme-guofeng .browser-toolbar,
+.theme-guofeng .browser-history {
+  border-color: color-mix(in srgb, var(--theme-text) 14%, transparent) !important;
+  background: color-mix(in srgb, var(--theme-panel) 92%, transparent) !important;
+  color: var(--theme-text) !important;
+}
+
+.theme-guofeng .browser-tab,
+.theme-guofeng .browser-window-button,
+.theme-guofeng .browser-tool,
+.theme-guofeng .browser-address,
+.theme-guofeng .browser-home-search,
+.theme-guofeng .browser-result-header button,
+.theme-guofeng .browser-history button {
+  border-color: color-mix(in srgb, var(--theme-text) 18%, transparent) !important;
+  background: color-mix(in srgb, var(--theme-panel) 88%, var(--theme-bg)) !important;
+  color: var(--theme-text) !important;
+}
+
+.theme-guofeng .browser-logo,
+.theme-guofeng .browser-result-header h2,
+.theme-guofeng .browser-result-card h3,
+.theme-guofeng .browser-page-view h2 {
+  color: var(--theme-text) !important;
+  font-family: "Songti SC", "SimSun", serif !important;
+}
+
+.theme-guofeng .browser-logo::first-letter {
+  color: var(--theme-accent);
+}
+
+.theme-guofeng .browser-address input,
+.theme-guofeng .browser-home-search input,
+.theme-guofeng .browser-worldbook-input,
+.theme-guofeng .browser-setting-input {
+  background: transparent !important;
+  color: var(--theme-text) !important;
+}
+
+.theme-guofeng .browser-address input::placeholder,
+.theme-guofeng .browser-home-search input::placeholder,
+.theme-guofeng .browser-worldbook-input::placeholder,
+.theme-guofeng .browser-setting-input::placeholder {
+  color: color-mix(in srgb, var(--theme-muted) 82%, transparent) !important;
+}
+
+.theme-guofeng .browser-result-header,
+.theme-guofeng .browser-result-card,
+.theme-guofeng .browser-page-view,
+.theme-guofeng .browser-history-row {
+  border: 1px solid color-mix(in srgb, var(--theme-text) 18%, transparent) !important;
+  background: color-mix(in srgb, var(--theme-panel) 90%, var(--theme-bg)) !important;
+  color: var(--theme-text) !important;
+  box-shadow: none !important;
+}
+
+.theme-guofeng .browser-result-card p,
+.theme-guofeng .browser-status,
+.theme-guofeng .browser-result-header p,
+.theme-guofeng .browser-page-view > p,
+.theme-guofeng .browser-article-body p,
+.theme-guofeng .browser-history-row small {
+  color: var(--theme-muted) !important;
+}
+
+.theme-guofeng .xhs-app {
+  --xhs-bg: var(--theme-bg);
+  --xhs-surface: var(--theme-panel);
+  --xhs-surface-2: color-mix(in srgb, var(--theme-muted) 13%, var(--theme-panel));
+  --xhs-text: var(--theme-text);
+  --xhs-muted: var(--theme-muted);
+  --xhs-line: color-mix(in srgb, var(--theme-text) 13%, transparent);
+  --xhs-accent: var(--theme-accent);
+  background:
+    repeating-linear-gradient(92deg, color-mix(in srgb, var(--theme-text) 2%, transparent) 0 1px, transparent 1px 13px),
+    var(--xhs-bg) !important;
+  color: var(--xhs-text) !important;
+}
+
+.theme-guofeng .xhs-topbar,
+.theme-guofeng .xhs-bottom,
+.theme-guofeng .xhs-surface,
+.theme-guofeng .xhs-note-card,
+.theme-guofeng .xhs-detail,
+.theme-guofeng .xhs-input,
+.theme-guofeng .xhs-refresh-button {
+  border-color: var(--xhs-line) !important;
+  background: color-mix(in srgb, var(--xhs-surface) 92%, transparent) !important;
+  color: var(--xhs-text) !important;
+  box-shadow: none !important;
+}
+
+.theme-guofeng .xhs-icon-button,
+.theme-guofeng .xhs-soft,
+.theme-guofeng .xhs-tag,
+.theme-guofeng .xhs-following {
+  background: var(--xhs-surface-2) !important;
+  color: var(--xhs-muted) !important;
+}
+
+.theme-guofeng .xhs-primary-button,
+.theme-guofeng .xhs-tag-active,
+.theme-guofeng .xhs-tab-line {
+  background: var(--xhs-accent) !important;
+  color: var(--theme-panel) !important;
+}
+
+.theme-guofeng .xhs-title,
+.theme-guofeng .xhs-app h1,
+.theme-guofeng .xhs-app h2,
+.theme-guofeng .xhs-tab.active {
+  color: var(--xhs-text) !important;
+}
+
+.theme-guofeng .xhs-muted,
+.theme-guofeng .xhs-tab,
+.theme-guofeng .xhs-bottom {
+  color: var(--xhs-muted) !important;
+}
+
+.theme-guofeng .phone-shell.screen-bilibili > section {
+  background:
+    repeating-linear-gradient(92deg, color-mix(in srgb, var(--theme-text) 2%, transparent) 0 1px, transparent 1px 13px),
+    var(--theme-bg);
+  color: var(--theme-text);
+}
+
+.theme-guofeng .phone-shell.screen-bilibili > section > .sticky {
+  border-color: color-mix(in srgb, var(--theme-text) 16%, transparent) !important;
+  background: color-mix(in srgb, var(--theme-panel) 94%, transparent) !important;
+  color: var(--theme-text) !important;
+}
+
+.theme-guofeng .phone-shell.screen-bilibili input,
+.theme-guofeng .phone-shell.screen-bilibili .bg-white,
+.theme-guofeng .phone-shell.screen-bilibili .bg-white\/45,
+.theme-guofeng .phone-shell.screen-bilibili .bg-\[\#cfe5ef\],
+.theme-guofeng .phone-shell.screen-bilibili .bg-\[\#f4edbd\] {
+  border-color: color-mix(in srgb, var(--theme-text) 20%, transparent) !important;
+  background: color-mix(in srgb, var(--theme-panel) 90%, var(--theme-bg)) !important;
+  color: var(--theme-text) !important;
+}
+
+.theme-guofeng .phone-shell.screen-bilibili .text-\[\#111\]\/55,
+.theme-guofeng .phone-shell.screen-bilibili .text-\[\#111\]\/60,
+.theme-guofeng .phone-shell.screen-bilibili .text-\[\#111\]\/45 {
+  color: var(--theme-muted) !important;
+}
+
+.theme-guofeng .lock-screen.has-default-lock-art {
+  background:
+    radial-gradient(circle at 78% 20%, color-mix(in srgb, var(--theme-muted) 16%, transparent), transparent 24%),
+    linear-gradient(90deg, transparent 0 20px, color-mix(in srgb, var(--theme-muted) 10%, transparent) 20px 21px, transparent 21px),
+    repeating-linear-gradient(180deg, transparent 0 32px, color-mix(in srgb, var(--theme-text) 4%, transparent) 32px 33px),
+    color-mix(in srgb, var(--theme-panel) 92%, var(--theme-bg)) !important;
+}
+
+.theme-guofeng .lock-screen.has-default-lock-art .lock-clock::after {
+  content: "手札";
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 48px;
+  margin-top: 0;
+  border: 2px solid var(--theme-accent);
+  padding: 0;
+  color: var(--theme-accent);
+  font-size: 15px;
+  font-weight: 1000;
+  line-height: 1.1;
+  writing-mode: vertical-rl;
+}
+
+/* App-specific guofeng pass, adapted from the reference zip's Plan 4 direction. */
+.theme-guofeng .phone-shell {
+  border-color: transparent !important;
+  box-shadow:
+    0 22px 52px rgba(22, 28, 24, 0.24);
+}
+
+.theme-guofeng .cream-screen {
+  background:
+    radial-gradient(circle at 72% 16%, color-mix(in srgb, var(--theme-muted) 12%, transparent), transparent 27%),
+    radial-gradient(circle at 18% 84%, color-mix(in srgb, var(--theme-accent) 7%, transparent), transparent 30%),
+    repeating-linear-gradient(92deg, color-mix(in srgb, var(--theme-text) 2.2%, transparent) 0 1px, transparent 1px 13px),
+    linear-gradient(180deg, var(--theme-panel), var(--theme-bg));
+}
+
+.theme-guofeng .phone-shell.screen-diary > section,
+.theme-guofeng .phone-shell.screen-diary .diary-detail-screen,
+.theme-guofeng .phone-shell.screen-memo > section,
+.theme-guofeng .phone-shell.screen-gallery .gallery-screen,
+.theme-guofeng .phone-shell.screen-calendar .calendar-screen,
+.theme-guofeng .phone-shell.screen-music .music-screen {
+  position: relative;
+  background:
+    linear-gradient(90deg, transparent 0 18px, color-mix(in srgb, var(--theme-muted) 9%, transparent) 18px 19px, transparent 19px),
+    radial-gradient(circle at 84% 18%, color-mix(in srgb, var(--theme-muted) 15%, transparent), transparent 28%),
+    radial-gradient(circle at 12% 88%, color-mix(in srgb, var(--theme-accent) 8%, transparent), transparent 29%),
+    linear-gradient(180deg, var(--theme-panel), var(--theme-bg));
+  color: var(--theme-text);
+}
+
+.theme-guofeng .phone-shell.screen-diary > section::before,
+.theme-guofeng .phone-shell.screen-diary .diary-detail-screen::before,
+.theme-guofeng .phone-shell.screen-memo > section::before,
+.theme-guofeng .phone-shell.screen-gallery .gallery-screen::before,
+.theme-guofeng .phone-shell.screen-calendar .calendar-screen::before,
+.theme-guofeng .phone-shell.screen-music .music-screen::before {
+  pointer-events: none;
+  position: absolute;
+  right: 15px;
+  top: 92px;
+  z-index: 0;
+  color: color-mix(in srgb, var(--theme-text) 10%, transparent);
+  font-family: "Noto Serif SC", "Songti SC", "SimSun", serif;
+  font-size: 56px;
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 0.9;
+  writing-mode: vertical-rl;
+}
+
+.theme-guofeng .phone-shell.screen-diary > section > *,
+.theme-guofeng .phone-shell.screen-diary .diary-detail-screen > *,
+.theme-guofeng .phone-shell.screen-memo > section > *,
+.theme-guofeng .phone-shell.screen-gallery .gallery-screen > *,
+.theme-guofeng .phone-shell.screen-calendar .calendar-screen > *,
+.theme-guofeng .phone-shell.screen-music .music-screen > * {
+  position: relative;
+  z-index: 1;
+}
+
+.theme-guofeng .phone-shell.screen-diary > section::before,
+.theme-guofeng .phone-shell.screen-diary .diary-detail-screen::before { content: "手札"; }
+.theme-guofeng .phone-shell.screen-memo > section::before { content: "信笺"; }
+.theme-guofeng .phone-shell.screen-gallery .gallery-screen::before { content: "画卷"; }
+.theme-guofeng .phone-shell.screen-calendar .calendar-screen::before { content: "历书"; }
+.theme-guofeng .phone-shell.screen-music .music-screen::before { content: "听雨"; }
+
+.theme-guofeng .phone-shell.screen-diary header h1::after,
+.theme-guofeng .phone-shell.screen-memo header h1::after,
+.theme-guofeng .phone-shell.screen-gallery header h1::after,
+.theme-guofeng .phone-shell.screen-calendar header h1::after,
+.theme-guofeng .phone-shell.screen-music header h1::after {
+  content: "印";
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  margin-left: 7px;
+  border: 1px solid var(--theme-accent);
+  border-radius: 2px;
+  color: var(--theme-accent);
+  font: 800 11px/1 "Noto Serif SC", "Songti SC", serif;
+  vertical-align: 3px;
+}
+
+.theme-guofeng .phone-shell.screen-diary .hand-panel,
+.theme-guofeng .phone-shell.screen-memo .hand-panel,
+.theme-guofeng .phone-shell.screen-gallery .hand-panel,
+.theme-guofeng .phone-shell.screen-calendar .hand-panel,
+.theme-guofeng .phone-shell.screen-music .hand-panel {
+  border: 1px solid color-mix(in srgb, var(--theme-text) 18%, transparent);
+  border-radius: 6px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-panel) 92%, white), color-mix(in srgb, var(--theme-bg) 80%, var(--theme-panel))),
+    var(--theme-panel);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--theme-gold) 12%, transparent),
+    0 12px 22px rgba(46, 61, 52, 0.09);
+}
+
+.theme-guofeng .phone-shell.screen-diary .hand-panel {
+  border-left: 4px solid var(--theme-accent);
+}
+
+.theme-guofeng .phone-shell.screen-diary .diary-detail-screen .hand-panel p {
+  line-height: 1.85;
+}
+
+.theme-guofeng .phone-shell.screen-diary .diary-detail-screen .hand-panel article {
+  border-bottom-color: color-mix(in srgb, var(--theme-accent) 18%, transparent);
+}
+
+.theme-guofeng .phone-shell.screen-memo .hand-input,
+.theme-guofeng .phone-shell.screen-memo textarea,
+.theme-guofeng .phone-shell.screen-memo input {
+  border-radius: 4px;
+  background:
+    repeating-linear-gradient(180deg, transparent 0 28px, color-mix(in srgb, var(--theme-text) 5%, transparent) 28px 29px),
+    color-mix(in srgb, var(--theme-panel) 96%, white);
+}
+
+.theme-guofeng .phone-shell.screen-memo button[class*="rounded-2xl"][class*="border"] {
+  border-color: color-mix(in srgb, var(--theme-text) 17%, transparent) !important;
+  border-radius: 5px !important;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--theme-accent) 7%, transparent), transparent 36%),
+    color-mix(in srgb, var(--theme-panel) 92%, white) !important;
+  box-shadow: 0 8px 18px rgba(46, 61, 52, 0.08);
+}
+
+.theme-guofeng .phone-shell.screen-gallery .gallery-entry-card,
+.theme-guofeng .phone-shell.screen-gallery .gallery-import-row {
+  border: 1px solid color-mix(in srgb, var(--theme-text) 18%, transparent);
+  border-radius: 4px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--theme-gold) 10%, transparent), transparent 34%),
+    color-mix(in srgb, var(--theme-panel) 88%, var(--theme-bg));
+  color: var(--theme-text);
+  box-shadow: 0 9px 18px rgba(46, 61, 52, 0.09);
+}
+
+.theme-guofeng .phone-shell.screen-gallery .gallery-entry-icon {
+  border-color: color-mix(in srgb, var(--theme-gold) 46%, transparent);
+  background: color-mix(in srgb, var(--theme-panel) 64%, transparent);
+  color: var(--theme-accent);
+}
+
+.theme-guofeng .phone-shell.screen-gallery .gallery-entry-preview,
+.theme-guofeng .phone-shell.screen-gallery img {
+  border-radius: 4px !important;
+  filter: sepia(0.16) saturate(0.82) contrast(0.96);
+}
+
+.theme-guofeng .phone-shell.screen-calendar .calendar-day-cell {
+  border: 1px solid color-mix(in srgb, var(--theme-text) 18%, transparent) !important;
+  border-radius: 4px !important;
+  background: color-mix(in srgb, var(--theme-panel) 88%, white) !important;
+  color: var(--theme-text);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--theme-gold) 9%, transparent);
+}
+
+.theme-guofeng .phone-shell.screen-calendar .calendar-day-cell.bg-\[\#d9e8f6\],
+.theme-guofeng .phone-shell.screen-calendar .calendar-day-cell[class*="border-[#111]"] {
+  border-color: var(--theme-accent) !important;
+  background: color-mix(in srgb, var(--theme-accent) 12%, var(--theme-panel)) !important;
+  color: var(--theme-accent);
+}
+
+.theme-guofeng .phone-shell.screen-calendar .calendar-day-period {
+  background: color-mix(in srgb, #d9849f 18%, var(--theme-panel)) !important;
+}
+
+.theme-guofeng .phone-shell.screen-calendar .calendar-day-date {
+  background: color-mix(in srgb, var(--theme-gold) 18%, var(--theme-panel)) !important;
+}
+
+.theme-guofeng .phone-shell.screen-music .music-screen {
+  background:
+    radial-gradient(circle at 76% 18%, color-mix(in srgb, var(--theme-muted) 18%, transparent), transparent 30%),
+    linear-gradient(140deg, transparent 0 58%, color-mix(in srgb, var(--theme-gold) 9%, transparent) 58.4% 59%, transparent 59.4%),
+    repeating-linear-gradient(90deg, color-mix(in srgb, var(--theme-text) 2%, transparent) 0 1px, transparent 1px 16px),
+    linear-gradient(180deg, var(--theme-panel), var(--theme-bg));
+}
+
+.theme-guofeng .phone-shell.screen-music .music-screen .app-chip {
+  border-color: color-mix(in srgb, var(--theme-accent) 28%, transparent);
+  background: color-mix(in srgb, var(--theme-panel) 76%, transparent);
+  color: var(--theme-accent);
+}
+
+.theme-guofeng .phone-shell.screen-music button[title="搜索"],
+.theme-guofeng .phone-shell.screen-music button[title="随机"],
+.theme-guofeng .phone-shell.screen-music button[title="上一首"],
+.theme-guofeng .phone-shell.screen-music button[title="下一首"] {
+  border-color: color-mix(in srgb, var(--theme-text) 24%, transparent) !important;
+  background: color-mix(in srgb, var(--theme-panel) 88%, var(--theme-bg)) !important;
+  color: var(--theme-text) !important;
+}
+
+.theme-guofeng .phone-shell.screen-music button[title="暂停"],
+.theme-guofeng .phone-shell.screen-music button[title="继续"] {
+  border-color: var(--theme-accent) !important;
+  background: var(--theme-accent) !important;
+  color: var(--theme-panel) !important;
+  box-shadow: 0 10px 22px color-mix(in srgb, var(--theme-accent) 25%, transparent) !important;
+}
+
+/* Final guofeng variant pass: object icons, paper notification, lifted dock. */
+.theme-guofeng.theme-guofeng .shell-notification-button {
+  top: max(22px, calc(env(safe-area-inset-top, 0px) + 12px)) !important;
+  left: 24px !important;
+  height: 40px !important;
+  min-width: 76px !important;
+  border: 1px solid rgba(36, 48, 45, 0.15) !important;
+  border-radius: 14px 14px 14px 5px !important;
+  background:
+    linear-gradient(180deg, rgba(255, 253, 247, 0.88), rgba(247, 243, 234, 0.76)),
+    #fbf8ee !important;
+  box-shadow: 0 10px 24px rgba(30, 38, 34, 0.1) !important;
+  color: var(--guofeng-ink) !important;
+  font-family: "Noto Serif SC", "Songti SC", "SimSun", serif !important;
+  font-size: 13px !important;
+  font-weight: 850 !important;
+  gap: 5px !important;
+}
+
+.theme-guofeng.theme-guofeng .shell-notification-button svg {
+  width: 14px !important;
+  height: 14px !important;
+  opacity: 0.82 !important;
+  stroke-width: 1.8 !important;
+}
+
+.theme-guofeng.theme-guofeng .shell-notification-button b {
+  right: -5px !important;
+  top: -5px !important;
+  border: 1px solid rgba(167, 71, 54, 0.48) !important;
+  background: rgba(255, 253, 247, 0.92) !important;
+  color: var(--guofeng-cinnabar) !important;
+}
+
+.theme-guofeng.theme-guofeng .dock {
+  position: absolute !important;
+  left: 26px !important;
+  right: 26px !important;
+  bottom: 22px !important;
+  z-index: 12 !important;
+  gap: 9px !important;
+  min-height: 70px !important;
+  padding: 8px 12px 10px !important;
+  border-radius: 24px 24px 18px 18px !important;
+  overflow: visible !important;
+}
+
+.theme-guofeng.theme-guofeng .layout-controls {
+  position: absolute !important;
+  z-index: 30 !important;
+}
+
+.theme-guofeng.theme-guofeng .page-dots {
+  position: absolute !important;
+  bottom: 118px !important;
+  z-index: 10 !important;
+}
+
+.theme-guofeng.theme-guofeng .dock > button {
+  min-width: 0 !important;
+  gap: 0 !important;
+}
+
+.theme-guofeng.theme-guofeng .dock span:last-child {
+  display: none !important;
+}
+
+.theme-guofeng.theme-guofeng .dock-icon {
+  width: 48px !important;
+  height: 48px !important;
+  border-radius: 16px !important;
+}
+
+.theme-guofeng.theme-guofeng .app-icon svg,
+.theme-guofeng.theme-guofeng .dock-icon svg,
+.theme-guofeng.theme-guofeng .image-bed > svg {
+  opacity: 0 !important;
+}
+
+.theme-guofeng.theme-guofeng .app-icon::before,
+.theme-guofeng.theme-guofeng .app-icon::after,
+.theme-guofeng.theme-guofeng .dock-icon::before,
+.theme-guofeng.theme-guofeng .dock-icon::after,
+.theme-guofeng.theme-guofeng .image-bed::before,
+.theme-guofeng.theme-guofeng .image-bed::after {
+  pointer-events: none;
+  content: "" !important;
+  display: block !important;
+  position: absolute;
+  box-sizing: border-box;
+  z-index: 2;
+}
+
+.theme-guofeng.theme-guofeng .app-icon::before,
+.theme-guofeng.theme-guofeng .dock-icon::before {
+  left: 15px;
+  top: 15px;
+  width: 28px;
+  height: 28px;
+  border: 2px solid currentColor;
+  border-radius: 9px;
+  background: transparent;
+}
+
+.theme-guofeng.theme-guofeng .app-icon::after,
+.theme-guofeng.theme-guofeng .dock-icon::after {
+  left: 20px;
+  top: 29px;
+  width: 18px;
+  height: 2px;
+  border: 0;
+  border-radius: 999px;
+  background: currentColor;
+  opacity: 0.62;
+}
+
+.theme-guofeng.theme-guofeng .app-icon[data-screen="wechat"]::before {
+  left: 14px;
+  top: 16px;
+  width: 31px;
+  height: 23px;
+  border-radius: 13px 13px 13px 5px;
+}
+
+.theme-guofeng.theme-guofeng .app-icon[data-screen="wechat"]::after {
+  left: 18px;
+  top: 36px;
+  width: 9px;
+  height: 9px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  border-radius: 0 0 7px 0;
+  background: transparent;
+  transform: rotate(16deg);
+}
+
+.theme-guofeng.theme-guofeng .app-icon[data-screen="qq"]::before {
+  left: 14px;
+  top: 18px;
+  width: 30px;
+  height: 22px;
+  border-radius: 5px;
+}
+
+.theme-guofeng.theme-guofeng .app-icon[data-screen="qq"]::after {
+  left: 18px;
+  top: 20px;
+  width: 22px;
+  height: 15px;
+  border: 0;
+  border-bottom: 2px solid currentColor;
+  border-left: 2px solid currentColor;
+  background: transparent;
+  transform: rotate(-45deg) skew(8deg, 8deg);
+  opacity: 0.78;
+}
+
+.theme-guofeng.theme-guofeng .app-icon[data-screen="gallery"]::before,
+.theme-guofeng.theme-guofeng .app-icon[data-screen="calendar"]::before,
+.theme-guofeng.theme-guofeng .app-icon[data-screen="memo"]::before {
+  left: 16px;
+  top: 13px;
+  width: 25px;
+  height: 31px;
+  border-radius: 4px 9px 5px 5px;
+  background:
+    linear-gradient(135deg, transparent 0 76%, currentColor 77% 83%, transparent 84%),
+    rgba(255, 253, 247, 0.38);
+}
+
+.theme-guofeng.theme-guofeng .app-icon[data-screen="gallery"]::after {
+  left: 18px;
+  top: 29px;
+  width: 21px;
+  height: 12px;
+  border: 0;
+  background:
+    linear-gradient(135deg, transparent 0 38%, currentColor 39% 48%, transparent 49%),
+    linear-gradient(45deg, transparent 0 56%, currentColor 57% 66%, transparent 67%),
+    radial-gradient(circle at 18% 24%, currentColor 0 2px, transparent 2.5px);
+  opacity: 0.82;
+}
+
+.theme-guofeng.theme-guofeng .app-icon[data-screen="calendar"]::after {
+  left: 21px;
+  top: 22px;
+  width: 16px;
+  height: 15px;
+  border: 0;
+  background:
+    radial-gradient(circle, currentColor 0 1.3px, transparent 1.6px) 0 0 / 8px 7px,
+    linear-gradient(currentColor, currentColor) 0 -3px / 100% 2px no-repeat;
+  opacity: 0.76;
+}
+
+.theme-guofeng.theme-guofeng .app-icon[data-screen="diary"]::before {
+  left: 17px;
+  top: 14px;
+  width: 23px;
+  height: 31px;
+  border-radius: 4px 8px 8px 4px;
+  box-shadow: -5px 0 0 -2px currentColor;
+}
+
+.theme-guofeng.theme-guofeng .app-icon[data-screen="diary"]::after {
+  left: 24px;
+  top: 21px;
+  width: 12px;
+  height: 13px;
+  border: 0;
+  background:
+    linear-gradient(currentColor, currentColor) 0 0 / 100% 2px no-repeat,
+    linear-gradient(currentColor, currentColor) 0 6px / 80% 2px no-repeat,
+    linear-gradient(currentColor, currentColor) 0 12px / 64% 2px no-repeat;
+}
+
+.theme-guofeng.theme-guofeng .app-icon[data-screen="memo"]::after {
+  left: 21px;
+  top: 22px;
+  width: 15px;
+  height: 16px;
+  border: 0;
+  background:
+    linear-gradient(currentColor, currentColor) 0 1px / 100% 2px no-repeat,
+    linear-gradient(currentColor, currentColor) 0 7px / 82% 2px no-repeat,
+    linear-gradient(currentColor, currentColor) 0 13px / 58% 2px no-repeat;
+  opacity: 0.72;
+}
+
+.theme-guofeng.theme-guofeng .app-icon[data-screen="peek"]::before {
+  left: 16px;
+  top: 23px;
+  width: 26px;
+  height: 19px;
+  border-radius: 5px;
+}
+
+.theme-guofeng.theme-guofeng .app-icon[data-screen="peek"]::after {
+  left: 21px;
+  top: 14px;
+  width: 16px;
+  height: 15px;
+  border: 2px solid currentColor;
+  border-bottom: 0;
+  border-radius: 13px 13px 0 0;
+  background: transparent;
+  opacity: 1;
+}
+
+.theme-guofeng.theme-guofeng .image-bed {
+  position: relative;
+}
+
+.theme-guofeng.theme-guofeng .image-bed::before {
+  left: 6px;
+  top: 0;
+  width: 58px;
+  height: 58px;
+  border: 1px solid var(--guofeng-line);
+  border-radius: 17px;
+  background:
+    linear-gradient(180deg, var(--guofeng-paper-strong), var(--guofeng-paper)),
+    #fbf8ee;
+  box-shadow: var(--guofeng-shadow);
+}
+
+.theme-guofeng.theme-guofeng .image-bed::after {
+  left: 20px;
+  top: 18px;
+  width: 31px;
+  height: 23px;
+  border: 2px solid var(--guofeng-ink);
+  border-radius: 4px;
+  background:
+    linear-gradient(135deg, transparent 0 38%, var(--guofeng-ink) 39% 47%, transparent 48%),
+    linear-gradient(45deg, transparent 0 56%, var(--guofeng-ink) 57% 65%, transparent 66%),
+    radial-gradient(circle at 20% 23%, var(--guofeng-ink) 0 2px, transparent 2.5px);
+}
+
+.theme-guofeng.theme-guofeng .dock-icon[data-screen="phone"]::before {
+  left: 15px;
+  top: 13px;
+  width: 18px;
+  height: 28px;
+  border-radius: 9px 9px 6px 6px;
+  transform: rotate(-28deg);
+}
+
+.theme-guofeng.theme-guofeng .dock-icon[data-screen="phone"]::after {
+  left: 27px;
+  top: 30px;
+  width: 9px;
+  height: 9px;
+  border: 2px solid currentColor;
+  border-left: 0;
+  border-top: 0;
+  border-radius: 0 0 8px 0;
+  background: transparent;
+  transform: rotate(-28deg);
+}
+
+.theme-guofeng.theme-guofeng .dock-icon[data-screen="settings"]::before {
+  left: 16px;
+  top: 16px;
+  width: 17px;
+  height: 17px;
+  border-radius: 999px;
+  box-shadow:
+    0 -9px 0 -6px currentColor,
+    0 9px 0 -6px currentColor,
+    9px 0 0 -6px currentColor,
+    -9px 0 0 -6px currentColor,
+    7px 7px 0 -6px currentColor,
+    -7px -7px 0 -6px currentColor,
+    7px -7px 0 -6px currentColor,
+    -7px 7px 0 -6px currentColor;
+}
+
+.theme-guofeng.theme-guofeng .dock-icon[data-screen="settings"]::after {
+  left: 21px;
+  top: 21px;
+  width: 7px;
+  height: 7px;
+  border: 2px solid currentColor;
+  border-radius: 999px;
+  background: transparent;
+  opacity: 1;
+}
+
+.theme-guofeng.theme-guofeng .dock-icon[data-screen="contacts"]::before {
+  left: 16px;
+  top: 15px;
+  width: 17px;
+  height: 17px;
+  border-radius: 999px;
+}
+
+.theme-guofeng.theme-guofeng .dock-icon[data-screen="contacts"]::after {
+  left: 12px;
+  top: 31px;
+  width: 25px;
+  height: 12px;
+  border: 2px solid currentColor;
+  border-bottom: 0;
+  border-radius: 18px 18px 0 0;
+  background: transparent;
+  opacity: 1;
+}
+
+.theme-guofeng.theme-guofeng .dock-icon[data-screen="themes"]::before {
+  left: 14px;
+  top: 17px;
+  width: 25px;
+  height: 18px;
+  border-radius: 13px 13px 9px 13px;
+}
+
+.theme-guofeng.theme-guofeng .dock-icon[data-screen="themes"]::after {
+  left: 29px;
+  top: 30px;
+  width: 5px;
+  height: 5px;
+  border: 2px solid currentColor;
+  border-radius: 999px;
+  background: transparent;
+  box-shadow:
+    -10px -3px 0 -1px currentColor,
+    -5px -10px 0 -1px currentColor,
+    2px -8px 0 -1px currentColor;
+  opacity: 0.82;
+}
+
+/* Guofeng motif pass: cinnabar, brush, scroll, jade, and complete page-two variants. */
+.theme-guofeng.theme-guofeng .cream-screen {
+  background:
+    radial-gradient(circle at 78% 14%, rgba(185, 200, 189, 0.22), transparent 28%),
+    radial-gradient(circle at 24% 82%, rgba(167, 71, 54, 0.07), transparent 31%),
+    linear-gradient(112deg, transparent 0 64%, rgba(167, 71, 54, 0.05) 64.3% 64.8%, transparent 65.1%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0) 38%),
+    #f4f1e9 !important;
+}
+
+.theme-guofeng.theme-guofeng .desktop-canvas {
+  height: calc(100dvh - 176px) !important;
+  min-height: 572px !important;
+  max-height: 642px !important;
+}
+
+.theme-guofeng.theme-guofeng .dock {
+  bottom: 24px !important;
+}
+
+.theme-guofeng.theme-guofeng .page-dots {
+  bottom: 116px !important;
+}
+
+.theme-guofeng.theme-guofeng .app-icon[data-screen="xiaohongshu"],
+.theme-guofeng.theme-guofeng .app-icon[data-screen="logs"],
+.theme-guofeng.theme-guofeng .dock-icon[data-screen="themes"] {
+  color: var(--guofeng-cinnabar) !important;
+}
+
+.theme-guofeng.theme-guofeng .app-icon[data-screen="music"],
+.theme-guofeng.theme-guofeng .app-icon[data-screen="browser"],
+.theme-guofeng.theme-guofeng .app-icon[data-screen="ai-context"] {
+  color: #354640 !important;
+}
+
+.theme-guofeng.theme-guofeng .app-icon[data-screen="xiaohongshu"]::before {
+  left: 16px;
+  top: 15px;
+  width: 27px;
+  height: 27px;
+  border: 2px solid currentColor;
+  border-radius: 4px;
+  background:
+    linear-gradient(45deg, transparent 0 42%, currentColor 43% 51%, transparent 52%),
+    linear-gradient(-45deg, transparent 0 42%, currentColor 43% 51%, transparent 52%),
+    rgba(167, 71, 54, 0.08);
+  transform: rotate(-5deg);
+}
+
+.theme-guofeng.theme-guofeng .app-icon[data-screen="xiaohongshu"]::after {
+  left: 23px;
+  top: 22px;
+  width: 12px;
+  height: 12px;
+  border: 2px solid currentColor;
+  border-radius: 999px;
+  background: transparent;
+  opacity: 0.82;
+}
+
+.theme-guofeng.theme-guofeng .app-icon[data-screen="bilibili"]::before,
+.theme-guofeng.theme-guofeng .app-icon[data-screen="theater"]::before {
+  left: 13px;
+  top: 17px;
+  width: 32px;
+  height: 23px;
+  border-radius: 7px;
+  background: rgba(255, 253, 247, 0.38);
+}
+
+.theme-guofeng.theme-guofeng .app-icon[data-screen="bilibili"]::after {
+  left: 25px;
+  top: 22px;
+  width: 0;
+  height: 0;
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+  border-left: 11px solid currentColor;
+  border-radius: 0;
+  background: transparent;
+  opacity: 0.82;
+}
+
+.theme-guofeng.theme-guofeng .app-icon[data-screen="theater"]::after {
+  left: 18px;
+  top: 22px;
+  width: 22px;
+  height: 15px;
+  border: 0;
+  border-radius: 0 0 18px 18px;
+  background:
+    radial-gradient(circle at 25% 32%, currentColor 0 1.8px, transparent 2.2px),
+    radial-gradient(circle at 74% 32%, currentColor 0 1.8px, transparent 2.2px),
+    linear-gradient(currentColor, currentColor) 35% 68% / 30% 2px no-repeat;
+  opacity: 0.82;
+}
+
+.theme-guofeng.theme-guofeng .app-icon[data-screen="music"]::before {
+  left: 17px;
+  top: 11px;
+  width: 8px;
+  height: 35px;
+  border: 0;
+  border-radius: 999px 999px 3px 3px;
+  background: currentColor;
+  transform: rotate(25deg);
+  opacity: 0.82;
+}
+
+.theme-guofeng.theme-guofeng .app-icon[data-screen="music"]::after {
+  left: 30px;
+  top: 14px;
+  width: 10px;
+  height: 30px;
+  border: 0;
+  border-radius: 999px 999px 5px 5px;
+  background:
+    linear-gradient(currentColor, currentColor) 50% 0 / 2px 100% no-repeat,
+    radial-gradient(circle at 50% 86%, currentColor 0 5px, transparent 5.5px);
+  transform: rotate(12deg);
+  opacity: 0.62;
+}
+
+.theme-guofeng.theme-guofeng .app-icon[data-screen="browser"]::before {
+  left: 15px;
+  top: 15px;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 50% 50%, transparent 0 5px, currentColor 5.5px 7px, transparent 7.5px),
+    rgba(255, 253, 247, 0.24);
+}
+
+.theme-guofeng.theme-guofeng .app-icon[data-screen="browser"]::after {
+  left: 22px;
+  top: 22px;
+  width: 14px;
+  height: 14px;
+  border: 0;
+  background:
+    linear-gradient(135deg, transparent 0 45%, currentColor 46% 56%, transparent 57%),
+    linear-gradient(-45deg, transparent 0 45%, currentColor 46% 56%, transparent 57%);
+  transform: rotate(12deg);
+  opacity: 0.86;
+}
+
+.theme-guofeng.theme-guofeng .app-icon[data-screen="presets"]::before {
+  left: 15px;
+  top: 15px;
+  width: 28px;
+  height: 28px;
+  border-radius: 5px;
+  background:
+    linear-gradient(90deg, transparent 0 42%, currentColor 43% 56%, transparent 57%),
+    linear-gradient(0deg, transparent 0 42%, currentColor 43% 56%, transparent 57%),
+    rgba(167, 71, 54, 0.05);
+}
+
+.theme-guofeng.theme-guofeng .app-icon[data-screen="presets"]::after {
+  left: 22px;
+  top: 22px;
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-radius: 4px;
+  background: transparent;
+  opacity: 0.72;
+}
+
+.theme-guofeng.theme-guofeng .app-icon[data-screen="ai-context"]::before {
+  left: 14px;
+  top: 14px;
+  width: 9px;
+  height: 31px;
+  border-radius: 999px;
+  background: currentColor;
+  box-shadow:
+    11px 0 0 0 currentColor,
+    22px 0 0 0 currentColor;
+  opacity: 0.72;
+}
+
+.theme-guofeng.theme-guofeng .app-icon[data-screen="ai-context"]::after {
+  left: 16px;
+  top: 18px;
+  width: 28px;
+  height: 22px;
+  border: 0;
+  background:
+    linear-gradient(var(--guofeng-paper-strong), var(--guofeng-paper-strong)) 0 4px / 100% 1px no-repeat,
+    linear-gradient(var(--guofeng-paper-strong), var(--guofeng-paper-strong)) 0 13px / 100% 1px no-repeat;
+  opacity: 0.9;
+}
+
+.theme-guofeng.theme-guofeng .app-icon[data-screen="logs"]::before {
+  left: 16px;
+  top: 13px;
+  width: 25px;
+  height: 31px;
+  border-radius: 4px 9px 5px 5px;
+  background:
+    linear-gradient(135deg, transparent 0 76%, currentColor 77% 83%, transparent 84%),
+    rgba(167, 71, 54, 0.05);
+}
+
+.theme-guofeng.theme-guofeng .app-icon[data-screen="logs"]::after {
+  left: 22px;
+  top: 22px;
+  width: 15px;
+  height: 15px;
+  border: 0;
+  background:
+    linear-gradient(45deg, transparent 0 43%, currentColor 44% 56%, transparent 57%),
+    linear-gradient(-45deg, transparent 0 43%, currentColor 44% 56%, transparent 57%);
+  opacity: 0.75;
+}
+
+.theme-guofeng.theme-guofeng .app-icon[data-screen="char-active"]::before {
+  left: 17px;
+  top: 15px;
+  width: 24px;
+  height: 28px;
+  border-radius: 999px 999px 8px 8px;
+  background:
+    radial-gradient(circle at 37% 35%, currentColor 0 2px, transparent 2.4px),
+    radial-gradient(circle at 64% 35%, currentColor 0 2px, transparent 2.4px),
+    rgba(255, 253, 247, 0.32);
+}
+
+.theme-guofeng.theme-guofeng .app-icon[data-screen="char-active"]::after {
+  left: 26px;
+  top: 8px;
+  width: 7px;
+  height: 12px;
+  border: 2px solid currentColor;
+  border-bottom: 0;
+  border-radius: 999px 999px 0 0;
+  background: transparent;
+  transform: rotate(-10deg);
+  opacity: 0.8;
+}
+
+.theme-guofeng.theme-guofeng .app-icon[data-screen="backup"]::before {
+  left: 14px;
+  top: 19px;
+  width: 31px;
+  height: 22px;
+  border-radius: 5px;
+  background:
+    linear-gradient(currentColor, currentColor) 0 -1px / 42% 2px no-repeat,
+    rgba(255, 253, 247, 0.28);
+}
+
+.theme-guofeng.theme-guofeng .app-icon[data-screen="backup"]::after {
+  left: 24px;
+  top: 23px;
+  width: 10px;
+  height: 15px;
+  border: 0;
+  background:
+    linear-gradient(currentColor, currentColor) 50% 0 / 2px 100% no-repeat,
+    linear-gradient(135deg, transparent 0 42%, currentColor 43% 58%, transparent 59%),
+    linear-gradient(-135deg, transparent 0 42%, currentColor 43% 58%, transparent 59%);
+  opacity: 0.76;
+}
+
+.theme-guofeng.theme-guofeng .app-icon[data-screen="user-info"]::before {
+  left: 17px;
+  top: 11px;
+  width: 24px;
+  height: 35px;
+  border-radius: 999px 999px 14px 14px;
+  background:
+    radial-gradient(circle at 50% 35%, transparent 0 5px, currentColor 5.5px 7px, transparent 7.5px),
+    rgba(185, 200, 189, 0.22);
+}
+
+.theme-guofeng.theme-guofeng .app-icon[data-screen="user-info"]::after {
+  left: 22px;
+  top: 28px;
+  width: 14px;
+  height: 9px;
+  border: 2px solid currentColor;
+  border-bottom: 0;
+  border-radius: 999px 999px 0 0;
+  background: transparent;
+  opacity: 0.76;
+}
+
+/* Generated guofeng image icons. */
+.theme-guofeng.theme-guofeng .shell-notification-button {
+  top: max(42px, calc(env(safe-area-inset-top, 0px) + 18px)) !important;
+}
+
+.theme-guofeng.theme-guofeng .layout-controls {
+  top: calc(env(safe-area-inset-top, 0px) + 42px) !important;
+}
+
+.theme-guofeng.theme-guofeng .app-icon,
+.theme-guofeng.theme-guofeng .dock-icon {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+}
+
+.theme-guofeng.theme-guofeng .app-icon::before,
+.theme-guofeng.theme-guofeng .dock-icon::before,
+.theme-guofeng.theme-guofeng .image-bed::before {
+  left: -3px !important;
+  top: -3px !important;
+  width: 64px !important;
+  height: 64px !important;
+  border: 0 !important;
+  border-radius: 18px !important;
+  background-color: transparent !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+  background-size: contain !important;
+  box-shadow: 0 10px 24px rgba(36, 42, 36, 0.08) !important;
+  transform: none !important;
+}
+
+.theme-guofeng.theme-guofeng .app-icon::after,
+.theme-guofeng.theme-guofeng .dock-icon::after,
+.theme-guofeng.theme-guofeng .image-bed::after {
+  display: none !important;
+  content: none !important;
+}
+
+.theme-guofeng.theme-guofeng .app-icon[data-screen="wechat"]::before { background-image: url("/guofeng-icons/letter.png") !important; }
+.theme-guofeng.theme-guofeng .app-icon[data-screen="qq"]::before { background-image: url("/guofeng-icons/letter.png") !important; }
+.theme-guofeng.theme-guofeng .app-icon[data-screen="gallery"]::before { background-image: url("/guofeng-icons/painting.png") !important; }
+.theme-guofeng.theme-guofeng .app-icon[data-screen="calendar"]::before { background-image: url("/guofeng-icons/calendar.png") !important; }
+.theme-guofeng.theme-guofeng .app-icon[data-screen="diary"]::before { background-image: url("/guofeng-icons/diary-book.png") !important; }
+.theme-guofeng.theme-guofeng .app-icon[data-screen="memo"]::before { background-image: url("/guofeng-icons/scroll.png") !important; }
+.theme-guofeng.theme-guofeng .app-icon[data-screen="peek"]::before { background-image: url("/guofeng-icons/jade-lock.png") !important; }
+.theme-guofeng.theme-guofeng .app-icon[data-screen="xiaohongshu"]::before { background-image: url("/guofeng-icons/seal.png") !important; }
+.theme-guofeng.theme-guofeng .app-icon[data-screen="bilibili"]::before { background-image: url("/guofeng-icons/painting.png") !important; }
+.theme-guofeng.theme-guofeng .app-icon[data-screen="theater"]::before { background-image: url("/guofeng-icons/theater-mask.png") !important; }
+.theme-guofeng.theme-guofeng .app-icon[data-screen="music"]::before { background-image: url("/guofeng-icons/flute.png") !important; }
+.theme-guofeng.theme-guofeng .app-icon[data-screen="browser"]::before { background-image: url("/guofeng-icons/compass.png") !important; }
+.theme-guofeng.theme-guofeng .app-icon[data-screen="presets"]::before { background-image: url("/guofeng-icons/gear-seal.png") !important; }
+.theme-guofeng.theme-guofeng .app-icon[data-screen="ai-context"]::before { background-image: url("/guofeng-icons/bamboo-slips.png") !important; }
+.theme-guofeng.theme-guofeng .app-icon[data-screen="logs"]::before { background-image: url("/guofeng-icons/scroll.png") !important; }
+.theme-guofeng.theme-guofeng .app-icon[data-screen="char-active"]::before { background-image: url("/guofeng-icons/jade-charm.png") !important; }
+.theme-guofeng.theme-guofeng .app-icon[data-screen="backup"]::before { background-image: url("/guofeng-icons/chest.png") !important; }
+.theme-guofeng.theme-guofeng .app-icon[data-screen="user-info"]::before { background-image: url("/guofeng-icons/user-token.png") !important; }
+
+.theme-guofeng.theme-guofeng .image-bed::before {
+  background-image: url("/guofeng-icons/painting.png") !important;
+}
+
+.theme-guofeng.theme-guofeng .dock-icon::before {
+  left: -2px !important;
+  top: -2px !important;
+  width: 52px !important;
+  height: 52px !important;
+  border-radius: 16px !important;
+}
+
+.theme-guofeng.theme-guofeng .dock-icon[data-screen="phone"]::before { background-image: url("/guofeng-icons/jade-charm.png") !important; }
+.theme-guofeng.theme-guofeng .dock-icon[data-screen="settings"]::before { background-image: url("/guofeng-icons/gear-seal.png") !important; }
+.theme-guofeng.theme-guofeng .dock-icon[data-screen="contacts"]::before { background-image: url("/guofeng-icons/jade-pendant.png") !important; }
+.theme-guofeng.theme-guofeng .dock-icon[data-screen="themes"]::before { background-image: url("/guofeng-icons/inkstone.png") !important; }
+
+.theme-guofeng.theme-guofeng .image-bed > span {
+  position: relative;
+  z-index: 3;
+}
+
+/* Ink minimal pass: black-white, quieter desktop, page two uses a 4-column grid. */
+.theme-guofeng.theme-guofeng {
+  --guofeng-paper: rgba(250, 249, 244, 0.78);
+  --guofeng-paper-strong: rgba(255, 255, 252, 0.92);
+  --guofeng-ink: #1d2320;
+  --guofeng-muted: #7d8580;
+  --guofeng-cinnabar: #1d2320;
+  --guofeng-line: rgba(29, 35, 32, 0.16);
+  --guofeng-shadow: 0 10px 24px rgba(20, 24, 22, 0.06);
+}
+
+.theme-guofeng.theme-guofeng .phone-shell {
+  border-color: #101412 !important;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.16), 0 18px 48px rgba(16, 20, 18, 0.22) !important;
+}
+
+.theme-guofeng.theme-guofeng .cream-screen {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 252, 0.95), rgba(246, 245, 239, 0.94)),
+    #f8f7f2 !important;
+}
+
+.theme-guofeng.theme-guofeng .cream-screen::before {
+  background:
+    linear-gradient(90deg, rgba(29, 35, 32, 0.025) 1px, transparent 1px),
+    linear-gradient(rgba(29, 35, 32, 0.018) 1px, transparent 1px) !important;
+  background-size: 22px 22px !important;
+  opacity: 0.72 !important;
+}
+
+.theme-guofeng.theme-guofeng .cream-screen::after {
+  opacity: 0.16 !important;
+  filter: grayscale(1) !important;
+}
+
+.theme-guofeng.theme-guofeng .shell-notification-button {
+  top: max(50px, calc(env(safe-area-inset-top, 0px) + 18px)) !important;
+  left: 26px !important;
+  height: 38px !important;
+  min-width: 74px !important;
+  border: 1px solid rgba(29, 35, 32, 0.16) !important;
+  border-radius: 13px !important;
+  background: rgba(255, 255, 252, 0.82) !important;
+  box-shadow: none !important;
+  color: #1d2320 !important;
+  font-family: inherit !important;
+}
+
+.theme-guofeng.theme-guofeng .layout-controls {
+  top: calc(env(safe-area-inset-top, 0px) + 50px) !important;
+  right: 26px !important;
+}
+
+.theme-guofeng.theme-guofeng .layout-toggle {
+  height: 38px !important;
+  border: 1px solid rgba(29, 35, 32, 0.16) !important;
+  border-radius: 13px !important;
+  background: rgba(255, 255, 252, 0.82) !important;
+  box-shadow: none !important;
+  color: #1d2320 !important;
+}
+
+.theme-guofeng.theme-guofeng .app-button {
+  width: 74px !important;
+  min-height: 86px !important;
+  gap: 8px !important;
+}
+
+.theme-guofeng.theme-guofeng .app-icon,
+.theme-guofeng.theme-guofeng .dock-icon {
+  border: 1px solid rgba(29, 35, 32, 0.14) !important;
+  background: rgba(255, 255, 252, 0.76) !important;
+  box-shadow: none !important;
+  color: #1d2320 !important;
+  overflow: hidden !important;
+}
+
+.theme-guofeng.theme-guofeng .app-icon {
+  width: 58px !important;
+  height: 58px !important;
+  border-radius: 18px !important;
+}
+
+.theme-guofeng.theme-guofeng .dock-icon {
+  width: 48px !important;
+  height: 48px !important;
+  border-radius: 16px !important;
+}
+
+.theme-guofeng.theme-guofeng .app-icon::before,
+.theme-guofeng.theme-guofeng .app-icon::after,
+.theme-guofeng.theme-guofeng .dock-icon::before,
+.theme-guofeng.theme-guofeng .dock-icon::after,
+.theme-guofeng.theme-guofeng .image-bed::before,
+.theme-guofeng.theme-guofeng .image-bed::after {
+  display: none !important;
+  content: none !important;
+  background-image: none !important;
+}
+
+.theme-guofeng.theme-guofeng .app-icon svg,
+.theme-guofeng.theme-guofeng .dock-icon svg,
+.theme-guofeng.theme-guofeng .image-bed > svg {
+  display: block !important;
+  color: #1d2320 !important;
+  stroke-width: 1.8 !important;
+  opacity: 0.94 !important;
+}
+
+.theme-guofeng.theme-guofeng .custom-app-icon-image {
+  filter: grayscale(1) contrast(1.08) !important;
+  opacity: 0.92 !important;
+}
+
+.theme-guofeng.theme-guofeng .app-label,
+.theme-guofeng.theme-guofeng .image-bed > span {
+  color: #1d2320 !important;
+  font-family: inherit !important;
+  font-size: 12px !important;
+  font-weight: 850 !important;
+}
+
+.theme-guofeng.theme-guofeng .image-bed {
+  width: 74px !important;
+  height: 86px !important;
+  gap: 8px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #1d2320 !important;
+  overflow: visible !important;
+}
+
+.theme-guofeng.theme-guofeng .image-bed > svg,
+.theme-guofeng.theme-guofeng .image-bed > img {
+  width: 58px !important;
+  height: 58px !important;
+  margin: 0 !important;
+  padding: 14px !important;
+  border: 1px solid rgba(29, 35, 32, 0.14) !important;
+  border-radius: 18px !important;
+  background: rgba(255, 255, 252, 0.76) !important;
+  box-shadow: none !important;
+  object-fit: cover !important;
+}
+
+.theme-guofeng.theme-guofeng .time-card {
+  width: 326px !important;
+  height: 70px !important;
+  border: 1px solid rgba(29, 35, 32, 0.16) !important;
+  border-left: 1px solid rgba(29, 35, 32, 0.16) !important;
+  border-radius: 18px !important;
+  background: rgba(255, 255, 252, 0.78) !important;
+  box-shadow: none !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+.theme-guofeng.theme-guofeng .time-text,
+.theme-guofeng.theme-guofeng .time-card .time-main {
+  color: #1d2320 !important;
+  font-size: 29px !important;
+  letter-spacing: 0 !important;
+}
+
+.theme-guofeng.theme-guofeng .date-text,
+.theme-guofeng.theme-guofeng .time-card .time-sub {
+  color: #7d8580 !important;
+}
+
+.theme-guofeng.theme-guofeng .guide-mark {
+  width: 44px !important;
+  min-width: 44px !important;
+  height: 44px !important;
+  border: 1px solid rgba(29, 35, 32, 0.18) !important;
+  background: rgba(255, 255, 252, 0.72) !important;
+  color: #1d2320 !important;
+}
+
+.theme-guofeng.theme-guofeng .guide-mark::before {
+  content: "静" !important;
+  color: #1d2320 !important;
+}
+
+.theme-guofeng.theme-guofeng .dock {
+  left: 28px !important;
+  right: 28px !important;
+  bottom: 18px !important;
+  min-height: 68px !important;
+  border: 1px solid rgba(29, 35, 32, 0.12) !important;
+  border-radius: 24px !important;
+  background: rgba(255, 255, 252, 0.72) !important;
+  box-shadow: none !important;
+}
+
+.theme-guofeng.theme-guofeng .page-dots {
+  bottom: 104px !important;
+}
+
+.theme-guofeng.theme-guofeng .page-dots button::before {
+  background: rgba(29, 35, 32, 0.18) !important;
+}
+
+.theme-guofeng.theme-guofeng .page-dots button.active::before {
+  background: rgba(29, 35, 32, 0.76) !important;
+}
+
+.theme-guofeng.theme-guofeng .fetch-button,
+.theme-guofeng.theme-guofeng .theme-card.active,
+.theme-guofeng.theme-guofeng .pill.active,
+.theme-guofeng.theme-guofeng .layout-toggle.active {
+  border-color: rgba(29, 35, 32, 0.72) !important;
+  background: #1d2320 !important;
+  color: #fffffc !important;
+  box-shadow: none !important;
+}
+
+.theme-guofeng.theme-guofeng .theme-card,
+.theme-guofeng.theme-guofeng .feature-tile,
+.theme-guofeng.theme-guofeng .hand-panel,
+.theme-guofeng.theme-guofeng .custom-widget,
+.theme-guofeng.theme-guofeng .guide-panel,
+.theme-guofeng.theme-guofeng .notification-card {
+  border-color: rgba(29, 35, 32, 0.14) !important;
+  background: rgba(255, 255, 252, 0.76) !important;
+  box-shadow: none !important;
+}
+
+.theme-guofeng.theme-guofeng .theme-card.active p,
+.theme-guofeng.theme-guofeng .theme-card.active h1,
+.theme-guofeng.theme-guofeng .theme-card.active h2,
+.theme-guofeng.theme-guofeng .theme-card.active h3 {
+  color: #fffffc !important;
+}
+
+/* Ink-wash desktop pass: brush icons with restrained cinnabar and celadon accents. */
+.theme-guofeng.theme-guofeng {
+  --guofeng-paper: rgba(250, 249, 243, 0.86);
+  --guofeng-paper-strong: rgba(255, 255, 252, 0.94);
+  --guofeng-ink: #1b211f;
+  --guofeng-muted: #77817b;
+  --guofeng-cinnabar: #a04736;
+  --guofeng-celadon: #8fa79a;
+  --guofeng-line: rgba(27, 33, 31, 0.15);
+  font-family: "LXGW WenKai", "STKaiti", "KaiTi", "Kaiti SC", "Noto Serif SC", "Songti SC", "SimSun", serif !important;
+}
+
+.theme-guofeng.theme-guofeng .cream-screen,
+.theme-guofeng.theme-guofeng .phone-shell[class*="screen-"] > section,
+.theme-guofeng.theme-guofeng .phone-shell.screen-theater section,
+.theme-guofeng.theme-guofeng .phone-shell.screen-xiaohongshu section,
+.theme-guofeng.theme-guofeng .phone-shell.screen-browser section,
+.theme-guofeng.theme-guofeng .phone-shell.screen-presets section,
+.theme-guofeng.theme-guofeng .phone-shell.screen-ai-context section,
+.theme-guofeng.theme-guofeng .phone-shell.screen-logs section,
+.theme-guofeng.theme-guofeng .phone-shell.screen-char-active section,
+.theme-guofeng.theme-guofeng .phone-shell.screen-backup section,
+.theme-guofeng.theme-guofeng .phone-shell.screen-user-info section {
+  background:
+    radial-gradient(circle at 86% 18%, rgba(143, 167, 154, 0.16), transparent 25%),
+    radial-gradient(circle at 12% 88%, rgba(160, 71, 54, 0.07), transparent 28%),
+    linear-gradient(90deg, rgba(27, 33, 31, 0.025) 1px, transparent 1px),
+    linear-gradient(rgba(27, 33, 31, 0.018) 1px, transparent 1px),
+    linear-gradient(180deg, #fffdfa, #f4f2ec) !important;
+  background-size: auto, auto, 22px 22px, 22px 22px, auto !important;
+  color: var(--guofeng-ink) !important;
+}
+
+.theme-guofeng.theme-guofeng header {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 252, 0.96), rgba(245, 243, 236, 0.86)) !important;
+  color: var(--guofeng-ink) !important;
+  border-bottom: 1px solid rgba(27, 33, 31, 0.08) !important;
+}
+
+.theme-guofeng.theme-guofeng header h1,
+.theme-guofeng.theme-guofeng .app-label,
+.theme-guofeng.theme-guofeng .image-bed > span,
+.theme-guofeng.theme-guofeng .time-text,
+.theme-guofeng.theme-guofeng .date-text {
+  font-family: "LXGW WenKai", "STKaiti", "KaiTi", "Kaiti SC", "Noto Serif SC", "Songti SC", "SimSun", serif !important;
+}
+
+.theme-guofeng.theme-guofeng header h1 {
+  font-size: 27px !important;
+  font-weight: 700 !important;
+}
+
+.theme-guofeng.theme-guofeng .shell-notification-button,
+.theme-guofeng.theme-guofeng .layout-toggle {
+  border-color: rgba(27, 33, 31, 0.14) !important;
+  background: rgba(255, 255, 252, 0.82) !important;
+  color: var(--guofeng-ink) !important;
+}
+
+.theme-guofeng.theme-guofeng .layout-toggle.active,
+.theme-guofeng.theme-guofeng .pill.active,
+.theme-guofeng.theme-guofeng .theme-card.active,
+.theme-guofeng.theme-guofeng .fetch-button {
+  border-color: rgba(160, 71, 54, 0.5) !important;
+  background:
+    linear-gradient(180deg, rgba(160, 71, 54, 0.94), rgba(124, 47, 36, 0.94)) !important;
+  color: #fffdfa !important;
+}
+
+.theme-guofeng.theme-guofeng .app-button {
+  width: 72px !important;
+}
+
+.theme-guofeng.theme-guofeng .app-icon,
+.theme-guofeng.theme-guofeng .dock-icon {
+  border-color: rgba(27, 33, 31, 0.1) !important;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 252, 0.95), rgba(246, 244, 238, 0.9)) !important;
+  box-shadow: 0 8px 18px rgba(27, 33, 31, 0.055) !important;
+  overflow: hidden !important;
+}
+
+.theme-guofeng.theme-guofeng .app-icon svg,
+.theme-guofeng.theme-guofeng .dock-icon svg,
+.theme-guofeng.theme-guofeng .image-bed > svg {
+  display: none !important;
+}
+
+.theme-guofeng.theme-guofeng .app-icon::before,
+.theme-guofeng.theme-guofeng .dock-icon::before,
+.theme-guofeng.theme-guofeng .image-bed::before {
+  content: "" !important;
+  display: block !important;
+  position: absolute !important;
+  left: 2px !important;
+  top: 2px !important;
+  width: calc(100% - 4px) !important;
+  height: calc(100% - 4px) !important;
+  border: 0 !important;
+  border-radius: inherit !important;
+  background-color: transparent !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+  background-size: 112% 112% !important;
+  box-shadow: none !important;
+  opacity: 0.98 !important;
+  filter: contrast(1.08) saturate(0.1) !important;
+}
+
+.theme-guofeng.theme-guofeng .app-icon::after,
+.theme-guofeng.theme-guofeng .dock-icon::after {
+  content: "" !important;
+  display: block !important;
+  position: absolute !important;
+  right: 6px !important;
+  bottom: 8px !important;
+  width: 14px !important;
+  height: 3px !important;
+  border-radius: 999px !important;
+  background: var(--guofeng-celadon) !important;
+  opacity: 0.75 !important;
+  transform: rotate(-18deg) !important;
+}
+
+.theme-guofeng.theme-guofeng .app-icon[data-screen="wechat"]::before { background-image: url("/guofeng-ink-icons/chat-brush.png") !important; }
+.theme-guofeng.theme-guofeng .app-icon[data-screen="qq"]::before { background-image: url("/guofeng-ink-icons/letter-brush.png") !important; }
+.theme-guofeng.theme-guofeng .app-icon[data-screen="gallery"]::before,
+.theme-guofeng.theme-guofeng .app-icon[data-screen="bilibili"]::before { background-image: url("/guofeng-ink-icons/mountain-brush.png") !important; }
+.theme-guofeng.theme-guofeng .app-icon[data-screen="calendar"]::before { background-image: url("/guofeng-ink-icons/calendar-brush.png") !important; }
+.theme-guofeng.theme-guofeng .app-icon[data-screen="diary"]::before { background-image: url("/guofeng-ink-icons/book-brush.png") !important; }
+.theme-guofeng.theme-guofeng .app-icon[data-screen="memo"]::before,
+.theme-guofeng.theme-guofeng .app-icon[data-screen="logs"]::before { background-image: url("/guofeng-ink-icons/scroll-brush.png") !important; }
+.theme-guofeng.theme-guofeng .app-icon[data-screen="peek"]::before { background-image: url("/guofeng-ink-icons/lock-brush.png") !important; }
+.theme-guofeng.theme-guofeng .app-icon[data-screen="xiaohongshu"]::before,
+.theme-guofeng.theme-guofeng .app-icon[data-screen="presets"]::before,
+.theme-guofeng.theme-guofeng .dock-icon[data-screen="settings"]::before { background-image: url("/guofeng-ink-icons/gear-brush.png") !important; }
+.theme-guofeng.theme-guofeng .app-icon[data-screen="theater"]::before { background-image: url("/guofeng-ink-icons/mask-brush.png") !important; }
+.theme-guofeng.theme-guofeng .app-icon[data-screen="music"]::before { background-image: url("/guofeng-ink-icons/flute-brush.png") !important; }
+.theme-guofeng.theme-guofeng .app-icon[data-screen="browser"]::before { background-image: url("/guofeng-ink-icons/compass-brush.png") !important; }
+.theme-guofeng.theme-guofeng .app-icon[data-screen="ai-context"]::before,
+.theme-guofeng.theme-guofeng .app-icon[data-screen="char-active"]::before { background-image: url("/guofeng-ink-icons/chat-brush.png") !important; }
+.theme-guofeng.theme-guofeng .app-icon[data-screen="backup"]::before { background-image: url("/guofeng-ink-icons/lock-brush.png") !important; }
+.theme-guofeng.theme-guofeng .app-icon[data-screen="user-info"]::before,
+.theme-guofeng.theme-guofeng .dock-icon[data-screen="contacts"]::before { background-image: url("/guofeng-ink-icons/user-brush.png") !important; }
+.theme-guofeng.theme-guofeng .dock-icon[data-screen="phone"]::before { background-image: url("/guofeng-ink-icons/chat-brush.png") !important; }
+.theme-guofeng.theme-guofeng .dock-icon[data-screen="themes"]::before { background-image: url("/guofeng-ink-icons/mountain-brush.png") !important; }
+
+.theme-guofeng.theme-guofeng .app-icon[data-screen="xiaohongshu"]::after,
+.theme-guofeng.theme-guofeng .app-icon[data-screen="logs"]::after,
+.theme-guofeng.theme-guofeng .dock-icon[data-screen="themes"]::after {
+  background: var(--guofeng-cinnabar) !important;
+}
+
+.theme-guofeng.theme-guofeng .page-dots button.active::before {
+  background: var(--guofeng-cinnabar) !important;
+  box-shadow: inset 0 0 0 1px rgba(143, 167, 154, 0.42) !important;
+}
+
+.theme-guofeng.theme-guofeng .page-dots button:not(.active)::before {
+  background: rgba(143, 167, 154, 0.36) !important;
+}
+
+.theme-guofeng.theme-guofeng .image-bed {
+  position: relative !important;
+  border-radius: 0 !important;
+  justify-content: flex-end !important;
+  padding-bottom: 0 !important;
+}
+
+.theme-guofeng.theme-guofeng .image-bed::before {
+  left: 7px !important;
+  top: 0 !important;
+  width: 58px !important;
+  height: 58px !important;
+  border: 1px solid rgba(27, 33, 31, 0.1) !important;
+  border-radius: 18px !important;
+  background-image: url("/guofeng-ink-icons/mountain-brush.png") !important;
+  background-color: rgba(255, 255, 252, 0.92) !important;
+}
+
+.theme-guofeng.theme-guofeng .time-card {
+  border-left: 4px solid var(--guofeng-cinnabar) !important;
+  background:
+    linear-gradient(90deg, rgba(143, 167, 154, 0.09), transparent 38%),
+    rgba(255, 255, 252, 0.84) !important;
+}
+
+.theme-guofeng.theme-guofeng .guide-mark {
+  border-color: rgba(160, 71, 54, 0.42) !important;
+  color: var(--guofeng-cinnabar) !important;
+}
+
+.theme-guofeng.theme-guofeng .guide-mark::before {
+  content: "静" !important;
+  color: var(--guofeng-cinnabar) !important;
+}
+
+.theme-guofeng.theme-guofeng .dock {
+  background:
+    linear-gradient(90deg, rgba(143, 167, 154, 0.08), rgba(255, 255, 252, 0.72) 36% 64%, rgba(160, 71, 54, 0.05)),
+    rgba(255, 255, 252, 0.76) !important;
+}
+
+.theme-guofeng.theme-guofeng .phone-shell.screen-music .music-screen,
+.theme-guofeng.theme-guofeng .phone-shell.screen-theater section,
+.theme-guofeng.theme-guofeng .phone-shell.screen-bilibili > section,
+.theme-guofeng.theme-guofeng .phone-shell.screen-xiaohongshu section {
+  background:
+    radial-gradient(circle at 86% 12%, rgba(143, 167, 154, 0.18), transparent 26%),
+    radial-gradient(circle at 8% 92%, rgba(160, 71, 54, 0.08), transparent 26%),
+    linear-gradient(180deg, #fffdfa, #f4f2ec) !important;
+  color: var(--guofeng-ink) !important;
+}
+
+/* Standalone object icons: remove the visible white icon tile. */
+.theme-guofeng.theme-guofeng .app-icon,
+.theme-guofeng.theme-guofeng .dock-icon {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+}
+
+.theme-guofeng.theme-guofeng .app-icon::before,
+.theme-guofeng.theme-guofeng .dock-icon::before,
+.theme-guofeng.theme-guofeng .image-bed::before {
+  left: -4px !important;
+  top: -4px !important;
+  width: calc(100% + 8px) !important;
+  height: calc(100% + 8px) !important;
+  border: 0 !important;
+  background-size: contain !important;
+  filter: drop-shadow(0 5px 8px rgba(27, 33, 31, 0.08)) !important;
+}
+
+.theme-guofeng.theme-guofeng .dock-icon::before {
+  left: -4px !important;
+  top: -4px !important;
+  width: calc(100% + 8px) !important;
+  height: calc(100% + 8px) !important;
+}
+
+.theme-guofeng.theme-guofeng .app-icon::after,
+.theme-guofeng.theme-guofeng .dock-icon::after {
+  display: none !important;
+  content: none !important;
+}
+
+.theme-guofeng.theme-guofeng .app-icon[data-screen="wechat"]::before { background-image: url("/guofeng-ink-icons-clean/chat-brush.png") !important; }
+.theme-guofeng.theme-guofeng .app-icon[data-screen="qq"]::before { background-image: url("/guofeng-ink-icons-clean/letter-brush.png") !important; }
+.theme-guofeng.theme-guofeng .app-icon[data-screen="gallery"]::before { background-image: url("/guofeng-ink-icons-clean/mountain-brush.png") !important; }
+.theme-guofeng.theme-guofeng .app-icon[data-screen="calendar"]::before { background-image: url("/guofeng-ink-icons-clean/calendar-brush.png") !important; }
+.theme-guofeng.theme-guofeng .app-icon[data-screen="diary"]::before { background-image: url("/guofeng-ink-icons-clean/book-brush.png") !important; }
+.theme-guofeng.theme-guofeng .app-icon[data-screen="memo"]::before { background-image: url("/guofeng-ink-icons-clean/scroll-brush.png") !important; }
+.theme-guofeng.theme-guofeng .app-icon[data-screen="peek"]::before { background-image: url("/guofeng-ink-icons-clean/lock-brush.png") !important; }
+.theme-guofeng.theme-guofeng .app-icon[data-screen="xiaohongshu"]::before { background-image: url("/guofeng-ink-icons-clean/xhs-blossom.png") !important; }
+.theme-guofeng.theme-guofeng .app-icon[data-screen="bilibili"]::before { background-image: url("/guofeng-ink-icons-clean/video-frame.png") !important; }
+.theme-guofeng.theme-guofeng .app-icon[data-screen="theater"]::before { background-image: url("/guofeng-ink-icons-clean/mask-brush.png") !important; }
+.theme-guofeng.theme-guofeng .app-icon[data-screen="music"]::before { background-image: url("/guofeng-ink-icons-clean/flute-brush.png") !important; }
+.theme-guofeng.theme-guofeng .app-icon[data-screen="browser"]::before { background-image: url("/guofeng-ink-icons-clean/compass-brush.png") !important; }
+.theme-guofeng.theme-guofeng .app-icon[data-screen="presets"]::before { background-image: url("/guofeng-ink-icons-clean/seal-stamp.png") !important; }
+.theme-guofeng.theme-guofeng .app-icon[data-screen="ai-context"]::before { background-image: url("/guofeng-ink-icons-clean/api-plug.svg") !important; }
+.theme-guofeng.theme-guofeng .app-icon[data-screen="logs"]::before { background-image: url("/guofeng-ink-icons-clean/cracked-paper.png") !important; }
+.theme-guofeng.theme-guofeng .app-icon[data-screen="char-active"]::before { background-image: url("/guofeng-ink-icons-clean/char-spark.png") !important; }
+.theme-guofeng.theme-guofeng .app-icon[data-screen="backup"]::before { background-image: url("/guofeng-ink-icons-clean/treasure-chest.png") !important; }
+.theme-guofeng.theme-guofeng .app-icon[data-screen="user-info"]::before { background-image: url("/guofeng-ink-icons-clean/name-token.png") !important; }
+
+.theme-guofeng.theme-guofeng .image-bed::before {
+  left: 1px !important;
+  top: -8px !important;
+  width: 72px !important;
+  height: 72px !important;
+  border: 0 !important;
+  background-color: transparent !important;
+  background-image: url("/guofeng-ink-icons-clean/mountain-scroll.png") !important;
+}
+
+.theme-guofeng.theme-guofeng .dock-icon[data-screen="phone"]::before { background-image: url("/guofeng-ink-icons-clean/phone-handset.png") !important; }
+.theme-guofeng.theme-guofeng .dock-icon[data-screen="settings"]::before { background-image: url("/guofeng-ink-icons-clean/gear-brush.png") !important; }
+.theme-guofeng.theme-guofeng .dock-icon[data-screen="contacts"]::before { background-image: url("/guofeng-ink-icons-clean/folded-card.png") !important; }
+.theme-guofeng.theme-guofeng .dock-icon[data-screen="themes"]::before { background-image: url("/guofeng-ink-icons-clean/brush-palette.png") !important; }
+
+.theme-guofeng.theme-guofeng .app-icon[data-screen="theater"]::before {
+  left: 2px !important;
+  top: 0 !important;
+  width: calc(100% - 4px) !important;
+  height: calc(100% - 2px) !important;
+  background-size: 88% 88% !important;
+  opacity: 0.9 !important;
+}
+
+.theme-guofeng.theme-guofeng .app-icon[data-screen="music"]::before,
+.theme-guofeng.theme-guofeng .app-icon[data-screen="xiaohongshu"]::before,
+.theme-guofeng.theme-guofeng .app-icon[data-screen="ai-context"]::before,
+.theme-guofeng.theme-guofeng .dock-icon::before {
+  background-size: 90% 90% !important;
+}
+
+.theme-guofeng.theme-guofeng .dock {
+  border-color: rgba(27, 33, 31, 0.09) !important;
+  background: rgba(255, 255, 252, 0.42) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+/* Smaller standalone ink objects. */
+.theme-guofeng.theme-guofeng .app-icon::before,
+.theme-guofeng.theme-guofeng .image-bed::before {
+  left: 1px !important;
+  top: 0 !important;
+  width: calc(100% - 2px) !important;
+  height: calc(100% - 1px) !important;
+  background-size: 82% 82% !important;
+}
+
+.theme-guofeng.theme-guofeng .dock-icon::before {
+  left: 0 !important;
+  top: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  background-size: 82% 82% !important;
+}
+
+.theme-guofeng.theme-guofeng .app-icon[data-screen="theater"]::before {
+  background-image: url("/guofeng-ink-icons-clean/theater-scroll.svg") !important;
+  left: 2px !important;
+  top: 1px !important;
+  width: calc(100% - 4px) !important;
+  height: calc(100% - 2px) !important;
+  background-size: 78% 78% !important;
+  opacity: 0.96 !important;
+}
+
+.theme-guofeng.theme-guofeng .app-icon[data-screen="music"]::before,
+.theme-guofeng.theme-guofeng .app-icon[data-screen="xiaohongshu"]::before,
+.theme-guofeng.theme-guofeng .app-icon[data-screen="ai-context"]::before {
+  background-size: 80% 80% !important;
+}

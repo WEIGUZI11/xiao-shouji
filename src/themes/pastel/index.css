@@ -1,0 +1,486 @@
+/**
+ * Pastel theme visual layer.
+ * Split from src/index.css without visual changes.
+ */
+
+.theme-pastel {
+  --phone-bg: #fffaf0;
+  --phone-text: #050505;
+  --panel-bg: #fffefa;
+  --accent: #d9e8f6;
+}
+
+.theme-pastel .lock-screen.has-default-lock-art {
+  background:
+    radial-gradient(circle at 22% 18%, rgba(220, 238, 205, 0.78), transparent 28%),
+    radial-gradient(circle at 82% 72%, rgba(233, 196, 213, 0.64), transparent 32%),
+    linear-gradient(145deg, #fff8e8 0%, #f4edbd 36%, #d9e8f6 100%);
+}
+
+.theme-pastel .lock-screen.has-default-lock-art .lock-clock h1 {
+  color: #111;
+  text-shadow: 0 2px 0 rgba(255, 250, 240, 0.8);
+}
+
+.theme-pastel .wechat-shell,
+.theme-pastel .wechat-chat-screen {
+  --wechat-bg: var(--phone-bg);
+  --wechat-surface: #fffefa;
+  --wechat-surface-2: #d9e8f6;
+  --wechat-text: var(--phone-text);
+  --wechat-muted: #777166;
+  --wechat-line: rgba(17, 17, 17, 0.18);
+  --wechat-active: #667f8c;
+  --wechat-active-text: var(--phone-text);
+  --wechat-user-bubble: #dceecf;
+  --wechat-model-bubble: var(--panel-bg);
+  --wechat-badge: #e8bfd4;
+  --wechat-moments-accent: #667f8c;
+  --wechat-moments-accent-soft: #d9e8f6;
+  --wechat-moments-bg: #fffaf0;
+  --wechat-moments-hero-bg: linear-gradient(135deg, #dceecf 0%, #fffefa 58%, #d9e8f6 100%);
+  --wechat-moments-comment-bg: #f5efbd;
+  --wechat-shadow: 2px 3px 0 rgba(0, 0, 0, 0.11);
+  background: var(--wechat-bg);
+  color: var(--wechat-text);
+  font-family: var(--phone-font-family, "Arial Rounded MT Bold", "Trebuchet MS", "Microsoft YaHei", system-ui, sans-serif);
+}
+
+.theme-pastel .wechat-page {
+  background: var(--wechat-bg);
+  color: var(--wechat-text);
+}
+
+.theme-pastel .wechat-topbar {
+  border-bottom: 1px solid var(--wechat-line);
+  background: color-mix(in srgb, var(--wechat-surface) 94%, transparent);
+  color: var(--wechat-text);
+}
+
+.theme-pastel .wechat-icon-button {
+  color: var(--wechat-text);
+}
+
+.theme-pastel .wechat-chat-row,
+.theme-pastel .wechat-contact-row,
+.theme-pastel .wechat-menu-row,
+.theme-pastel .wechat-empty-card,
+.theme-pastel .wechat-me-hero,
+.theme-pastel .wechat-photo-wall {
+  border-bottom-color: var(--wechat-line);
+  background: var(--wechat-surface);
+  color: var(--wechat-text);
+  box-shadow: var(--wechat-shadow);
+}
+
+.theme-pastel .wechat-chat-row,
+.theme-pastel .wechat-contact-row,
+.theme-pastel .wechat-menu-row,
+.theme-pastel .wechat-empty-card,
+.theme-pastel .wechat-photo-wall {
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid var(--wechat-line);
+  border-radius: 0;
+  margin: 0;
+  box-shadow: none;
+}
+
+.theme-pastel .wechat-search-row {
+  width: auto;
+  border: 0;
+  box-shadow: none;
+}
+
+.theme-pastel .wechat-add-menu {
+  border: 1px solid var(--wechat-line);
+  background: var(--wechat-surface);
+  color: var(--wechat-text);
+  box-shadow: 3px 4px 0 rgba(0, 0, 0, 0.14);
+}
+
+.theme-pastel .wechat-add-menu::before {
+  border-bottom-color: var(--wechat-surface);
+}
+
+.theme-pastel .wechat-add-menu button {
+  border-bottom-color: var(--wechat-line);
+}
+
+.theme-pastel .wechat-list {
+  gap: 8px;
+  padding-top: 8px;
+}
+
+.theme-pastel .wechat-discover-home .wechat-menu-row {
+  width: calc(100% - 24px);
+  min-height: 76px;
+  margin: 0 12px;
+  border: 2px solid #111;
+  border-radius: 20px;
+  background: #fffefa;
+  padding: 12px 14px;
+  box-shadow: 3px 4px 0 rgba(0, 0, 0, 0.14);
+  color: #111;
+  font-size: 18px;
+  font-weight: 950;
+}
+
+.theme-pastel .wechat-discover-home .wechat-menu-row:nth-of-type(1) {
+  background: #eef9e8;
+}
+
+.theme-pastel .wechat-discover-home .wechat-menu-row:nth-of-type(2) {
+  background: #fff9cf;
+}
+
+.theme-pastel .wechat-discover-home .wechat-menu-row:nth-of-type(3) {
+  background: #f9e5f0;
+}
+
+.theme-pastel .wechat-discover-home .wechat-menu-row .wechat-row-meta {
+  margin-left: auto;
+  color: #111;
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.theme-pastel .wechat-discover-home .wechat-square-icon {
+  height: 44px;
+  width: 44px;
+  border: 3px solid #111;
+  border-radius: 14px;
+  color: #111;
+  box-shadow: 2px 3px 0 rgba(0, 0, 0, 0.12);
+}
+
+.theme-pastel .wechat-discover-home .wechat-square-icon.orange {
+  background: #dceecf;
+}
+
+.theme-pastel .wechat-discover-home .wechat-square-icon.green {
+  background: #f5efbd;
+}
+
+.theme-pastel .wechat-discover-home .wechat-square-icon.blue {
+  background: #e8bfd4;
+}
+
+.theme-pastel .wechat-chat-row p,
+.theme-pastel .wechat-contact-row p,
+.theme-pastel .wechat-menu-row span,
+.theme-pastel .wechat-photo-wall h2 {
+  color: var(--wechat-text);
+}
+
+.theme-pastel .wechat-chat-row p:last-child,
+.theme-pastel .wechat-contact-row p:last-child,
+.theme-pastel .wechat-section-title,
+.theme-pastel .wechat-empty-card,
+.theme-pastel .wechat-photo-wall p,
+.theme-pastel .wechat-row-meta {
+  color: var(--wechat-muted);
+}
+
+.theme-pastel .wechat-avatar {
+  border: 1px solid var(--wechat-line);
+  background: var(--wechat-surface-2);
+  box-shadow: none;
+}
+
+.theme-pastel .wechat-topbar h1,
+.theme-pastel .wechat-chat-header h2 {
+  font-family: var(--phone-font-family, "Microsoft YaHei", "PingFang SC", system-ui, sans-serif);
+  font-size: 18px;
+  font-style: normal;
+  font-weight: 650;
+  text-shadow: none;
+}
+
+.theme-pastel .wechat-shell,
+.theme-pastel .wechat-chat-screen {
+  font-family: var(--phone-font-family, "Microsoft YaHei", "PingFang SC", system-ui, sans-serif);
+}
+
+.theme-pastel .wechat-tabs {
+  border-top-color: var(--wechat-line);
+  background: var(--wechat-surface);
+}
+
+.theme-pastel .wechat-tab-button {
+  color: var(--wechat-muted);
+}
+
+.theme-pastel .wechat-tab-button.active {
+  color: var(--wechat-active);
+}
+
+.theme-pastel .wechat-tab-badge,
+.theme-pastel .wechat-profile-chips .dot {
+  background: var(--wechat-badge);
+}
+
+.theme-pastel .wechat-profile-status {
+  color: var(--wechat-active);
+}
+
+.theme-pastel .wechat-profile-name,
+.theme-pastel .wechat-profile-id,
+.theme-pastel .wechat-profile-id input {
+  color: var(--wechat-text);
+}
+
+.theme-pastel .wechat-profile-id span {
+  color: var(--wechat-muted);
+}
+
+.theme-pastel .wechat-profile-chips span {
+  border-color: var(--wechat-line);
+  background: var(--wechat-surface-2);
+  color: var(--wechat-muted);
+}
+
+.theme-pastel .wechat-mini-button {
+  background: var(--wechat-surface-2);
+  color: var(--wechat-active);
+}
+
+.theme-pastel .wechat-photo-wall .wechat-mini-button:nth-of-type(3n + 1) {
+  background: #dceecf;
+}
+
+.theme-pastel .wechat-photo-wall .wechat-mini-button:nth-of-type(3n + 2) {
+  background: #f5efbd;
+}
+
+.theme-pastel .wechat-photo-wall .wechat-mini-button:nth-of-type(3n) {
+  background: #d9e8f6;
+}
+
+.theme-pastel .wechat-moment-composer,
+.theme-pastel .wechat-moment-card,
+.theme-pastel .wechat-moments-hero {
+  border-color: rgba(17, 17, 17, 0.16);
+}
+
+.theme-pastel .wechat-moment-input {
+  background: #d9e8f6;
+  color: #111;
+}
+
+.theme-pastel .wechat-photo-add,
+.theme-pastel .wechat-photo-item {
+  background: var(--wechat-surface-2);
+  color: var(--wechat-muted);
+}
+
+.theme-pastel .wechat-message-list {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--wechat-surface) 42%, transparent), transparent 70px),
+    var(--wechat-bg);
+}
+
+.theme-pastel .wechat-input-bar,
+.theme-pastel .wechat-chat-header {
+  border-color: var(--wechat-line);
+  background: var(--wechat-surface);
+  color: var(--wechat-text);
+}
+
+.theme-pastel .wechat-input-bar .hand-input {
+  background: var(--wechat-surface-2);
+  color: var(--wechat-text);
+}
+
+.theme-pastel .wechat-input-bar .circle-button {
+  background: var(--wechat-surface-2);
+  color: var(--wechat-text);
+}
+
+.theme-pastel .wechat-input-bar .wechat-compose-button-active,
+.theme-pastel .wechat-input-bar .wechat-compose-send {
+  background: var(--wechat-active);
+  color: var(--wechat-active-text);
+}
+
+.theme-pastel .wechat-text-wrap.bg-white,
+.theme-pastel .wechat-text-model,
+.theme-pastel .wechat-voice-model {
+  background: var(--wechat-model-bubble);
+  color: var(--wechat-text);
+}
+
+.theme-pastel .wechat-text-wrap.bg-\[\#d7efc7\],
+.theme-pastel .wechat-text-user,
+.theme-pastel .wechat-voice-user {
+  background: var(--wechat-user-bubble);
+  color: var(--wechat-active-text);
+}
+
+.theme-pastel .wechat-voice-model::before {
+  border-right-color: var(--wechat-model-bubble);
+}
+
+.theme-pastel .wechat-voice-user::before {
+  border-left-color: var(--wechat-user-bubble);
+}
+
+.theme-pastel .xhs-app {
+  --xhs-bg: #fff7e8;
+  --xhs-surface: #fffefa;
+  --xhs-surface-2: #f6eddc;
+  --xhs-text: #17120c;
+  --xhs-muted: #7f7669;
+  --xhs-line: rgba(42, 31, 18, 0.12);
+  --xhs-accent: #e64340;
+  background: var(--xhs-bg) !important;
+}
+
+.theme-pastel .qq-home-screen,
+.theme-pastel .qq-chat-screen {
+  --qq-bg:
+    radial-gradient(circle at 18% 16%, rgba(210, 234, 223, 0.72), transparent 28%),
+    radial-gradient(circle at 84% 72%, rgba(239, 210, 224, 0.58), transparent 30%),
+    linear-gradient(180deg, #fffaf0 0%, #fffefa 100%);
+  --qq-header-bg: color-mix(in srgb, #fffefa 90%, transparent);
+  --qq-text: #17120c;
+  --qq-heading: #111111;
+  --qq-muted: #746c61;
+  --qq-accent: #8994c9;
+  --qq-accent-soft: #e8ebf8;
+  --qq-hero-bg:
+    linear-gradient(135deg, rgba(232, 235, 248, 0.96), rgba(235, 247, 255, 0.94)),
+    #eef3ff;
+  --qq-hero-text: #4f556e;
+  --qq-hero-muted: #788094;
+  --qq-nav-bg: rgba(255, 254, 250, 0.94);
+  --qq-surface: rgba(255, 254, 250, 0.9);
+  --qq-surface-strong: #fffefa;
+  --qq-line: rgba(17, 17, 17, 0.13);
+  --qq-shadow: 3px 4px 0 rgba(0, 0, 0, 0.11);
+  --qq-active-shadow: 4px 5px 0 rgba(0, 0, 0, 0.14);
+  --qq-badge: #e96f8c;
+  --qq-avatar-bg:
+    linear-gradient(135deg, #bddff1 0 50%, #d2eadf 50.5%),
+    #bddff1;
+  --qq-radius: 20px;
+}
+
+.theme-pastel .qq-home-avatar,
+.theme-pastel .qq-header-action,
+.theme-pastel .qq-search-bar,
+.theme-pastel .qq-quick-action,
+.theme-pastel .qq-row,
+.theme-pastel .qq-empty-state {
+  border: 2px solid #111;
+}
+
+.theme-pastel .qq-quick-action,
+.theme-pastel .qq-row,
+.theme-pastel .qq-empty-state {
+  box-shadow: var(--qq-shadow);
+}
+
+/* Final lockscreen theme pass. Keep custom wallpapers intact; only theme the default lock view. */
+.theme-pastel .lock-screen.has-default-lock-art {
+  background:
+    linear-gradient(rgba(17, 17, 17, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(17, 17, 17, 0.025) 1px, transparent 1px),
+    #fffaf0;
+  background-size: 18px 18px, 18px 18px, auto;
+  padding: 24px 20px 28px;
+}
+
+.theme-pastel .lock-screen.has-default-lock-art .lock-wallpaper-image {
+  display: none;
+}
+
+.theme-pastel .lock-screen.has-default-lock-art .lock-wallpaper-shade {
+  background:
+    radial-gradient(circle at 16% 18%, rgba(220, 238, 205, 0.7), transparent 22%),
+    radial-gradient(circle at 86% 88%, rgba(233, 196, 213, 0.55), transparent 28%);
+}
+
+.theme-pastel .lock-screen.has-default-lock-art .lock-status-row {
+  color: #111;
+  font-size: 13px;
+}
+
+.theme-pastel .lock-screen.has-default-lock-art .lock-clock {
+  display: grid;
+  grid-template-columns: 1fr 78px;
+  grid-template-rows: auto auto;
+  align-items: center;
+  margin-top: 124px;
+  border: 3px solid #111;
+  border-radius: 24px;
+  background: #d2eadf;
+  padding: 14px 14px 14px 20px;
+  text-align: left;
+  box-shadow: 4px 6px 0 rgba(0, 0, 0, 0.14);
+}
+
+.theme-pastel .lock-screen.has-default-lock-art .lock-clock::before {
+  content: "";
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: stretch;
+  width: 2px;
+  margin-left: 2px;
+  background: rgba(17, 17, 17, 0.12);
+}
+
+.theme-pastel .lock-screen.has-default-lock-art .lock-clock::after {
+  content: "42";
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  justify-self: end;
+  color: #bddff1;
+  font-size: 42px;
+  font-style: italic;
+  font-weight: 1000;
+  line-height: 1;
+  -webkit-text-stroke: 2px #111;
+  text-shadow: 2px 3px 0 rgba(0, 0, 0, 0.12);
+}
+
+.theme-pastel .lock-screen.has-default-lock-art .lock-clock p {
+  grid-column: 1;
+  grid-row: 2;
+  margin-top: 5px;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.theme-pastel .lock-screen.has-default-lock-art .lock-clock h1 {
+  grid-column: 1;
+  grid-row: 1;
+  margin: 0;
+  color: #111;
+  font-size: 40px;
+  line-height: 0.95;
+  text-shadow: none;
+}
+
+.theme-pastel .lock-screen.has-default-lock-art .lock-notification-stack {
+  margin-top: 30px;
+}
+
+.theme-pastel .lock-screen.has-default-lock-art .lock-empty-card,
+.theme-pastel .lock-screen.has-default-lock-art .notification-card.compact {
+  min-height: 58px;
+  border: 3px solid #111;
+  border-radius: 24px;
+  background: rgba(255, 254, 250, 0.86);
+  box-shadow: 3px 4px 0 rgba(0, 0, 0, 0.12);
+  backdrop-filter: blur(8px);
+}
+
+.theme-pastel .lock-screen.has-default-lock-art .lock-unlock-button {
+  width: 172px;
+  min-height: 50px;
+  border-radius: 24px;
+  background: #fffefa;
+  box-shadow: 4px 5px 0 rgba(0, 0, 0, 0.18);
+}

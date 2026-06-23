@@ -54,8 +54,8 @@ function Header({
   return (
     <header className="sticky top-0 z-30 bg-[var(--phone-bg)] px-4 pb-4 pt-6">
       <div className="grid grid-cols-[48px_1fr_56px] items-center">
-        <button onClick={onBack || goBack} className="circle-button">
-          <ChevronLeft className="h-7 w-7" />
+        <button onClick={onBack || goBack} className="circle-button" aria-label="返回">
+          <ChevronLeft className="h-7 w-7" aria-hidden />
         </button>
         <div className="min-w-0 text-center">
           <h1 className="truncate text-2xl font-black">{title}</h1>

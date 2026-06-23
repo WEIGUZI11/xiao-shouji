@@ -4,7 +4,8 @@ import { parseCharacterCard } from '../../../lib/charaParser';
 import { cn } from '../../../lib/utils';
 import type { Character } from '../../../store';
 import { useAppStore } from '../../../store';
-import { WeChatAvatar, WeChatGroupAvatar, WeChatTopBar } from '../shared/WeChatShared';
+import { WeChatGroups } from '../groups/WeChatGroups';
+import { WeChatAvatar, WeChatTopBar } from '../shared/WeChatShared';
 
 export function WeChatContacts() {
   const { characters, openChat, addCharacter, deleteCharacter, groupChats, addGroupChat, updateGroupChat, deleteGroupChat, contactTags, setContactTag } = useAppStore();
@@ -12,13 +13,9 @@ export function WeChatContacts() {
   const [status, setStatus] = useState('');
   const [showGroupComposer, setShowGroupComposer] = useState(false);
   const [showTagEditor, setShowTagEditor] = useState(false);
-  const [groupName, setGroupName] = useState('');
-  const [selectedMembers, setSelectedMembers] = useState<Record<string, boolean>>({});
   const [profileId, setProfileId] = useState<string | null>(null);
   const [activeTagFilter, setActiveTagFilter] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const renameTimer = useRef<number | null>(null);
-  const skipOpenAfterRename = useRef(false);
   const profileCharacter = characters.find((character) => character.id === profileId) || null;
   const allTags = Array.from(new Set(Object.values(contactTags).flat())).filter(Boolean);
   const displayedCharacters = activeTagFilter
@@ -40,52 +37,11 @@ export function WeChatContacts() {
     }
   };
 
-  const createGroup = () => {
-    const memberIds = Object.entries(selectedMembers)
-      .filter(([, selected]) => selected)
-      .map(([id]) => id);
-    if (memberIds.length === 0) {
-      setStatus('至少选择一个联系人再拉群聊');
-      return;
-    }
-    addGroupChat(groupName, memberIds);
-    setGroupName('');
-    setSelectedMembers({});
-    setShowGroupComposer(false);
-    setStatus('群聊已创建');
-  };
-
-  const clearRenameTimer = () => {
-    if (renameTimer.current) {
-      window.clearTimeout(renameTimer.current);
-      renameTimer.current = null;
-    }
-  };
-  const renameGroup = (group: { id: string; name: string }) => {
-    skipOpenAfterRename.current = true;
-    const nextName = window.prompt('修改群聊名称', group.name)?.trim();
-    if (nextName) {
-      updateGroupChat(group.id, { name: nextName });
-      setStatus('群聊名称已更新');
-    }
-    window.setTimeout(() => {
-      skipOpenAfterRename.current = false;
-    }, 0);
-  };
-  const armRename = (group: { id: string; name: string }) => {
-    clearRenameTimer();
-    renameTimer.current = window.setTimeout(() => renameGroup(group), 520);
-  };
   const removeCharacter = (character: Character) => {
     const confirmed = window.confirm(`确定删除「${character.name}」吗？通讯录、聊天、群聊成员、电话、日记、相册、备忘录、音乐等关联记录都会一起删除。`);
     if (!confirmed) return;
     deleteCharacter(character.id);
     setProfileId(null);
-    setSelectedMembers((members) => {
-      const next = { ...members };
-      delete next[character.id];
-      return next;
-    });
     setStatus(`已删除：${character.name}`);
   };
 
@@ -157,57 +113,16 @@ export function WeChatContacts() {
           <span>群聊</span>
           <span className="wechat-row-meta">{groupChats.length}个</span>
         </button>
-        {showGroupComposer && (
-          <div className="wechat-inline-panel">
-            <input value={groupName} onChange={(event) => setGroupName(event.target.value)} placeholder="群聊名称" className="wechat-inline-input" />
-            <div className="wechat-check-list">
-              {characters.map((character) => (
-                <label key={character.id}>
-                  <input
-                    type="checkbox"
-                    checked={Boolean(selectedMembers[character.id])}
-                    onChange={(event) => setSelectedMembers((state) => ({ ...state, [character.id]: event.target.checked }))}
-                  />
-                  <span>{character.name}</span>
-                </label>
-              ))}
-            </div>
-            <button type="button" onClick={createGroup} className="wechat-mini-button">创建群聊</button>
-          </div>
-        )}
-        {groupChats.map((group) => (
-          <div
-            key={group.id}
-            className="wechat-contact-row"
-            onContextMenu={(event) => { event.preventDefault(); renameGroup(group); }}
-            onPointerDown={() => armRename(group)}
-            onPointerUp={clearRenameTimer}
-            onPointerCancel={clearRenameTimer}
-            onPointerLeave={clearRenameTimer}
-            title="长按或右键修改群名"
-          >
-            <WeChatGroupAvatar group={group} characters={characters} />
-            <button
-              type="button"
-              onClick={() => {
-                if (skipOpenAfterRename.current) return;
-                openChat(group.id, 'wechat');
-              }}
-              className="min-w-0 flex-1 text-left"
-            >
-              <p className="wechat-row-title small">{group.name}</p>
-              <p className="wechat-row-preview compact">{group.memberIds.length}个成员 · 点开聊天</p>
-            </button>
-            <button
-              type="button"
-              onClick={() => window.confirm(`确定解散「${group.name}」吗？`) && deleteGroupChat(group.id)}
-              onPointerDown={(event) => event.stopPropagation()}
-              className="wechat-mini-button danger"
-            >
-              解散
-            </button>
-          </div>
-        ))}
+        <WeChatGroups
+          characters={characters}
+          groupChats={groupChats}
+          openChat={openChat}
+          addGroupChat={addGroupChat}
+          updateGroupChat={updateGroupChat}
+          deleteGroupChat={deleteGroupChat}
+          setStatus={setStatus}
+          showComposer={showGroupComposer}
+        />
         <button type="button" onClick={() => setShowTagEditor((visible) => !visible)} className="wechat-menu-row">
           <span className="wechat-square-icon blue"><Tag className="h-5 w-5" /></span>
           <span>标签</span>

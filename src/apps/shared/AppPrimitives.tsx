@@ -1,9 +1,9 @@
 import { ChevronLeft, CircleUserRound } from 'lucide-react';
 import React from 'react';
 
+import { cn } from '../../lib/utils';
 import type { Character } from '../../store';
 import { useAppStore } from '../../store';
-import { cn } from '../../lib/utils';
 
 export function Header({
   title,
@@ -24,8 +24,8 @@ export function Header({
   return (
     <header className="sticky top-0 z-30 bg-[var(--phone-bg)] px-4 pb-4 pt-6">
       <div className="grid grid-cols-[48px_1fr_56px] items-center">
-        <button onClick={onBack || goBack} className="circle-button">
-          <ChevronLeft className="h-7 w-7" />
+        <button onClick={onBack || goBack} className="circle-button" aria-label="返回">
+          <ChevronLeft className="h-7 w-7" aria-hidden />
         </button>
         <div className="min-w-0 text-center">
           <h1 className="truncate text-2xl font-black">{title}</h1>
@@ -38,7 +38,18 @@ export function Header({
   );
 }
 
-export function Pill({ icon, label, active, onClick }: { key?: React.Key; icon: React.ReactNode; label: string; active?: boolean; onClick?: () => void }) {
+export function Pill({
+  icon,
+  label,
+  active,
+  onClick,
+}: {
+  key?: React.Key;
+  icon: React.ReactNode;
+  label: string;
+  active?: boolean;
+  onClick?: () => void;
+}) {
   return (
     <button onClick={onClick} className={cn('pill', active && 'active')}>
       {React.cloneElement(icon as React.ReactElement<{ className?: string }>, { className: 'h-4 w-4' })}
@@ -59,11 +70,27 @@ export function Field({ icon, label, children }: { icon: React.ReactNode; label:
   );
 }
 
-export function Panel({ children, className }: { key?: React.Key; children: React.ReactNode; className?: string }) {
+export function Panel({
+  children,
+  className,
+}: {
+  key?: React.Key;
+  children: React.ReactNode;
+  className?: string;
+}) {
   return <div className={cn('hand-panel mx-4 mt-4 p-5', className)}>{children}</div>;
 }
 
-export function Row({ icon, title, desc }: { key?: React.Key; icon: React.ReactNode; title: string; desc: string }) {
+export function Row({
+  icon,
+  title,
+  desc,
+}: {
+  key?: React.Key;
+  icon: React.ReactNode;
+  title: string;
+  desc: string;
+}) {
   return (
     <div className="flex gap-3 border-b-[2px] border-[#111]/15 py-3 last:border-b-0">
       <div className="app-chip">
@@ -99,7 +126,17 @@ export function Avatar({ character, large }: { character?: Character; large?: bo
   );
 }
 
-export function CallButton({ icon, label, danger, onClick }: { icon: React.ReactNode; label: string; danger?: boolean; onClick?: () => void }) {
+export function CallButton({
+  icon,
+  label,
+  danger,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  danger?: boolean;
+  onClick?: () => void;
+}) {
   return (
     <button onClick={onClick} className={cn('call-button', danger ? 'bg-[#ff7b7b]' : 'bg-white')}>
       {React.cloneElement(icon as React.ReactElement<{ className?: string }>, { className: 'h-5 w-5' })}

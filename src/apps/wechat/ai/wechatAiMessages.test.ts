@@ -38,4 +38,24 @@ assert.equal(quoted[0].note, '别喝冰的');
 const badImage = parseWeChatAiReply('[image label=缺提示词]');
 assert.equal(badImage[0].kind, 'text');
 
+const withThinking = parseWeChatAiReply([
+  '<think>',
+  '用户现在很难过，我应该先安慰再问原因。',
+  '</think>',
+  '我在呢',
+  '慢慢说',
+].join('\n'));
+assert.deepEqual(withThinking, [
+  { kind: 'text', content: '我在呢' },
+  { kind: 'text', content: '慢慢说' },
+]);
+
+const colonThinking = parseWeChatAiReply([
+  '思考：这里需要显得自然一点',
+  '先别急，我听着',
+].join('\n'));
+assert.deepEqual(colonThinking, [
+  { kind: 'text', content: '先别急，我听着' },
+]);
+
 console.log('wechatAiMessages tests passed');

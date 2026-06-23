@@ -1,0 +1,382 @@
+/**
+ * Status terminal theme.
+ * Inspired by the provided frosted status-panel style: translucent surfaces,
+ * blue-lavender accents, soft gradients, and readable diagnostic panels.
+ */
+
+.theme-status-terminal {
+  --theme-bg: #f4f5fa;
+  --theme-text: #4a4a5a;
+  --theme-panel: rgba(255, 255, 255, 0.76);
+  --theme-accent: #8a90c7;
+  --theme-accent-strong: #8a90c7;
+  --theme-accent-soft: #e8eaf6;
+  --theme-muted: #7a7a8c;
+  --theme-line: rgba(138, 144, 199, 0.25);
+  --theme-shadow: 0 14px 34px rgba(89, 96, 145, 0.16);
+  --phone-bg: var(--theme-bg);
+  --phone-text: var(--theme-text);
+  --panel-bg: var(--theme-panel);
+  --accent: var(--theme-accent-soft);
+  background:
+    linear-gradient(115deg, rgba(232, 234, 246, 0.95), rgba(244, 245, 250, 0.9) 48%, rgba(232, 234, 246, 0.86)),
+    #f4f5fa;
+  color: var(--theme-text);
+}
+
+.theme-status-terminal .phone-shell {
+  border-color: #242633 !important;
+  background: var(--theme-bg);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.68),
+    0 30px 70px rgba(28, 31, 48, 0.35);
+}
+
+.theme-status-terminal .cream-screen,
+.theme-status-terminal .lock-screen {
+  background:
+    linear-gradient(180deg, rgba(232, 234, 246, 0.92), rgba(244, 245, 250, 0.92) 52%, rgba(232, 234, 246, 0.98));
+  color: var(--theme-text);
+}
+
+.theme-status-terminal .cream-screen::before,
+.theme-status-terminal .lock-screen::before {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 18px;
+  border: 1px solid var(--theme-line);
+  border-radius: 24px;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.34), transparent 34%, rgba(138, 144, 199, 0.08) 68%, transparent),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.34), transparent 58%);
+  opacity: 0.58;
+  mask-image: linear-gradient(180deg, #000 0 18%, transparent 44%, transparent 64%, #000 100%);
+}
+
+.theme-status-terminal header,
+.theme-status-terminal .wechat-topbar,
+.theme-status-terminal .wechat-tabs,
+.theme-status-terminal .wechat-chat-header,
+.theme-status-terminal .wechat-input-bar,
+.theme-status-terminal .browser-tabs,
+.theme-status-terminal .browser-toolbar,
+.theme-status-terminal .xhs-topbar,
+.theme-status-terminal .xhs-bottom {
+  border-color: var(--theme-line) !important;
+  background: rgba(255, 255, 255, 0.72) !important;
+  color: var(--theme-text) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.theme-status-terminal h1,
+.theme-status-terminal h2,
+.theme-status-terminal h3,
+.theme-status-terminal .lock-clock,
+.theme-status-terminal .lock-status-row,
+.theme-status-terminal .time-text {
+  color: var(--theme-text);
+  letter-spacing: 0;
+}
+
+.theme-status-terminal .date-text,
+.theme-status-terminal .hand-note,
+.theme-status-terminal .widget-status,
+.theme-status-terminal .notification-body,
+.theme-status-terminal .app-label,
+.theme-status-terminal .dock span:last-child {
+  color: var(--theme-muted);
+}
+
+.theme-status-terminal .image-bed,
+.theme-status-terminal .time-card,
+.theme-status-terminal .hand-panel,
+.theme-status-terminal .theme-card,
+.theme-status-terminal .feature-tile,
+.theme-status-terminal .custom-widget,
+.theme-status-terminal .guide-panel,
+.theme-status-terminal .notification-sheet,
+.theme-status-terminal .notification-card,
+.theme-status-terminal .lock-empty-card,
+.theme-status-terminal .hand-note,
+.theme-status-terminal .app-chip {
+  border: 1px solid var(--theme-line);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(244, 245, 250, 0.68)),
+    var(--theme-panel);
+  color: var(--theme-text);
+  box-shadow: var(--theme-shadow);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.theme-status-terminal .time-card {
+  border-left: 5px solid var(--theme-accent);
+}
+
+.theme-status-terminal .time-text {
+  color: #4a4a5a;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
+.theme-status-terminal .circle-button,
+.theme-status-terminal .save-button,
+.theme-status-terminal .pill,
+.theme-status-terminal .call-button,
+.theme-status-terminal .layout-toggle,
+.theme-status-terminal .hand-bubble,
+.theme-status-terminal .shell-notification-button,
+.theme-status-terminal .lock-unlock-button,
+.theme-status-terminal .fetch-button,
+.theme-status-terminal .browser-tool,
+.theme-status-terminal .browser-window-button,
+.theme-status-terminal .browser-result-header button,
+.theme-status-terminal .browser-history button {
+  border: 1px solid var(--theme-line);
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--theme-text);
+  box-shadow: 0 6px 16px rgba(89, 96, 145, 0.12);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.theme-status-terminal .fetch-button,
+.theme-status-terminal .theme-card.active,
+.theme-status-terminal .pill.active,
+.theme-status-terminal .layout-toggle.active {
+  border-color: rgba(138, 144, 199, 0.62);
+  background: linear-gradient(180deg, #9fa5d5, var(--theme-accent-strong));
+  color: #ffffff;
+  box-shadow: 0 10px 22px rgba(138, 144, 199, 0.26);
+}
+
+.theme-status-terminal .hand-input,
+.theme-status-terminal .widget-input,
+.theme-status-terminal select,
+.theme-status-terminal textarea,
+.theme-status-terminal .browser-address,
+.theme-status-terminal .browser-home-search,
+.theme-status-terminal .browser-worldbook-input,
+.theme-status-terminal .browser-setting-input {
+  border: 1px solid var(--theme-line);
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--theme-text);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.62);
+}
+
+.theme-status-terminal .hand-input::placeholder,
+.theme-status-terminal .widget-input::placeholder,
+.theme-status-terminal textarea::placeholder,
+.theme-status-terminal input::placeholder {
+  color: rgba(115, 118, 138, 0.74);
+}
+
+.theme-status-terminal .dock {
+  border: 1px solid var(--theme-line);
+  background: rgba(255, 255, 255, 0.62);
+  box-shadow: 0 14px 28px rgba(89, 96, 145, 0.14);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.theme-status-terminal .app-icon,
+.theme-status-terminal .dock-icon {
+  border: 1px solid rgba(138, 144, 199, 0.34);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.82), rgba(232, 234, 246, 0.9)),
+    var(--theme-accent-soft);
+  color: #4a4a5a;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.78),
+    0 8px 18px rgba(89, 96, 145, 0.14);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.theme-status-terminal .app-button:nth-of-type(3n + 2) .app-icon,
+.theme-status-terminal .dock button:nth-child(3n + 2) .dock-icon {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.82), rgba(232, 234, 246, 0.9));
+}
+
+.theme-status-terminal .app-button:nth-of-type(3n) .app-icon,
+.theme-status-terminal .dock button:nth-child(3n) .dock-icon {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.82), rgba(232, 234, 246, 0.9));
+}
+
+.theme-status-terminal .shell-badge,
+.theme-status-terminal .dock-badge,
+.theme-status-terminal .notification-count {
+  border-color: rgba(255, 255, 255, 0.88);
+  background: var(--theme-accent-strong);
+  color: #ffffff;
+}
+
+.theme-status-terminal .wechat-shell,
+.theme-status-terminal .wechat-chat-screen {
+  --wechat-bg: #f4f5fa;
+  --wechat-surface: rgba(255, 255, 255, 0.76);
+  --wechat-surface-2: #e8eaf6;
+  --wechat-text: var(--theme-text);
+  --wechat-muted: var(--theme-muted);
+  --wechat-line: var(--theme-line);
+  --wechat-active: var(--theme-accent-strong);
+  --wechat-active-text: #ffffff;
+  --wechat-user-bubble: #e8eaf6;
+  --wechat-model-bubble: rgba(255, 255, 255, 0.76);
+  --wechat-badge: var(--theme-accent-strong);
+  --wechat-moments-accent: var(--theme-accent-strong);
+  --wechat-moments-accent-soft: var(--theme-accent-soft);
+  --wechat-moments-bg: #f4f5fa;
+  --wechat-moments-hero-bg: linear-gradient(135deg, #e8eaf6, #ffffff 58%, #f4f5fa);
+  --wechat-moments-comment-bg: rgba(232, 234, 246, 0.72);
+  --wechat-shadow: 0 8px 18px rgba(89, 96, 145, 0.12);
+  background: var(--wechat-bg);
+  color: var(--wechat-text);
+}
+
+.theme-status-terminal .wechat-page,
+.theme-status-terminal .wechat-message-list,
+.theme-status-terminal .xhs-app,
+.theme-status-terminal .browser-app,
+.theme-status-terminal .ai-context-app,
+.theme-status-terminal .logs-app {
+  background:
+    linear-gradient(180deg, #ffffff, #f4f5fa);
+  color: var(--theme-text);
+}
+
+.theme-status-terminal .wechat-chat-row,
+.theme-status-terminal .wechat-contact-row,
+.theme-status-terminal .wechat-menu-row,
+.theme-status-terminal .wechat-empty-card,
+.theme-status-terminal .wechat-me-hero,
+.theme-status-terminal .wechat-photo-wall,
+.theme-status-terminal .wechat-plus-panel,
+.theme-status-terminal .wechat-plus-action,
+.theme-status-terminal .wechat-moment-composer,
+.theme-status-terminal .wechat-moment-card,
+.theme-status-terminal .wechat-moments-hero,
+.theme-status-terminal .xhs-surface,
+.theme-status-terminal .xhs-note-card,
+.theme-status-terminal .xhs-detail,
+.theme-status-terminal .browser-result-header,
+.theme-status-terminal .browser-result-card,
+.theme-status-terminal .browser-page-view,
+.theme-status-terminal .browser-history-row {
+  border-color: var(--theme-line) !important;
+  background: rgba(255, 255, 255, 0.72) !important;
+  color: var(--theme-text) !important;
+  box-shadow: 0 8px 18px rgba(89, 96, 145, 0.12);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.theme-status-terminal .wechat-text-model,
+.theme-status-terminal .wechat-voice-model {
+  border: 1px solid var(--theme-line);
+  background: rgba(255, 255, 255, 0.82) !important;
+  color: var(--theme-text) !important;
+}
+
+.theme-status-terminal .wechat-text-user,
+.theme-status-terminal .wechat-voice-user {
+  border: 1px solid rgba(138, 144, 199, 0.32);
+  background: #e8eaf6 !important;
+  color: var(--theme-text) !important;
+}
+
+.theme-status-terminal .wechat-tab-button.active,
+.theme-status-terminal .wechat-profile-status,
+.theme-status-terminal .wechat-mini-button,
+.theme-status-terminal .wechat-icon-button,
+.theme-status-terminal .wechat-input-bar .wechat-compose-button-active,
+.theme-status-terminal .wechat-input-bar .wechat-compose-send,
+.theme-status-terminal .xhs-primary-button,
+.theme-status-terminal .xhs-tag-active,
+.theme-status-terminal .xhs-tab-line {
+  background: var(--theme-accent-strong) !important;
+  color: #ffffff !important;
+}
+
+.theme-status-terminal .qq-home-screen,
+.theme-status-terminal .qq-chat-screen {
+  --qq-bg:
+    linear-gradient(180deg, #ffffff, #f4f5fa);
+  --qq-header-bg: rgba(255, 255, 255, 0.74);
+  --qq-text: var(--theme-text);
+  --qq-heading: #30334a;
+  --qq-muted: var(--theme-muted);
+  --qq-accent: var(--theme-accent-strong);
+  --qq-accent-soft: #e8eaf6;
+  --qq-surface: rgba(255, 255, 255, 0.74);
+  --qq-surface-strong: #ffffff;
+  --qq-line: var(--theme-line);
+  --qq-shadow: 0 8px 18px rgba(89, 96, 145, 0.12);
+  --qq-active-shadow: 0 10px 22px rgba(138, 144, 199, 0.2);
+  --qq-badge: var(--theme-accent-strong);
+  --qq-avatar-bg: linear-gradient(135deg, #e8eaf6, #f4f5fa);
+  --qq-radius: 14px;
+}
+
+.theme-status-terminal .qq-home-avatar,
+.theme-status-terminal .qq-header-action,
+.theme-status-terminal .qq-search-bar,
+.theme-status-terminal .qq-quick-action,
+.theme-status-terminal .qq-row,
+.theme-status-terminal .qq-empty-state {
+  border: 1px solid var(--qq-line);
+  background: var(--qq-surface);
+  box-shadow: var(--qq-shadow);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.theme-status-terminal .qq-header-action.qq-header-add {
+  border-color: rgba(138, 144, 199, 0.38);
+  background: linear-gradient(180deg, #aeb4df, var(--theme-accent-strong));
+  color: #ffffff;
+}
+
+.theme-status-terminal .page-dots button::before {
+  background: #dfe2f3;
+}
+
+.theme-status-terminal .page-dots button.active::before {
+  background: var(--theme-accent-strong);
+}
+
+.theme-status-terminal .layout-toggle {
+  background: #f2f3fb;
+  color: var(--theme-accent-strong);
+}
+
+.theme-status-terminal .layout-toggle.active {
+  background: #e8eaf6;
+  color: var(--theme-accent-strong);
+}
+
+.theme-status-terminal .browser-logo,
+.theme-status-terminal .browser-result-card h3,
+.theme-status-terminal .browser-site-line span,
+.theme-status-terminal .ai-context-app svg,
+.theme-status-terminal .logs-app svg {
+  color: var(--theme-accent-strong);
+}
+
+.theme-status-terminal .logs-app .bg-\[\#171717\] {
+  border-color: rgba(138, 144, 199, 0.34) !important;
+  background:
+    linear-gradient(180deg, rgba(50, 52, 68, 0.92), rgba(36, 38, 54, 0.96)) !important;
+  box-shadow: 0 14px 30px rgba(36, 38, 54, 0.22) !important;
+}
+
+.theme-status-terminal .lock-screen.has-default-lock-art {
+  background:
+    linear-gradient(180deg, #e8eaf6 0%, #f4f5fa 54%, #e8eaf6 100%);
+}
+
+.theme-status-terminal .lock-clock h1 {
+  color: #4a4a5a;
+  text-shadow: 0 2px 0 rgba(255, 255, 255, 0.74);
+}

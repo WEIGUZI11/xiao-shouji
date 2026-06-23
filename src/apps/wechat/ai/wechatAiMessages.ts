@@ -8,6 +8,7 @@ export type WeChatAiParsedPart =
 
 const actionLinePattern = /^\[(sticker|transfer|red-packet|shopping|image)(?:\s+([^\]]+))?\]$/;
 const pairPattern = /(\w[\w-]*)=(?:"([^"]*)"|'([^']*)'|([^\s]+))/g;
+const thinkingLinePattern = /^(思考|思路|推理|分析|reasoning|thinking)\s*[:：]/i;
 
 function parsePairs(input = '') {
   const pairs: Record<string, string> = {};
@@ -75,9 +76,11 @@ function parseActionLine(line: string): WeChatAiParsedPart | null {
 export function parseWeChatAiReply(reply: string): WeChatAiParsedPart[] {
   const lines = reply
     .replace(/\r/g, '\n')
+    .replace(/<think>[\s\S]*?<\/think>/gi, '\n')
+    .replace(/<thinking>[\s\S]*?<\/thinking>/gi, '\n')
     .split('\n')
     .map((line) => line.trim())
-    .filter(Boolean);
+    .filter((line) => line && !thinkingLinePattern.test(line));
 
   if (lines.length === 0) return [{ kind: 'text', content: '嗯，我看到了。' }];
 

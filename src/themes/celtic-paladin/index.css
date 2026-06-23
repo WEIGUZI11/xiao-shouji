@@ -1,3 +1,32 @@
+/**
+ * Celtic paladin theme visual layer.
+ * Split from src/index.css and existing celtic-paladin styles without visual changes.
+ */
+
+.theme-celtic-paladin .lock-screen.has-default-lock-art {
+  background:
+    radial-gradient(circle at 78% 16%, rgba(137, 164, 190, 0.26), transparent 25%),
+    linear-gradient(135deg, rgba(41, 77, 86, 0.16), transparent 35%),
+    repeating-linear-gradient(45deg, rgba(36, 50, 44, 0.04) 0 2px, transparent 2px 18px),
+    linear-gradient(180deg, #fff3d4, #e7d6ad);
+}
+
+.theme-celtic-paladin .lock-screen.has-default-lock-art::after {
+  content: "ᚠ ᚱ ᛟ ᚾ ᛏ";
+  pointer-events: none;
+  position: absolute;
+  left: 28px;
+  right: 28px;
+  bottom: 86px;
+  border-top: 1px solid rgba(49, 76, 68, 0.28);
+  color: rgba(32, 54, 48, 0.5);
+  padding-top: 8px;
+  text-align: center;
+  font-size: 12px;
+  letter-spacing: 0;
+  z-index: 1;
+}
+
 .theme-celtic-paladin {
   --theme-bg: #e7d6ad;
   --theme-text: #16211f;
@@ -15,6 +44,38 @@
     radial-gradient(circle at 14% 80%, color-mix(in srgb, var(--theme-forest) 18%, transparent), transparent 30%),
     linear-gradient(135deg, color-mix(in srgb, var(--theme-panel) 74%, var(--theme-bg)), var(--theme-bg));
   color: var(--theme-text);
+}
+
+.theme-celtic-paladin .qq-home-screen,
+.theme-celtic-paladin .qq-chat-screen {
+  --qq-bg:
+    radial-gradient(circle at 16% 14%, color-mix(in srgb, var(--theme-silver) 20%, transparent), transparent 24%),
+    repeating-linear-gradient(90deg, color-mix(in srgb, var(--theme-text) 3%, transparent) 0 1px, transparent 1px 16px),
+    linear-gradient(180deg, var(--theme-panel), var(--theme-bg));
+  --qq-header-bg: color-mix(in srgb, var(--theme-panel) 90%, transparent);
+  --qq-text: var(--theme-text);
+  --qq-heading: var(--theme-text);
+  --qq-muted: var(--theme-muted);
+  --qq-accent: var(--theme-accent);
+  --qq-accent-soft: color-mix(in srgb, var(--theme-accent) 14%, var(--theme-panel));
+  --qq-surface: color-mix(in srgb, var(--theme-panel) 88%, transparent);
+  --qq-surface-strong: var(--theme-panel);
+  --qq-line: color-mix(in srgb, var(--theme-text) 18%, transparent);
+  --qq-shadow: 0 10px 20px rgba(24, 38, 32, 0.12);
+  --qq-active-shadow: 0 12px 24px rgba(31, 79, 62, 0.18);
+  --qq-badge: #8f3f46;
+  --qq-avatar-bg:
+    linear-gradient(135deg, var(--theme-silver), var(--theme-accent));
+  --qq-radius: 12px;
+}
+
+.theme-celtic-paladin .qq-home-avatar,
+.theme-celtic-paladin .qq-header-action,
+.theme-celtic-paladin .qq-search-bar,
+.theme-celtic-paladin .qq-quick-action,
+.theme-celtic-paladin .qq-row,
+.theme-celtic-paladin .qq-empty-state {
+  border: 1px solid var(--qq-line);
 }
 
 .theme-celtic-paladin .phone-shell {

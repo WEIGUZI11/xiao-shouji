@@ -1,48 +1,50 @@
 import {
   Bot,
   ChevronLeft,
-  Copy,
+  Folder,
   Gift,
   Image as ImageIcon,
   ImagePlus,
+  Mail,
   MessageCircle,
   Mic,
   MoreHorizontal,
   Phone,
   Plus,
-  Quote,
   RefreshCw,
   Search,
   Send,
   ShoppingBag,
+  Scissors,
   SmilePlus,
   Sparkles,
-  Star,
-  Trash2,
-  Undo2,
   Users,
   Video,
 } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 
 import { cn, createId } from '../../../lib/utils';
-import { buildNovelAiPrompt, requestNaiImage } from '../../../lib/naiImage';
+import { buildChatImagePrompt, evaluateImageGenerationGate, hashPrompt, requestNaiImage, type ImageTriggerType } from '../../../lib/naiImage';
 import { speakWithConfiguredTts } from '../../../tts';
 import type { Character, ChatMessage, StickerItem } from '../../../store';
 import { useAppStore } from '../../../store';
 import { EmptyScreen } from '../../shared/AppPrimitives';
 import { delay, describeChatMessage, getCharacterPrompt, requestChatCompletion } from '../../shared/aiText';
-import { buildWeChatSystemPrompt, fallbackWeChatReply, parseWeChatReplyParts } from '../ai/wechatAi';
+import { buildUserProfilePrompt, resolveUserProfileForCharacter } from '../../user-info/userProfilePrompt';
+import { buildChatRequestPreview, buildChatSystemPrompt, parseWeChatReplyParts, resolveGroupReplyPartSpeaker } from '../ai/wechatAi';
 import type { WeChatAiParsedPart } from '../ai/wechatAiMessages';
-import { formatMessageTime, WeChatAvatar } from '../shared/WeChatShared';
+import { parseDailyWechatReminderRequest } from '../../active-events/activeEventsLogic';
+import { getProactiveReminderClientId, registerBackendProactiveReminder, scheduleNativeLocalProactiveReminder } from '../../active-events/proactiveReminderClient';
+import { WeChatAvatar } from '../shared/WeChatShared';
 import {
   canAcceptLifeCard,
+  getCallScreenForType,
+  getReplyHistoryMessages,
   getPendingResponseMode,
   shouldAutoReplyAfterUserAction,
   type PendingChatDraftKind,
 } from './wechatInteraction';
-import { isUnreadVoiceMessage } from './voiceUnread';
-import { VoiceMessageBubble } from './VoiceMessageBubble';
+import { ChatBubble as Bubble } from './components/ChatBubble';
 
 function speak(text: string) {
   const { ttsConfig } = useAppStore.getState();
@@ -69,12 +71,17 @@ export function ChatScreen() {
     toggleMessageFavorite,
     recallMessage,
     markVoiceMessagePlayed,
+    setScreen,
     addPurchaseRecord,
     addGalleryPhoto,
+    addCalendarEvent,
+    addLifeEvent,
     goBack,
     stickers,
     ttsEnabled,
     imageGenerationConfig,
+    generatedImageRecords,
+    recordGeneratedImage,
     addAppLog,
     apiBaseUrl,
     apiKey,
@@ -85,6 +92,11 @@ export function ChatScreen() {
     chatTemperature,
     chatMaxTokens,
     chatReplyStyle,
+    userName,
+    activeUserProfileId,
+    userProfile,
+    userProfiles,
+    userProfileCharacterBindings,
   } = useAppStore();
   const [input, setInput] = useState('');
   const [mode, setMode] = useState<'text' | 'voice'>('text');
@@ -113,18 +125,19 @@ export function ChatScreen() {
         .map((id) => characters.find((item) => item.id === id))
         .filter((item): item is Character => Boolean(item))
     : [];
+  const groupAppName = activeChannel === 'qq' ? 'QQ' : '微信';
   const character = directCharacter || (activeGroup
     ? {
         id: activeGroup.id,
         name: activeGroup.name,
         avatar: '',
-        description: `微信群聊，成员：${activeGroup.memberIds.map((id) => characters.find((item) => item.id === id)?.name).filter(Boolean).join('、')}`,
+        description: `${groupAppName}群聊，成员：${activeGroup.memberIds.map((id) => characters.find((item) => item.id === id)?.name).filter(Boolean).join('、')}`,
         personality: '群聊会自然地出现不同成员的短回复。',
         firstMessage: `${activeGroup.name} 已创建，可以开始聊天。`,
         systemPrompt: [
-          `你正在模拟微信群聊「${activeGroup.name}」。`,
+          `你正在模拟${groupAppName}群聊「${activeGroup.name}」。`,
           '你要同时扮演群里的多个成员，不要只扮演一个人。',
-          '每条回复用「成员名：消息内容」格式，像微信群里不同人轮流说话。',
+          `每条回复用「成员名：消息内容」格式，像${groupAppName}群里不同人轮流说话。`,
           activeGroup.memberIds
             .map((id) => characters.find((item) => item.id === id))
             .filter((item): item is Character => Boolean(item))
@@ -136,6 +149,15 @@ export function ChatScreen() {
   const session = activeChatId ? chatSessions[`${activeChannel}:${activeChatId}`] : undefined;
   const messages = session?.messages || [];
   const isWechat = activeChannel === 'wechat';
+  const isQq = activeChannel === 'qq';
+  const chatAppName = isQq ? 'QQ' : '微信';
+  const getChatUserProfile = (characterId?: string | null) => resolveUserProfileForCharacter({
+    characterId,
+    activeUserName: userName,
+    activeUserProfile: userProfile,
+    userProfiles,
+    bindings: userProfileCharacterBindings,
+  });
   const channelPresetPrompt = activeChannel === 'qq'
     ? appPresets.qq.prompt
     : appPresets.wechat.prompt || chatPresetPrompt;
@@ -161,6 +183,9 @@ export function ChatScreen() {
     const screen = chatScreenRef.current;
     const inputBar = inputBarRef.current;
     if (!screen || !inputBar) return;
+    const viewport = window.visualViewport;
+    const visibleHeight = viewport?.height || window.innerHeight;
+    screen.style.setProperty('--app-vvh', `${Math.round(visibleHeight)}px`);
     const activeElement = document.activeElement;
     const isEditingInChat = !!activeElement
       && screen.contains(activeElement)
@@ -170,10 +195,9 @@ export function ChatScreen() {
       screen.style.setProperty('--wechat-keyboard-lift', '0px');
       return;
     }
-    const viewport = window.visualViewport;
     const visibleBottom = viewport ? viewport.offsetTop + viewport.height : window.innerHeight;
     const rect = inputBar.getBoundingClientRect();
-    const nextLift = Math.max(0, Math.ceil(keyboardLiftRef.current + rect.bottom - visibleBottom + 8));
+    const nextLift = Math.max(0, Math.ceil(rect.bottom - visibleBottom + 12));
     keyboardLiftRef.current = nextLift;
     screen.style.setProperty('--wechat-keyboard-lift', `${nextLift}px`);
   };
@@ -207,6 +231,28 @@ export function ChatScreen() {
     if (stickers.length === 0) return undefined;
     const keyword = (mood || '').toLowerCase();
     return stickers.find((sticker) => sticker.label.toLowerCase().includes(keyword)) || stickers[0];
+  };
+
+  const formatImageGateReason = (reason: string, retryAfterMs?: number) => {
+    const suffix = retryAfterMs ? `，约 ${Math.ceil(retryAfterMs / 1000)} 秒后再试` : '';
+    const labels: Record<string, string> = {
+      character_cooldown: '角色冷却中',
+      channel_cooldown: '频道冷却中',
+      user_cooldown: '用户冷却中',
+      daily_quota: '今日额度已用完',
+      retry_limit: '失败重试次数过多',
+      duplicate_prompt: '重复 prompt 已去重',
+      similar_prompt: '连续相似 prompt 已拦截',
+    };
+    return `${labels[reason] || reason}${suffix}`;
+  };
+
+  const getChatConnectionIssue = () => {
+    const missing = [
+      !apiBaseUrl.trim() ? '接口地址' : '',
+      !selectedModel.trim() ? '模型' : '',
+    ].filter(Boolean);
+    return missing.length > 0 ? `聊天 API 未连接：缺少${missing.join('和')}。` : '';
   };
 
   const buildLifeMessage = (part: WeChatAiParsedPart, speaker?: Character): ChatMessage => {
@@ -281,16 +327,71 @@ export function ChatScreen() {
     role,
     speaker,
     replyTo,
+    triggerType,
   }: {
     prompt: string;
     role: 'user' | 'model';
     speaker?: Character;
     replyTo?: string;
+    triggerType: ImageTriggerType;
   }): Promise<ChatMessage> => {
-    const imageUrl = await requestNaiImage({
-      config: imageGenerationConfig,
-      prompt: buildNovelAiPrompt(`${speaker?.name ? `${speaker.name}想发给我的图，` : ''}${prompt}`, 'wechat'),
+    const now = Date.now();
+    const imageId = createId('image');
+    const targetCharacterId = role === 'model' ? speaker?.id || character.id : character.id;
+    const channelId = `${activeChannel}:${activeChatId}`;
+    const currentChatUser = getChatUserProfile(character.id);
+    const userId = currentChatUser.id || activeUserProfileId || userName || 'local-user';
+    const imageCharacter = role === 'model' ? speaker || character : character;
+    const fullPrompt = buildChatImagePrompt({
+      prompt,
+      speakerName: speaker?.name,
+      characterTags: imageCharacter.imagePromptTags,
+      context: 'wechat',
     });
+    const gate = evaluateImageGenerationGate({
+      now,
+      characterId: targetCharacterId,
+      channelId,
+      userId,
+      prompt: fullPrompt,
+      triggerType,
+      records: generatedImageRecords,
+    });
+    const logBase = `trigger=${triggerType}; user=${userId}; bot=${activeChannel}; character=${targetCharacterId}; channel=${channelId}; prompt_hash=${gate.promptHash}; model=${imageGenerationConfig.model}; size=${imageGenerationConfig.width}x${imageGenerationConfig.height}`;
+    if (!gate.allowed) {
+      const detail = `${logBase}; blocked=${gate.reason}`;
+      addAppLog({ type: 'info', title: `${chatAppName} NAI 生图被限制`, detail });
+      throw new Error(formatImageGateReason(gate.reason, gate.retryAfterMs));
+    }
+    addAppLog({ type: 'image', title: `${chatAppName} NAI 生图开始`, detail: logBase });
+    let imageUrl: string;
+    try {
+      imageUrl = await requestNaiImage({
+        config: imageGenerationConfig,
+        prompt: fullPrompt,
+      });
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : '未知错误';
+      recordGeneratedImage({
+        imageId,
+        botId: activeChannel,
+        characterId: targetCharacterId,
+        guildId: 'local-small-phone',
+        channelId,
+        userId,
+        triggerType,
+        promptHash: gate.promptHash,
+        promptText: fullPrompt,
+        createdAt: now,
+        width: imageGenerationConfig.width,
+        height: imageGenerationConfig.height,
+        model: imageGenerationConfig.model,
+        status: 'failure',
+        error: detail,
+      });
+      addAppLog({ type: 'error', title: `${chatAppName} NAI 生图 API 失败`, detail: `${logBase}; error=${detail}` });
+      throw error;
+    }
     const label = prompt.trim().slice(0, 38) || 'AI 生图';
     const message: ChatMessage = {
       id: createId('msg'),
@@ -302,16 +403,35 @@ export function ChatScreen() {
       speakerId: activeGroup && speaker ? speaker.id : undefined,
       replyTo,
     };
-    addGalleryPhoto({
+    const galleryPhotoId = addGalleryPhoto({
       url: imageUrl,
-      title: role === 'user' ? '微信生图' : `${speaker?.name || character.name}发来的图`,
+      title: role === 'user' ? `${chatAppName}生图` : `${speaker?.name || character.name}发来的图`,
       description: prompt,
       album: '聊天',
-      tags: ['微信', 'AI生图'],
+      tags: [chatAppName, 'AI生图'],
       source: 'chat',
       characterId: role === 'model' ? speaker?.id || character.id : undefined,
       readableByChar: true,
     });
+    recordGeneratedImage({
+      imageId,
+      botId: activeChannel,
+      characterId: targetCharacterId,
+      guildId: 'local-small-phone',
+      channelId,
+      userId,
+      triggerType,
+      promptHash: gate.promptHash,
+      promptText: fullPrompt,
+      storageUrl: imageUrl,
+      galleryPhotoId,
+      createdAt: now,
+      width: imageGenerationConfig.width,
+      height: imageGenerationConfig.height,
+      model: imageGenerationConfig.model,
+      status: 'success',
+    });
+    addAppLog({ type: 'image', title: `${chatAppName} NAI 生图成功`, detail: `${logBase}; image_id=${imageId}; gallery_photo_id=${galleryPhotoId}; storage_url=data-url/gallery` });
     return message;
   };
 
@@ -320,72 +440,96 @@ export function ChatScreen() {
     setIsTyping(true);
     const styleInstruction =
       chatReplyStyle === 'single'
-        ? '这次尽量只回复一条微信气泡。'
+        ? `这次尽量只回复一条${chatAppName}消息。`
         : chatReplyStyle === 'burst'
-          ? '这次允许像真人一样连发两到四条短微信气泡；每条气泡单独一行。'
-          : '这次根据角色性格决定一条还是多条；如果拆成多条，每条气泡单独一行。';
+          ? `这次允许像熟人聊天一样连发两到四条短${chatAppName}消息；每条消息单独一行。`
+          : '这次根据角色性格决定一条还是多条；如果拆成多条，每条消息单独一行。';
 
     const spokenReplies: string[] = [];
+    const connectionIssue = getChatConnectionIssue();
+    if (connectionIssue) {
+      addAppLog({ type: 'error', title: `${chatAppName}聊天 API 未连接`, detail: connectionIssue });
+      throw new Error(connectionIssue);
+    }
     const requestOneReply = async (speaker: Character, memberInstruction = '') => {
-      const reply = apiBaseUrl && selectedModel
-        ? await requestChatCompletion({
+      const chatUserProfile = getChatUserProfile(speaker.id);
+      const userProfilePrompt = buildUserProfilePrompt(chatUserProfile.name, chatUserProfile.profile);
+      const requestMessages = [
+        {
+          role: 'system' as const,
+          content: buildChatSystemPrompt({
+            channel: activeChannel,
+            characterPrompt: getCharacterPrompt(character),
+            characterName: character.name,
+            memberInstruction,
+            userProfilePrompt,
+            chatPresetPrompt: channelPresetPrompt,
+            styleInstruction,
+            isGroupChat: Boolean(activeGroup),
+          }),
+        },
+        ...getReplyHistoryMessages(messages, drafts).slice(-Math.max(4, chatContextDepth)).filter((message) => !message.recalled).map((message) => ({
+          role: message.role === 'model' ? 'assistant' as const : 'user' as const,
+          content: describeChatMessage(message, true, characters),
+        })),
+        { role: 'user' as const, content },
+      ];
+      addAppLog({
+        type: 'ai',
+        title: `${chatAppName}聊天请求预览`,
+        detail: [
+          `channel=${activeChannel}:${activeChatId}`,
+          `speaker=${speaker.name}`,
+          `messages=${requestMessages.length}`,
+          buildChatRequestPreview(requestMessages),
+        ].join('\n'),
+      });
+      const reply = await requestChatCompletion({
           baseUrl: apiBaseUrl,
           apiKey,
           model: selectedModel,
           temperature: chatTemperature,
           maxTokens: chatMaxTokens,
-          messages: [
-            {
-              role: 'system',
-              content: buildWeChatSystemPrompt({
-                characterPrompt: getCharacterPrompt(character),
-                characterName: character.name,
-                memberInstruction,
-                chatPresetPrompt: channelPresetPrompt,
-                styleInstruction,
-              }),
-            },
-            ...messages.slice(-Math.max(4, chatContextDepth)).filter((message) => !message.recalled).map((message) => ({
-              role: message.role === 'model' ? 'assistant' as const : 'user' as const,
-              content: describeChatMessage(message, true, characters),
-            })),
-            { role: 'user', content },
-          ],
-        })
-        : fallbackWeChatReply(content, responseMode, chatReplyStyle, speaker, memberInstruction);
+          messages: requestMessages,
+        });
       return parseWeChatReplyParts(reply, chatReplyStyle, speaker.name);
     };
 
-    const speakers = activeGroup && groupMembers.length > 0 ? groupMembers : [character];
+    const speakers = activeGroup && groupMembers.length > 0 ? [groupMembers[0]] : [character];
     for (let speakerIndex = 0; speakerIndex < speakers.length; speakerIndex += 1) {
       const speaker = speakers[speakerIndex];
       const memberInstruction = activeGroup
         ? [
-            `现在只允许你扮演群成员「${speaker.name}」。`,
-            getCharacterPrompt(speaker),
-            `你是群聊「${activeGroup.name}」中的一个成员。轮到你发言，按你自己的人设回应用户刚才的消息。`,
+            `你正在模拟${chatAppName}群聊「${activeGroup.name}」。`,
+            `可发言成员：${groupMembers.map((member) => member.name).join('、')}。`,
+            '请根据刚才的消息和每个成员的人设，挑选 1 到 4 位成员自然接话；不是所有成员都必须回复。',
+            '每行必须使用「成员名：消息内容」格式，成员名必须来自可发言成员。',
           ].join('\n')
         : '';
       const parts = await requestOneReply(speaker, memberInstruction);
       for (let index = 0; index < parts.length; index += 1) {
-        const part = parts[index];
-        const speakable = part.kind === 'text' ? part.content : part.kind === 'sticker' ? '表情包' : describeChatMessage(buildLifeMessage(part, speaker));
+        const resolved = activeGroup
+          ? resolveGroupReplyPartSpeaker(parts[index], speaker, groupMembers)
+          : { part: parts[index], speaker };
+        const { part } = resolved;
+        const messageSpeaker = resolved.speaker;
+        const speakable = part.kind === 'text' ? part.content : part.kind === 'sticker' ? '表情包' : describeChatMessage(buildLifeMessage(part, messageSpeaker));
         await delay(Math.min(1400, Math.max(420, speakable.length * 55)));
         if (part.kind === 'image') {
           try {
-            const imageMessage = await createGeneratedImageMessage({ prompt: part.prompt, role: 'model', speaker });
+            const imageMessage = await createGeneratedImageMessage({ prompt: part.prompt, role: 'model', speaker: messageSpeaker, triggerType: 'proactive' });
             imageMessage.timestamp = Date.now() + index + speakerIndex;
             addMessage(activeChatId, activeChannel, imageMessage);
           } catch (error) {
-            const message = buildLifeMessage(part, speaker);
+            const message = buildLifeMessage(part, messageSpeaker);
             message.content = `想发你一张图，但生图失败了：${error instanceof Error ? error.message : '未知错误'}`;
             message.timestamp = Date.now() + index + speakerIndex;
             addMessage(activeChatId, activeChannel, message);
-            addAppLog({ type: 'error', title: '微信 char 生图失败', detail: message.content });
+            addAppLog({ type: 'error', title: `${chatAppName} char 生图失败`, detail: `trigger=proactive; character=${messageSpeaker.id}; channel=${activeChannel}:${activeChatId}; error=${message.content}` });
           }
           continue;
         }
-        const message = buildLifeMessage(part, speaker);
+        const message = buildLifeMessage(part, messageSpeaker);
         if (part.kind === 'text' && responseMode === 'voice') {
           message.kind = 'voice';
           message.duration = Math.max(2, Math.ceil(message.content.length / 4));
@@ -395,10 +539,10 @@ export function ChatScreen() {
         addMessage(activeChatId, activeChannel, message);
         if (message.kind === 'shopping') {
           addPurchaseRecord({
-            characterId: speaker.id,
+            characterId: messageSpeaker.id,
             itemName: message.itemName || message.content,
             amount: message.amount || '',
-            note: message.note || '微信聊天里提到的购物',
+            note: message.note || `${chatAppName}聊天里提到的购物`,
           });
         }
         if (message.kind === 'text' || message.kind === 'voice') spokenReplies.push(message.content);
@@ -423,10 +567,10 @@ export function ChatScreen() {
     }
   };
 
-  const queueUserDraft = (draft: PendingChatDraft) => {
+  const queueUserDraft = (draft: PendingChatDraft, options?: Parameters<typeof shouldAutoReplyAfterUserAction>[1]) => {
     const nextDrafts = [...pendingUserDrafts, draft];
     setPendingUserDrafts(nextDrafts);
-    if (shouldAutoReplyAfterUserAction(draft.kind)) {
+    if (shouldAutoReplyAfterUserAction(draft.kind, options)) {
       void requestReplyForDrafts(nextDrafts);
     }
   };
@@ -441,8 +585,9 @@ export function ChatScreen() {
     }
     const kind = mode === 'voice' ? 'voice' : 'text';
     const replyTo = replyDraft || undefined;
+    const id = createId('msg');
     addMessage(activeChatId, activeChannel, {
-      id: createId('msg'),
+      id,
       role: 'user',
       content,
       timestamp: Date.now(),
@@ -451,7 +596,62 @@ export function ChatScreen() {
       transcript: kind === 'voice' ? content : undefined,
       replyTo,
     });
-    queueUserDraft({ content, replyTo, kind });
+    if (activeChannel === 'wechat') {
+      const reminder = parseDailyWechatReminderRequest(content, {
+        now: Date.now(),
+        characterId: directCharacter?.id || (!activeGroup ? activeChatId : undefined) || undefined,
+        sourceMessageId: id,
+      });
+      if (reminder) {
+        const calendarId = addCalendarEvent(reminder.calendarEvent);
+        addLifeEvent({
+          ...reminder.lifeEvent,
+          sourceId: reminder.lifeEvent.sourceId || `wechat-reminder-${calendarId}`,
+        });
+        const reminderAt = new Date(reminder.calendarEvent.reminderAt || reminder.calendarEvent.startAt);
+        const task = reminder.calendarEvent.title.replace(/^每天\s*\d{1,2}:\d{2}\s*提醒[:：]?/, '').trim() || reminder.calendarEvent.title;
+        void registerBackendProactiveReminder({
+          clientId: getProactiveReminderClientId(),
+          calendarEventId: calendarId,
+          characterId: reminder.calendarEvent.characterId,
+          characterName: directCharacter?.name,
+          channel: 'wechat',
+          title: reminder.calendarEvent.title,
+          task,
+          hour: reminderAt.getHours(),
+          minute: reminderAt.getMinutes(),
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Shanghai',
+          enabled: true,
+          sourceMessageId: id,
+          createdAt: Date.now(),
+        }).catch((error) => {
+          addAppLog({
+            type: 'error',
+            title: `${chatAppName}主动提醒后端注册失败`,
+            detail: error instanceof Error ? error.message : String(error),
+          });
+        });
+        const localScheduled = scheduleNativeLocalProactiveReminder({
+          id: `local-${calendarId}`,
+          title: `${directCharacter?.name || chatAppName}提醒你`,
+          body: task,
+          hour: reminderAt.getHours(),
+          minute: reminderAt.getMinutes(),
+          data: {
+            type: 'proactive-reminder',
+            calendarEventId: calendarId,
+            characterId: reminder.calendarEvent.characterId,
+            channel: 'wechat',
+          },
+        });
+        addAppLog({
+          type: 'info',
+          title: `${chatAppName}长期主动提醒已记录`,
+          detail: `calendar_id=${calendarId}; character=${reminder.calendarEvent.characterId || 'none'}; repeat=${reminder.calendarEvent.repeat}; reminder_at=${new Date(reminder.calendarEvent.reminderAt || reminder.calendarEvent.startAt).toLocaleString('zh-CN')}; native_local=${localScheduled ? 'scheduled' : 'unavailable'}; title=${reminder.calendarEvent.title}`,
+        });
+      }
+    }
+    queueUserDraft({ content, replyTo, kind, sourceMessageId: id });
     setInput('');
     setReplyDraft(null);
     setFailedDraft(null);
@@ -474,8 +674,9 @@ export function ChatScreen() {
 
   const sendSticker = (sticker: StickerItem) => {
     const replyTo = replyDraft || undefined;
+    const id = createId('msg');
     addMessage(activeChatId, activeChannel, {
-      id: createId('msg'),
+      id,
       role: 'user',
       content: sticker.url,
       timestamp: Date.now(),
@@ -483,7 +684,7 @@ export function ChatScreen() {
       stickerLabel: sticker.label,
       replyTo,
     });
-    queueUserDraft({ content: `表情包：${sticker.label}`, replyTo, kind: 'sticker' });
+    queueUserDraft({ content: `表情包：${sticker.label}`, replyTo, kind: 'sticker', sourceMessageId: id });
     setReplyDraft(null);
     setFailedDraft(null);
     setShowPlusPanel(false);
@@ -499,9 +700,10 @@ export function ChatScreen() {
       timestamp: Date.now(),
       kind: 'call-note',
     });
-    setPendingUserDrafts((drafts) => [...drafts, { content: label, kind: 'text', sourceMessageId: id }]);
+    setPendingUserDrafts((drafts) => [...drafts, { content: label, kind: 'call-note', sourceMessageId: id }]);
     setShowPlusPanel(false);
     setShowChatInfo(false);
+    setScreen(getCallScreenForType(type));
   };
 
   const cancelCallNote = (messageId: string) => {
@@ -518,8 +720,9 @@ export function ChatScreen() {
     reader.onload = async () => {
       const imageUrl = reader.result as string;
       const safeFileName = file.name.length > 42 ? `${file.name.slice(0, 22)}…${file.name.slice(-12)}` : file.name;
+      const id = createId('msg');
       addMessage(activeChatId, activeChannel, {
-        id: createId('msg'),
+        id,
         role: 'user',
         content: imageUrl,
         timestamp: Date.now(),
@@ -527,7 +730,7 @@ export function ChatScreen() {
         stickerLabel: safeFileName,
         replyTo,
       });
-      queueUserDraft({ content: `图片：${safeFileName}`, replyTo, kind: 'image' });
+      queueUserDraft({ content: `图片：${safeFileName}`, replyTo, kind: 'image', sourceMessageId: id });
       setReplyDraft(null);
       setFailedDraft(null);
       event.target.value = '';
@@ -541,20 +744,18 @@ export function ChatScreen() {
     setGeneratingImage(true);
     try {
       const replyTo = replyDraft || undefined;
-      const message = await createGeneratedImageMessage({ prompt, role: 'user', replyTo });
+      const message = await createGeneratedImageMessage({ prompt, role: 'user', replyTo, triggerType: 'manual' });
       addMessage(activeChatId, activeChannel, message);
-      queueUserDraft({ content: `图片：${prompt}`, replyTo, kind: 'image' });
       setImageDraft('');
       setShowImageComposer(false);
       setReplyDraft(null);
       setFailedDraft(null);
       setShowPlusPanel(false);
-      addAppLog({ type: 'image', title: '微信 NAI 生图成功', detail: prompt });
     } catch (error) {
       const message = error instanceof Error ? error.message : '生图失败';
       if (pendingUserDrafts.length > 0) setFailedDraft({ drafts: pendingUserDrafts, mode: 'text', error: message });
       setShowImageComposer(true);
-      addAppLog({ type: 'error', title: '微信 NAI 生图失败', detail: message });
+      addAppLog({ type: 'error', title: `${chatAppName} NAI 生图失败`, detail: `trigger=manual; user=${activeUserProfileId || userName || 'local-user'}; character=${character.id}; channel=${activeChannel}:${activeChatId}; prompt_hash=${hashPrompt(prompt)}; error=${message}` });
     } finally {
       setGeneratingImage(false);
     }
@@ -570,8 +771,9 @@ export function ChatScreen() {
     updateMessage(activeChatId, activeChannel, message.id, { status: 'accepted' });
     const label = message.kind === 'red-packet' ? '我收了红包' : '我收了转账';
     const content = `${label}${message.amount ? `：${message.amount}` : ''}${message.note ? `，${message.note}` : ''}`;
+    const id = createId('msg');
     addMessage(activeChatId, activeChannel, {
-      id: createId('msg'),
+      id,
       role: 'user',
       content,
       timestamp: Date.now(),
@@ -584,6 +786,7 @@ export function ChatScreen() {
       content,
       replyTo: describeChatMessage(message, true, characters).slice(0, 80),
       kind: message.kind,
+      sourceMessageId: id,
     });
   };
 
@@ -620,6 +823,7 @@ export function ChatScreen() {
       content: describeChatMessage(message, true, characters),
       replyTo,
       kind: lifeComposer,
+      sourceMessageId: message.id,
     });
     setReplyDraft(null);
     setFailedDraft(null);
@@ -628,8 +832,8 @@ export function ChatScreen() {
   };
 
   return (
-    <section ref={chatScreenRef} className={cn('relative flex h-full flex-col', isWechat && 'wechat-chat-screen')}>
-      <div className={cn('px-4 pb-4 pt-6', isWechat && 'wechat-chat-header')}>
+    <section ref={chatScreenRef} className={cn('relative flex h-full flex-col', isWechat && 'wechat-chat-screen', isQq && 'qq-chat-screen')}>
+      <div className={cn('px-4 pb-4 pt-6', isWechat && 'wechat-chat-header', isQq && 'qq-chat-header')}>
         <div className="grid grid-cols-[46px_1fr_46px] items-center">
           <button type="button" onClick={goBack} className="wechat-icon-button" aria-label="返回">
             <ChevronLeft className="h-6 w-6" />
@@ -676,12 +880,12 @@ export function ChatScreen() {
             </div>
           </div>
           <p className="mt-3 text-xs font-semibold text-[#6b7280]">
-            {apiBaseUrl && selectedModel ? `已连接：${selectedModel}` : '未配置聊天连接，将使用本地模拟回复。'}
+            {getChatConnectionIssue() || `已连接：${selectedModel}`}
           </p>
         </div>
       )}
 
-      <div className={cn('flex-1 overflow-y-auto px-4 py-4', isWechat && 'wechat-message-list')}>
+      <div className={cn('flex-1 overflow-y-auto px-4 py-4', isWechat && 'wechat-message-list', isQq && 'qq-message-list')}>
         {messages.length === 0 && character.firstMessage && (
           <Bubble role="model" content={character.firstMessage} kind="text" channel={activeChannel} character={character} />
         )}
@@ -736,7 +940,7 @@ export function ChatScreen() {
         <div ref={messagesEndRef} />
       </div>
 
-      <div ref={inputBarRef} className={cn('p-3', isWechat && 'wechat-input-bar')}>
+      <div ref={inputBarRef} className={cn('p-3', isWechat && 'wechat-input-bar', isQq && 'qq-input-bar')}>
         {replyDraft && (
           <div className="wechat-reply-draft">
             <span>引用：{replyDraft}</span>
@@ -745,7 +949,10 @@ export function ChatScreen() {
         )}
         {failedDraft && (
           <div className="wechat-failed-draft">
-            <span>{failedDraft.drafts.length} 条消息还没等到回复，点重试再试一次。</span>
+            <span>{failedDraft.drafts.length} 条消息还没等到回复。</span>
+            {failedDraft.error && (
+              <strong className="wechat-error-code">{failedDraft.error}</strong>
+            )}
             <button type="button" onClick={retryFailed}>重试</button>
           </div>
         )}
@@ -831,7 +1038,57 @@ export function ChatScreen() {
             </div>
           </div>
         )}
+        {isQq && (
+          <div className="qq-compose-toolbar" aria-label="QQ 聊天工具栏">
+            <button type="button" onClick={() => setShowPlusPanel((visible) => !visible)} aria-label="表情">
+              <SmilePlus className="h-6 w-6" aria-hidden />
+            </button>
+            <button type="button" onClick={() => setShowPlusPanel((visible) => !visible)} aria-label="截图">
+              <Scissors className="h-6 w-6" aria-hidden />
+              <span className="qq-toolbar-chevron" aria-hidden>⌄</span>
+            </button>
+            <button type="button" onClick={() => imageInputRef.current?.click()} aria-label="文件">
+              <Folder className="h-6 w-6" aria-hidden />
+            </button>
+            <button type="button" onClick={() => imageInputRef.current?.click()} aria-label="图片">
+              <ImageIcon className="h-6 w-6" aria-hidden />
+            </button>
+            <button type="button" onClick={() => addCallNote('voice')} aria-label="语音通话">
+              <Phone className="h-6 w-6" aria-hidden />
+            </button>
+            <button type="button" onClick={() => addCallNote('video')} aria-label="视频通话">
+              <Video className="h-6 w-6" aria-hidden />
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setLifeComposer((current) => current === 'red-packet' ? null : 'red-packet');
+                setShowPlusPanel(true);
+              }}
+              aria-label="红包"
+            >
+              <Mail className="h-6 w-6" aria-hidden />
+            </button>
+            <button
+              type="button"
+              onClick={() => { setMode((current) => (current === 'voice' ? 'text' : 'voice')); setShowPlusPanel(false); }}
+              aria-label={mode === 'voice' ? '切换文字输入' : '切换语音条'}
+            >
+              <Mic className="h-6 w-6" aria-hidden />
+            </button>
+          </div>
+        )}
         <div className="wechat-compose-row">
+          {isQq && (
+            <button
+              type="button"
+              onClick={() => { setMode((current) => (current === 'voice' ? 'text' : 'voice')); setShowPlusPanel(false); }}
+              className={cn('circle-button small qq-compose-tool', mode === 'voice' && 'wechat-compose-button-active')}
+              aria-label={mode === 'voice' ? '切换文字输入' : '切换语音条'}
+            >
+              <Mic className="h-5 w-5" aria-hidden />
+            </button>
+          )}
           <textarea
             value={input}
             onChange={(event) => setInput(event.target.value)}
@@ -850,307 +1107,38 @@ export function ChatScreen() {
             className="hand-input wechat-chat-input min-h-11 flex-1 resize-none"
           />
           <input ref={imageInputRef} type="file" accept="image/*" onChange={sendImage} className="hidden" />
-          <button onClick={() => setShowPlusPanel((visible) => !visible)} className={cn('circle-button small', showPlusPanel && 'wechat-compose-button-active')}>
-            <Plus className="h-5 w-5" />
+          {isQq && (
+            <button
+              type="button"
+              onClick={() => setShowPlusPanel((visible) => !visible)}
+              className={cn('circle-button small qq-compose-tool', showPlusPanel && 'wechat-compose-button-active')}
+              aria-label="打开表情和功能"
+            >
+              <SmilePlus className="h-5 w-5" aria-hidden />
+            </button>
+          )}
+          <button
+            onClick={() => setShowPlusPanel((visible) => !visible)}
+            className={cn('circle-button small', showPlusPanel && 'wechat-compose-button-active')}
+            aria-label={showPlusPanel ? '关闭更多功能' : '打开更多功能'}
+          >
+            <Plus className="h-5 w-5" aria-hidden />
           </button>
-          <button onClick={send} className="circle-button small wechat-compose-send">
-            {sending ? <RefreshCw className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
+          <button
+            onClick={send}
+            className={cn('circle-button small wechat-compose-send', isQq && !input.trim() && 'qq-send-idle')}
+            aria-label={input.trim() ? '发送消息' : '请求回复'}
+          >
+            {isQq
+              ? sending
+                ? <RefreshCw className="h-4 w-4 animate-spin" aria-hidden />
+                : <span className="qq-send-label">发送</span>
+              : sending
+                ? <RefreshCw className="h-5 w-5 animate-spin" aria-hidden />
+                : <Send className="h-5 w-5" aria-hidden />}
           </button>
         </div>
       </div>
     </section>
-  );
-}
-
-function Bubble({
-  role,
-  content,
-  kind,
-  duration,
-  transcript,
-  stickerLabel,
-  favorite,
-  replyTo,
-  amount,
-  note,
-  itemName,
-  status,
-  voicePlayedAt,
-  timestamp,
-  showTools,
-  channel,
-  character,
-  onToggleTools,
-  onDelete,
-  onToggleFavorite,
-  onCopy,
-  onReply,
-  onRecall,
-  onVoicePlayed,
-  onAcceptLifeCard,
-}: {
-  key?: React.Key;
-  role: 'user' | 'model';
-  content: string;
-  kind: string;
-  duration?: number;
-  transcript?: string;
-  stickerLabel?: string;
-  favorite?: boolean;
-  replyTo?: string;
-  amount?: string;
-  note?: string;
-  itemName?: string;
-  status?: 'pending' | 'accepted';
-  voicePlayedAt?: number;
-  timestamp?: number;
-  showTools?: boolean;
-  channel?: 'wechat' | 'qq';
-  character?: Character;
-  onToggleTools?: () => void;
-  onDelete?: () => void;
-  onToggleFavorite?: () => void;
-  onCopy?: () => void;
-  onReply?: () => void;
-  onRecall?: () => void;
-  onVoicePlayed?: () => void;
-  onAcceptLifeCard?: () => void;
-}) {
-  const isUser = role === 'user';
-  const isWechat = channel === 'wechat';
-  const { userAvatar, userName } = useAppStore();
-  const longPressTimer = useRef<number | null>(null);
-  const runTool = (event: React.MouseEvent<HTMLButtonElement>, action?: () => void) => {
-    event.stopPropagation();
-    action?.();
-  };
-  const messageTools = showTools ? (
-    <div className={cn('wechat-message-tools', isUser ? 'justify-end' : 'justify-start')}>
-      {onReply && (
-        <button type="button" onClick={(event) => runTool(event, onReply)} className="quote" title="引用">
-          <Quote className="h-3.5 w-3.5" />
-          <span>引用</span>
-        </button>
-      )}
-      {onToggleFavorite && (
-        <button type="button" onClick={(event) => runTool(event, onToggleFavorite)} className={cn(favorite && 'active')} title={favorite ? '取消收藏' : '收藏'}>
-          <Star className="h-3.5 w-3.5" />
-          <span>{favorite ? '已收藏' : '收藏'}</span>
-        </button>
-      )}
-      {onCopy && (
-        <button type="button" onClick={(event) => runTool(event, onCopy)} title="复制">
-          <Copy className="h-3.5 w-3.5" />
-          <span>复制</span>
-        </button>
-      )}
-      {onRecall && (
-        <button type="button" onClick={(event) => runTool(event, onRecall)} className="recall" title="撤回">
-          <Undo2 className="h-3.5 w-3.5" />
-          <span>撤回</span>
-        </button>
-      )}
-      {!isUser && onDelete && (
-        <button type="button" onClick={(event) => runTool(event, onDelete)} title="删除">
-          <Trash2 className="h-3.5 w-3.5" />
-          <span>删除</span>
-        </button>
-      )}
-    </div>
-  ) : null;
-
-  const clearLongPress = () => {
-    if (longPressTimer.current) {
-      window.clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
-    }
-  };
-
-  const armMessageTools = () => {
-    clearLongPress();
-    longPressTimer.current = window.setTimeout(() => onToggleTools?.(), 360);
-  };
-
-  const messageEvents = {
-    onClick: onToggleTools,
-    onContextMenu: (event: React.MouseEvent) => {
-      event.preventDefault();
-      onToggleTools?.();
-    },
-    onPointerDown: armMessageTools,
-    onPointerUp: clearLongPress,
-    onPointerCancel: clearLongPress,
-    onPointerLeave: clearLongPress,
-  };
-  const canReceiveLifeCard = canAcceptLifeCard({ role, kind: kind as ChatMessage['kind'], status });
-  const lifeCardEvents = canReceiveLifeCard && onAcceptLifeCard ? {
-    ...messageEvents,
-    onClick: (event: React.MouseEvent) => {
-      event.stopPropagation();
-      clearLongPress();
-      onAcceptLifeCard();
-    },
-  } : messageEvents;
-
-  const meta = timestamp ? <span className="wechat-message-time">{formatMessageTime(timestamp)}</span> : null;
-
-  if (content === '' && kind === 'text') {
-    return <p className="wechat-recalled-text">{isUser ? '你撤回了一条消息' : '对方撤回了一条消息'}</p>;
-  }
-
-  const replyLine = replyTo ? <p className="wechat-reply-line">引用：{replyTo}</p> : null;
-
-  if (kind === 'call-note') {
-    const isVideoCall = content.includes('视频');
-    return (
-      <div className="wechat-call-note">
-        {isVideoCall ? <Video className="h-3.5 w-3.5" /> : <Phone className="h-3.5 w-3.5" />}
-        <span>{content}</span>
-        {meta}
-        {isUser && onRecall && (
-          <button type="button" onClick={(event) => runTool(event, onRecall)} className="wechat-mini-button">
-            取消
-          </button>
-        )}
-      </div>
-    );
-  }
-
-  if (kind === 'transfer' || kind === 'red-packet' || kind === 'shopping') {
-    const isRedPacket = kind === 'red-packet';
-    const isShopping = kind === 'shopping';
-    const title = isShopping ? itemName || content || '购物记录' : isRedPacket ? note || content || '恭喜发财，大吉大利' : note || content || '转账';
-    const amountText = amount ? `￥${amount}` : isRedPacket ? '红包' : '未填金额';
-    return (
-      <div className={cn('wechat-message mb-3 flex gap-2', isUser ? 'justify-end' : 'justify-start')}>
-        {isWechat && !isUser && <WeChatAvatar src={character?.avatar} name={character?.name || 'char'} />}
-        <div className={cn('flex max-w-[78%] flex-col', isUser ? 'items-end' : 'items-start')}>
-          {replyLine}
-          <button type="button" className={cn('wechat-life-card', kind, canReceiveLifeCard && 'receivable')} {...lifeCardEvents}>
-            <span className="wechat-life-icon">
-              {isShopping ? <ShoppingBag className="h-5 w-5" /> : isRedPacket ? <Gift className="h-5 w-5" /> : <RefreshCw className="h-5 w-5" />}
-            </span>
-            <span className="min-w-0 flex-1">
-              <strong>{title}</strong>
-              <small>{isShopping ? (note || '生活购物') : status === 'accepted' ? '已收' : canReceiveLifeCard ? '点击收款' : '待收'}</small>
-            </span>
-            <b>{amountText}</b>
-          </button>
-          {meta}
-          {isWechat && messageTools}
-        </div>
-        {isWechat && isUser && <WeChatAvatar src={userAvatar} name={userName} />}
-      </div>
-    );
-  }
-
-  if (kind === 'sticker') {
-    if (isWechat) {
-      return (
-        <div className={cn('wechat-message mb-3 flex gap-2', isUser ? 'justify-end' : 'justify-start')}>
-          {!isUser && <WeChatAvatar src={character?.avatar} name={character?.name || 'char'} />}
-          <figure className="wechat-sticker-wrap" {...messageEvents}>
-            {replyLine}
-            <img src={content} className="wechat-sticker" alt={stickerLabel || '表情包'} />
-            {meta}
-            {messageTools}
-          </figure>
-          {isUser && <WeChatAvatar src={userAvatar} name={userName} />}
-        </div>
-      );
-    }
-
-    return (
-      <div className={cn('mb-3 flex', isUser ? 'justify-end' : 'justify-start')}>
-        <img src={content} className="max-h-36 max-w-36 rounded-2xl border-[3px] border-[#111] object-cover" />
-      </div>
-    );
-  }
-  if (kind === 'image') {
-    if (isWechat) {
-      return (
-        <div className={cn('wechat-message mb-3 flex gap-2', isUser ? 'justify-end' : 'justify-start')}>
-          {!isUser && <WeChatAvatar src={character?.avatar} name={character?.name || 'char'} />}
-          <figure className="wechat-image-wrap" {...messageEvents}>
-            {replyLine}
-            <img src={content} className="wechat-image-message" alt={stickerLabel || '聊天图片'} />
-            {stickerLabel && <figcaption>{stickerLabel}</figcaption>}
-            {meta}
-            {messageTools}
-          </figure>
-          {isUser && <WeChatAvatar src={userAvatar} name={userName} />}
-        </div>
-      );
-    }
-
-    return (
-      <div className={cn('mb-3 flex', isUser ? 'justify-end' : 'justify-start')}>
-        <img src={content} className="max-h-56 max-w-56 rounded-2xl border-[3px] border-[#111] object-cover" />
-      </div>
-    );
-  }
-  if (kind === 'voice') {
-    if (isWechat) {
-      return (
-        <div className={cn('wechat-message mb-3 flex gap-2', isUser ? 'justify-end' : 'justify-start')}>
-          {!isUser && <WeChatAvatar src={character?.avatar} name={character?.name || 'char'} />}
-          <div className={cn('flex max-w-[78%] flex-col', isUser ? 'items-end' : 'items-start')}>
-            {replyLine}
-            <VoiceMessageBubble
-              content={content}
-              duration={duration}
-              transcript={transcript}
-              isUser={isUser}
-              isUnread={isUnreadVoiceMessage({ role, kind, voicePlayedAt })}
-              onPlay={() => {
-                speak(content);
-                onVoicePlayed?.();
-              }}
-              onToggleTools={onToggleTools}
-            />
-            {meta}
-            {messageTools}
-          </div>
-          {isUser && <WeChatAvatar src={userAvatar} name={userName} />}
-        </div>
-      );
-    }
-
-    return (
-      <div className={cn('mb-3 flex', isUser ? 'justify-end' : 'justify-start')}>
-        <button
-          onClick={() => {
-            speak(content);
-            onVoicePlayed?.();
-          }}
-          className={cn('hand-bubble flex min-w-32 items-center gap-2', isUser ? 'bg-[#d7efc7]' : 'bg-white')}
-        >
-          <Mic className="h-4 w-4" />
-          <span>{duration || 3}"</span>
-          <span className="text-xs opacity-65">点按播放</span>
-        </button>
-      </div>
-    );
-  }
-  return (
-    <div className={cn(isWechat ? 'wechat-message' : '', 'mb-3 flex gap-2', isUser ? 'justify-end' : 'justify-start')}>
-      {isWechat && !isUser && <WeChatAvatar src={character?.avatar} name={character?.name || 'char'} />}
-      <div className={cn('flex max-w-[78%] flex-col', isUser ? 'items-end' : 'items-start')}>
-        {replyLine}
-        <div
-          className={cn(
-            isWechat && 'wechat-text-wrap',
-            'hand-bubble whitespace-pre-wrap leading-relaxed',
-            isWechat ? (isUser ? 'wechat-text-user' : 'wechat-text-model') : (isUser ? 'bg-[#d7efc7]' : 'bg-white'),
-          )}
-          {...messageEvents}
-        >
-          {content}
-        </div>
-        {meta}
-        {isWechat && messageTools}
-      </div>
-      {isWechat && isUser && <WeChatAvatar src={userAvatar} name={userName} />}
-    </div>
   );
 }

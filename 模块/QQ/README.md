@@ -1,38 +1,70 @@
 # QQ
 
-## 2026-05-10 调研结论
-
-QQ 目前还没有独立源码目录，真实入口仍在 `src/App.tsx`：
+## 当前入口
 
 - 桌面图标：`src/shell/appCatalog.tsx` 中 `screen: "qq"`。
-- 功能分发：`src/App.tsx` 的 `FeatureScreen` 在 `screen === "qq"` 时直接渲染 `<ChatList channel={screen} />`。
-- QQ 聊天列表：`src/App.tsx` 内部函数 `ChatList`，通过 `channel: "qq"` 过滤 `chatSessions`。
-- QQ 聊天房间：`src/App.tsx` 内部函数 `ChatScreen`，复用 `activeChannel`，QQ 与微信共用发送、AI 回复、图片、语音、表情、引用、收藏、撤回等逻辑。
-- QQ 气泡：`src/App.tsx` 内部函数 `Bubble`，通过 `channel !== "wechat"` 走通用手绘气泡分支。
-- 状态：`src/store.ts` 的 `chatSessions`、`openChat`、`addMessage`、`deleteMessage`、`toggleMessageFavorite`、`recallMessage` 均以 `channel: "wechat" | "qq"` 复用。
+- 功能分发：`src/App.tsx` 的 `FeatureScreen` 渲染 `src/apps/qq/QQScreen.tsx`。
+- QQ 外壳：`src/apps/qq/QQScreen.tsx`，只负责当前页签、个人主页状态和底部导航。
+- QQ 顶栏：`src/apps/qq/QQHeader.tsx`，读取 `userName/userAvatar`，显示玩家头像、昵称和“手机在线”状态。
+- QQ 消息页：`src/apps/qq/messages/QQMessages.tsx`。
+- QQ 联系人页：`src/apps/qq/contacts/QQContacts.tsx`。
+- QQ 群聊页块：`src/apps/qq/contacts/QQGroups.tsx`。
+- QQ 群资料页：`src/apps/qq/contacts/QQGroupProfile.tsx`。
+- QQ 设备页块：`src/apps/qq/contacts/QQDevices.tsx`。
+- QQ 通讯录页块：`src/apps/qq/contacts/QQPhonebook.tsx`。
+- QQ 频道页：`src/apps/qq/channels/QQChannels.tsx`，频道逻辑在 `src/apps/qq/channels/qqChannelsLogic.ts`。
+- QQ 动态页：`src/apps/qq/dynamic/QQDynamic.tsx`，空间动态逻辑在 `src/apps/qq/dynamic/qqDynamicLogic.ts`。
+- QQ 个人主页：`src/apps/qq/contacts/QQProfile.tsx`。
+- QQ 首页逻辑：`src/apps/qq/qqLogic.ts`，负责消息列表行、QQ 页签、联系人主页、群资料、设备和通讯录摘要。
+- QQ 逻辑测试：`src/apps/qq/qqLogic.test.ts`。
 
-结论：QQ 不是独立 App，也不是独立聊天实现；它现在基本是“QQ 入口 + 通用 ChatList/ChatScreen 的 qq channel”。后续拆分时不要复制微信整套页面、AI、通讯录、发现、我页代码。
+## 当前行为
 
-## 最小拆到 `src/apps/qq/` 方案
+- “消息”页读取全局 `characters`、`groupChats` 和 `chatSessions`，只把 `channel === "qq"` 的会话当作 QQ 最近聊天。
+- 点击好友消息行会调用 `openChat(characterId, "qq")`，点击群聊消息行会调用 `openChat(groupId, "qq")`，进入共享聊天房间。
+- 群聊会显示在 QQ 消息首页；点群头像或群名会进入群资料页。
+- QQ 消息行支持长按或右键菜单，菜单里可以置顶或取消置顶聊天。
+- 点击消息行或联系人里的头像，会进入 QQ 个人主页。
+- QQ 个人主页里的“发消息”会调用 `openChat(characterId, "qq")`；语音通话和视频通话会先建立 QQ 会话再进入通话界面。
+- QQ 顶栏头像跟随 User 信息里的 `userAvatar`，昵称跟随 `userName`。
+- “联系人”页展示已导入角色；导入角色卡后会自动出现在 QQ 联系人里。
+- 不再内置默认角色卡；用户导入过的角色卡不会被自动删除，也不会改 API/DeepSeek 配置。
+- “联系人”里的群聊已经支持创建、改名、解散和打开 QQ 群聊。
+- 点击群聊头像或群名会进入群资料页，可以保存群公告、管理成员、修改群名或解散群。
+- 设备和通讯录页已经有独立入口卡片，后续可继续接真实文件助手和手机通讯录数据。
+- “频道”已经有真实消息流：默认频道、关注/取消关注、频道消息发送和频道消息预览都会保存。
+- “动态”已经有 QQ 空间说说：支持发表文字动态、配图、点赞/取消点赞、评论和删除自己的动态。
+- QQ 空间配图会优先尝试全局生图配置；生图不可用或失败时，会自动生成本地 SVG 文字图片，不会阻断发动态。
 
-第一刀只建立 QQ 自己的薄入口，不迁移微信功能：
+## 四功能拆分
 
-- 新增 `src/apps/qq/QQApp.tsx`：导出 `QQApp`，只负责渲染 QQ 列表入口。
-- 从 `src/App.tsx` 搬出 `ChatList` 中与 `channel === "qq"` 有关的最小列表逻辑，改名为 `QQChatList` 或内置在 `QQApp`。
-- `QQApp` 继续使用 `useAppStore()` 读取 `characters`、`chatSessions`、`openChat`、`setScreen`，只筛选 `session.channel === "qq"`。
-- `src/App.tsx` 的 `FeatureScreen` 把 `screen === "qq"` 改为渲染 `<QQApp />`。
-- 可选新增 `src/apps/qq/qqTypes.ts`，只有在 QQ 后续出现专属状态或视图类型时再加。
+- 消息：`src/apps/qq/messages/`
+- 频道：`src/apps/qq/channels/`
+- 联系人：`src/apps/qq/contacts/`
+- 动态：`src/apps/qq/dynamic/`
 
-先保留在 `src/App.tsx`：
+拆分审计和后续清单见 `模块/QQ/拆分审计.md`。
 
-- `ChatScreen`：聊天房间仍由全局 `activeChannel` 驱动，避免一次性拆动 AI 回复、输入栏、图片、语音、表情、引用、收藏、撤回。
-- `Bubble`：QQ 当前只用非微信通用气泡分支，先不拆，避免连带搬走微信气泡和生活卡片。
-- `PendingChatDraft`、`describeChatMessage`、`requestChatCompletion`、`getCharacterPrompt`、`formatMessageTime`、`delay` 等聊天辅助函数：它们被多个模块共享或与 `ChatScreen` 紧耦合，先不搬。
-- `src/store.ts` 的聊天 actions：`wechat` 与 `qq` 当前共用 channel 模型，先不拆 store。
+## 聊天边界
 
-## 后续边界
+- QQ 聊天数据仍复用 `src/store.ts` 的 `chatSessions`，通过 `channel: "qq"` 与微信隔离。
+- QQ 聊天房间暂时复用 `src/apps/wechat/chat/ChatScreen.tsx` 的发送、AI 回复、图片、语音、表情、引用、收藏、撤回能力。
+- 共享聊天房间会按 `activeChannel === "qq"` 使用 QQ 专属提示词、QQ 软件预设和 QQ 日志文案；不再把 QQ API 回复要求写成微信气泡。
+- 不复制微信四页签、朋友圈、微信通讯录或微信生活卡片整套实现到 QQ。
+- 如果要做 QQ 专属语气、QQ 群、频道、空间动态或戳一戳，优先在 `src/apps/qq/` 内新增小模块，再按需要给共享聊天房间传轻量配置。
 
-- QQ 任务只改 `src/apps/qq/`、`src/App.tsx` 的 QQ 分发点、必要的 `src/store.ts` channel 字段和本 README。
-- 不要把 `src/apps/wechat/` 的四页签、朋友圈、联系人、微信 AI 生活卡片整套复制到 QQ。
-- 如果要做 QQ 空间、戳一戳、QQ 群或 QQ 专属 AI 语气，应先在 `src/apps/qq/` 内新增小模块，再按需要让 `ChatScreen` 接收轻量配置。
-- 真正接入 `src/apps/qq/` 后，同步 `PROJECT_OUTLINE.md` 的真实入口地图和 `docs/work-log.md`。
+## 维护规则
+
+- QQ 任务优先只改 `src/apps/qq/`、QQ 相关 `.qq-*` CSS、必要的共享聊天配置和本 README。视觉上优先跟随主题变量和小手机字体，不追求复刻官方 QQ。
+- 改 QQ 入口或行为时，同步 `PROJECT_OUTLINE.md` 和 `docs/work-log.md`。
+- 验证至少跑：
+  - `npx tsx src/apps/qq/qqLogic.test.ts`
+  - `npx tsx src/apps/appsStructure.test.ts`
+  - `npm run lint`
+
+## 2026-06-23 群资料补充
+
+- QQ 群资料页已补群文件、群相册、群通知、群名片四个区块。
+- 群文件、群相册、群通知和群名片跟随 `GroupChat` 持久化，不会写进角色卡。
+- 新增 `src/apps/qq/contacts/qqGroupProfileLogic.ts` 和测试，负责群共享资料的创建和摘要。
+- 已通过真实路径烟测：从 QQ 进入联系人、群聊、群资料，添加群文件、相册、通知并保存群名片。

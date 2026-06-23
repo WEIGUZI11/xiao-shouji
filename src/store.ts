@@ -1,6 +1,6 @@
 ﻿/**
  * Global Zustand store for the small phone prototype.
- * Exports/types: Character, ChatMessage, ChatSession, PhoneCallRecord, DiaryEntry, CalendarEvent, GalleryPhoto, LifeEvent, XiaohongshuNote, XiaohongshuProfile, CustomWidget, ThemeType, Screen, useAppStore.
+ * Exports/types: Character, ChatMessage, ChatSession, PhoneCallRecord, DiaryEntry, CalendarEvent, GalleryPhoto, LifeEvent, GeneratedImageRecord, XiaohongshuNote, XiaohongshuProfile, CustomWidget, ThemeType, Screen, useAppStore.
  * Store actions: addCharacter, updateCharacter, openChat, add/delete/favorite/recall message with optional speakerId,
  * phone call record add/update/delete/favorite helpers, theme/profile/photo/sticker/group/tag/order/API/chat-preset setters,
  * diary/calendar/gallery/memo/xiaohongshu/B站/life event/active event helpers, desktop layout/widget helpers, migration for persisted data and default diary cleanup.
@@ -11,16 +11,38 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { BilibiliSearchRecord, BilibiliVideoEntry } from './apps/bilibili/bilibiliTypes';
 import { createId } from './lib/utils';
-import { defaultImageGenerationConfig, type ImageGenerationConfig } from './lib/naiImage';
+import { defaultImageGenerationConfig, type GeneratedImageRecord, type ImageGenerationConfig } from './lib/naiImage';
 import { buildLifeEvent, normalizeLifeEvents, type LifeEvent, type LifeEventDraft } from './lifeEvents';
 import type { TheaterLengthKey, TheaterStyleKey, TheaterTopicDraft } from './apps/theater/theaterLogic';
 import { defaultUseruserWorldBookEntries } from './apps/theater/defaultUseruserWorldBook';
 import { markVoiceMessagePlayed as markVoiceMessagePlayedData } from './apps/wechat/chat/voiceUnread';
+import {
+  defaultUserProfile,
+  defaultUserProfilePresetId,
+  normalizeUserProfile,
+  type UserProfile,
+  type UserProfileCharacterBindings,
+  type UserProfilePreset,
+} from './apps/user-info/userProfilePrompt';
 import { defaultTtsConfig, type TtsConfig } from './tts';
 import { normalizeXiaohongshuNotes, normalizeXiaohongshuProfile } from './apps/xiaohongshu/xiaohongshuLogic';
 import type { XiaohongshuNote, XiaohongshuProfile } from './apps/xiaohongshu/types';
 import type { ThemeType } from './themes/themeOptions';
 import { cleanupCharacterReferences } from './storeCharacterCleanup';
+import { limitWechatMoments, normalizeMomentContent, removeWechatMomentAt } from './apps/wechat/moments/momentsLogic';
+import {
+  buildQqChannelMessage,
+  getDefaultQqChannels,
+  type QqChannelLike,
+  type QqChannelMessageLike,
+} from './apps/qq/channels/qqChannelsLogic';
+import {
+  buildQqDynamicPost,
+  toggleQqDynamicLikeIds,
+  withQqDynamicComment,
+  type QqDynamicCommentLike,
+  type QqDynamicPostLike,
+} from './apps/qq/dynamic/qqDynamicLogic';
 import {
   createDefaultAppPresets,
   mergeAppPresets,
@@ -30,10 +52,18 @@ import {
   type AppPresets,
   type GeminiPresetRole,
 } from './presets/softwarePresets';
+import { normalizeAppIconOverrides, updateAppIconOverride, type AppIconOverrides } from './shell/appIconOverrides';
+import { stripRemovedDefaultCharacters } from './removedDefaultCharacters';
 
 export type { XiaohongshuNote, XiaohongshuProfile } from './apps/xiaohongshu/types';
 export type { LifeEvent } from './lifeEvents';
+export type { GeneratedImageRecord } from './lib/naiImage';
+export type QqChannel = QqChannelLike;
+export type QqChannelMessage = QqChannelMessageLike;
+export type QqDynamicComment = QqDynamicCommentLike;
+export type QqDynamicPost = QqDynamicPostLike;
 export type { ThemeType } from './themes/themeOptions';
+export type PhoneFontStyle = 'rounded' | 'system' | 'serif' | 'pixel';
 import { starterStickerItems } from './apps/wechat/stickers/stickerPacks';
 
 const defaultAppPresets = createDefaultAppPresets();
@@ -81,6 +111,7 @@ export interface Character {
   personality: string;
   firstMessage: string;
   systemPrompt: string;
+  imagePromptTags?: string;
   worldBook?: unknown;
   wallpaper?: string;
 }
@@ -139,11 +170,43 @@ export interface StickerItem {
   favorite?: boolean;
 }
 
+export interface QqGroupFile {
+  id: string;
+  name: string;
+  uploaderId: string;
+  uploaderName: string;
+  sizeLabel: string;
+  createdAt: number;
+}
+
+export interface QqGroupPhoto {
+  id: string;
+  title: string;
+  sourceMemberId: string;
+  sourceMemberName: string;
+  url?: string;
+  createdAt: number;
+}
+
+export interface QqGroupNotice {
+  id: string;
+  content: string;
+  publisherId: string;
+  publisherName: string;
+  createdAt: number;
+  unread?: boolean;
+}
+
 export interface GroupChat {
   id: string;
   name: string;
   memberIds: string[];
   createdAt: number;
+  announcement?: string;
+  files?: QqGroupFile[];
+  photos?: QqGroupPhoto[];
+  notices?: QqGroupNotice[];
+  memberCards?: Record<string, string>;
 }
 
 export interface PurchaseRecord {
@@ -498,6 +561,7 @@ export type Screen =
   | 'qq'
   | 'chat'
   | 'phone'
+  | 'voice-call'
   | 'video'
   | 'diary'
   | 'peek'
@@ -514,6 +578,7 @@ export type Screen =
   | 'browser'
   | 'ai-context'
   | 'contacts'
+  | 'user-info'
   | 'settings'
   | 'themes'
   | 'presets'
@@ -524,25 +589,36 @@ export type Screen =
 interface AppState {
   characters: Character[];
   chatSessions: Record<string, ChatSession>;
+  pinnedChatIds: Record<string, number>;
   activeScreen: Screen;
   previousScreen: Screen;
   activeChatId: string | null;
   activeChannel: 'wechat' | 'qq';
   theme: ThemeType;
+  fontStyle: PhoneFontStyle;
   wallpaper: string | null;
   imageBed: string | null;
   userName: string;
   userAvatar: string | null;
+  userProfile: UserProfile;
+  userProfiles: UserProfilePreset[];
+  activeUserProfileId: string;
+  userProfileCharacterBindings: UserProfileCharacterBindings;
   wechatId: string;
   wechatStatus: string;
   wechatPhotos: string[];
   wechatMoments: string[];
   stickers: StickerItem[];
   groupChats: GroupChat[];
+  qqChannels: QqChannel[];
+  qqChannelMessages: QqChannelMessage[];
+  qqDynamicPosts: QqDynamicPost[];
   contactTags: Record<string, string[]>;
   purchaseRecords: PurchaseRecord[];
   lifeEvents: LifeEvent[];
   activeEventLastRefreshAt: number;
+  activeReminderAutomationEnabled: boolean;
+  randomProactiveMessagesEnabled: boolean;
   phoneCallRecords: PhoneCallRecord[];
   bilibiliEntries: BilibiliVideoEntry[];
   bilibiliSearches: BilibiliSearchRecord[];
@@ -594,6 +670,7 @@ interface AppState {
   musicSourceConfig: MusicSourceConfig;
   ttsConfig: TtsConfig;
   imageGenerationConfig: ImageGenerationConfig;
+  generatedImageRecords: GeneratedImageRecord[];
   communityVerificationConfig: CommunityVerificationConfig;
   appLogs: AppLogEntry[];
   presetName: string;
@@ -602,6 +679,7 @@ interface AppState {
   desktopPage: 0 | 1;
   layoutPositions: Record<string, LayoutPosition>;
   customWidgets: CustomWidget[];
+  appIconOverrides: AppIconOverrides;
 
   addCharacter: (character: Character) => void;
   updateCharacter: (id: string, updates: Partial<Character>) => void;
@@ -615,29 +693,46 @@ interface AppState {
   toggleMessageFavorite: (characterId: string, channel: 'wechat' | 'qq', messageId: string) => void;
   recallMessage: (characterId: string, channel: 'wechat' | 'qq', messageId: string) => void;
   markVoiceMessagePlayed: (characterId: string, channel: 'wechat' | 'qq', messageId: string, playedAt?: number) => void;
+  togglePinnedChat: (characterId: string, channel: 'wechat' | 'qq') => void;
   setTheme: (theme: ThemeType) => void;
+  setFontStyle: (fontStyle: PhoneFontStyle) => void;
   setWallpaper: (url: string | null) => void;
   setImageBed: (url: string | null) => void;
   setUserName: (name: string) => void;
   setUserAvatar: (url: string | null) => void;
+  setUserProfile: (updates: Partial<UserProfile>) => void;
+  addUserProfilePreset: () => string;
+  selectUserProfilePreset: (id: string) => void;
+  updateUserProfilePreset: (id: string, updates: { name?: string; profile?: Partial<UserProfile> }) => void;
+  deleteUserProfilePreset: (id: string) => void;
+  bindUserProfileToCharacter: (characterId: string, userProfileId: string | null) => void;
   setWechatId: (id: string) => void;
   setWechatStatus: (status: string) => void;
   addWechatPhoto: (url: string) => void;
   removeWechatPhoto: (url: string) => void;
   addWechatMoment: (content: string) => void;
+  deleteWechatMoment: (index: number) => void;
   addSticker: (url: string, label: string) => void;
   updateStickerLabel: (id: string, label: string) => void;
   deleteSticker: (id: string) => void;
   toggleStickerFavorite: (id: string) => void;
   addGroupChat: (name: string, memberIds: string[]) => void;
-  updateGroupChat: (id: string, updates: Partial<Pick<GroupChat, 'name' | 'memberIds'>>) => void;
+  updateGroupChat: (id: string, updates: Partial<Pick<GroupChat, 'name' | 'memberIds' | 'announcement' | 'files' | 'photos' | 'notices' | 'memberCards'>>) => void;
   deleteGroupChat: (id: string) => void;
+  toggleQqChannelFollow: (id: string) => void;
+  addQqChannelMessage: (message: Omit<QqChannelMessage, 'id'> & Partial<Pick<QqChannelMessage, 'id'>>) => string;
+  addQqDynamicPost: (post: Omit<QqDynamicPost, 'id' | 'likes' | 'comments'> & Partial<Pick<QqDynamicPost, 'id' | 'likes' | 'comments'>>) => string;
+  deleteQqDynamicPost: (id: string) => void;
+  toggleQqDynamicLike: (postId: string, userId?: string) => void;
+  addQqDynamicComment: (postId: string, comment: Omit<QqDynamicComment, 'id'> & Partial<Pick<QqDynamicComment, 'id'>>) => string;
   setContactTag: (characterId: string, tag: string) => void;
   addPurchaseRecord: (record: Omit<PurchaseRecord, 'id' | 'createdAt'>) => void;
   deletePurchaseRecord: (id: string) => void;
   addLifeEvent: (event: LifeEventDraft) => string;
   deleteLifeEvent: (id: string) => void;
   setActiveEventLastRefreshAt: (time: number) => void;
+  setActiveReminderAutomationEnabled: (enabled: boolean) => void;
+  setRandomProactiveMessagesEnabled: (enabled: boolean) => void;
   addPhoneCallRecord: (record: Omit<PhoneCallRecord, 'id'> & Partial<Pick<PhoneCallRecord, 'id'>>) => string;
   updatePhoneCallRecord: (id: string, updates: Partial<Omit<PhoneCallRecord, 'id'>>) => void;
   deletePhoneCallRecord: (id: string) => void;
@@ -717,6 +812,7 @@ interface AppState {
   setMusicSourceConfig: (updates: Partial<MusicSourceConfig>) => void;
   setTtsConfig: (updates: Partial<TtsConfig>) => void;
   setImageGenerationConfig: (updates: Partial<ImageGenerationConfig>) => void;
+  recordGeneratedImage: (record: GeneratedImageRecord) => string;
   setCommunityVerificationConfig: (updates: Partial<CommunityVerificationConfig>) => void;
   playMusicTrack: (trackId: string, record?: Partial<Omit<MusicListenRecord, 'id' | 'trackId' | 'createdAt'>>) => void;
   addMusicListenRecord: (record: Omit<MusicListenRecord, 'id' | 'createdAt'> & Partial<Pick<MusicListenRecord, 'id' | 'createdAt'>>) => string;
@@ -731,10 +827,92 @@ interface AppState {
   addCustomWidget: (page: 0 | 1, type: CustomWidget['type']) => void;
   updateCustomWidget: (id: string, updates: Partial<CustomWidget>) => void;
   removeCustomWidget: (id: string) => void;
+  setAppIconOverride: (screen: Screen, iconUrl: string) => void;
+  clearAppIconOverride: (screen: Screen) => void;
 }
 
 const sessionKey = (characterId: string, channel: 'wechat' | 'qq') => `${channel}:${characterId}`;
+
+function removePinnedChatIds(pinnedChatIds: Record<string, number> | undefined, targetIds: string[]) {
+  const targets = new Set(targetIds);
+  return Object.fromEntries(
+    Object.entries(pinnedChatIds || {}).filter(([key]) => {
+      const [, targetId] = key.split(':');
+      return !targets.has(targetId);
+    }),
+  );
+}
 const legacyWechatStatuses = new Set(['怎么就发生了这种事']);
+
+function buildUserProfilePreset(name: string, profile: Partial<UserProfile> | undefined, id = defaultUserProfilePresetId): UserProfilePreset {
+  return {
+    id,
+    name: String(name || '').trim() || '我',
+    profile: normalizeUserProfile(profile),
+    updatedAt: Date.now(),
+  };
+}
+
+function normalizeUserProfilePresets(
+  presets: unknown,
+  userName: string,
+  userProfile: Partial<UserProfile> | undefined,
+  activeId?: string,
+) {
+  const source = Array.isArray(presets) ? presets : [];
+  const normalized = source
+    .map((item) => {
+      if (!item || typeof item !== 'object') return null;
+      const preset = item as Partial<UserProfilePreset>;
+      const id = String(preset.id || '').trim();
+      if (!id) return null;
+      return buildUserProfilePreset(preset.name || userName, preset.profile, id);
+    })
+    .filter((item): item is UserProfilePreset => Boolean(item));
+
+  if (normalized.length === 0) normalized.push(buildUserProfilePreset(userName, userProfile));
+  const nextActiveId = activeId && normalized.some((preset) => preset.id === activeId) ? activeId : normalized[0].id;
+  return { presets: normalized, activeId: nextActiveId };
+}
+
+function syncActiveUserProfilePreset(
+  presets: UserProfilePreset[],
+  activeId: string,
+  updates: { name?: string; profile?: Partial<UserProfile> },
+) {
+  return presets.map((preset) =>
+    preset.id === activeId
+      ? {
+          ...preset,
+          name: updates.name ?? preset.name,
+          profile: updates.profile ? normalizeUserProfile({ ...preset.profile, ...updates.profile }) : preset.profile,
+          updatedAt: Date.now(),
+        }
+      : preset,
+  );
+}
+
+function normalizeUserProfileCharacterBindings(
+  bindings: unknown,
+  profiles: UserProfilePreset[],
+): UserProfileCharacterBindings {
+  if (!bindings || typeof bindings !== 'object') return {};
+  const validProfileIds = new Set(profiles.map((profile) => profile.id));
+  return Object.fromEntries(
+    Object.entries(bindings as Record<string, unknown>)
+      .map(([characterId, userProfileId]) => [characterId.trim(), String(userProfileId || '').trim()] as const)
+      .filter(([characterId, userProfileId]) => characterId && validProfileIds.has(userProfileId)),
+  );
+}
+
+function removeUserProfileBindingsForPreset(
+  bindings: UserProfileCharacterBindings,
+  userProfileId: string,
+): UserProfileCharacterBindings {
+  return Object.fromEntries(
+    Object.entries(bindings).filter(([, boundUserProfileId]) => boundUserProfileId !== userProfileId),
+  );
+}
 
 const presetLegacyFields: Partial<Record<AppPresetKey, { name: keyof AppState; prompt: keyof AppState }>> = {
   wechat: { name: 'chatPresetName', prompt: 'chatPresetPrompt' },
@@ -764,6 +942,25 @@ function migratePresetName(saved: string | undefined, legacyName: string, nextNa
 
 function migratePresetPrompt(saved: string | undefined, legacyName: string, savedName: string | undefined, nextPrompt: string) {
   return !saved || !savedName || savedName === legacyName ? nextPrompt : saved;
+}
+
+const legacyDoubaoDefaultVoiceId = 'zh_female_cancan_uranus_bigtts';
+
+export function normalizeMigratedTtsConfig(ttsConfig: unknown): TtsConfig {
+  const candidate = ttsConfig && typeof ttsConfig === 'object' ? ttsConfig as Partial<TtsConfig> : {};
+  const provider = candidate.provider || 'browser';
+  const migratedVoiceId = provider === 'doubao' && candidate.voiceId === legacyDoubaoDefaultVoiceId
+    ? ''
+    : candidate.voiceId || defaultTtsConfig.voiceId;
+  return {
+    ...defaultTtsConfig,
+    ...candidate,
+    provider,
+    apiKey: candidate.apiKey || '',
+    appId: candidate.appId || '',
+    model: candidate.model || defaultTtsConfig.model,
+    voiceId: migratedVoiceId,
+  };
 }
 
 function normalizeChatSessions(chatSessions: unknown): Record<string, ChatSession> {
@@ -1271,25 +1468,36 @@ export const useAppStore = create<AppState>()(
     (set) => ({
       characters: [],
       chatSessions: {},
+      pinnedChatIds: {},
       activeScreen: 'desktop',
       previousScreen: 'desktop',
       activeChatId: null,
       activeChannel: 'wechat',
       theme: 'pastel',
+      fontStyle: 'rounded',
       wallpaper: null,
       imageBed: null,
       userName: '我',
       userAvatar: null,
+      userProfile: defaultUserProfile,
+      userProfiles: [buildUserProfilePreset('我', defaultUserProfile)],
+      activeUserProfileId: defaultUserProfilePresetId,
+      userProfileCharacterBindings: {},
       wechatId: '9142',
       wechatStatus: '',
       wechatPhotos: [],
       wechatMoments: [],
       stickers: defaultStickers,
       groupChats: [],
+      qqChannels: getDefaultQqChannels(),
+      qqChannelMessages: [],
+      qqDynamicPosts: [],
       contactTags: {},
       purchaseRecords: [],
       lifeEvents: [],
       activeEventLastRefreshAt: 0,
+      activeReminderAutomationEnabled: true,
+      randomProactiveMessagesEnabled: false,
       phoneCallRecords: [],
       bilibiliEntries: [],
       bilibiliSearches: [],
@@ -1346,6 +1554,7 @@ export const useAppStore = create<AppState>()(
       musicSourceConfig: defaultMusicSourceConfig,
       ttsConfig: defaultTtsConfig,
       imageGenerationConfig: defaultImageGenerationConfig,
+      generatedImageRecords: [],
       communityVerificationConfig: defaultCommunityVerificationConfig,
       appLogs: [],
       presetName: '手机沉浸破限预设',
@@ -1354,6 +1563,7 @@ export const useAppStore = create<AppState>()(
       desktopPage: 0,
       layoutPositions: {},
       customWidgets: [],
+      appIconOverrides: {},
 
       addCharacter: (character) =>
         set((state) => {
@@ -1366,6 +1576,7 @@ export const useAppStore = create<AppState>()(
             personality: character.personality || '',
             firstMessage: character.firstMessage || '',
             systemPrompt: character.systemPrompt || '',
+            imagePromptTags: character.imagePromptTags || '',
           };
           const exists = state.characters.some((item) => item.id === normalized.id);
           return {
@@ -1384,11 +1595,15 @@ export const useAppStore = create<AppState>()(
         set((state) => {
           const character = state.characters.find((item) => item.id === id);
           if (!character) return {};
-          return cleanupCharacterReferences({
+          const cleaned = cleanupCharacterReferences({
             characterId: id,
             characterName: character.name,
             state,
           });
+          return {
+            ...cleaned,
+            pinnedChatIds: removePinnedChatIds(cleaned.pinnedChatIds, [id]),
+          };
         }),
       setScreen: (screen) => set((state) => ({ previousScreen: state.activeScreen, activeScreen: screen })),
       goBack: () =>
@@ -1551,17 +1766,106 @@ export const useAppStore = create<AppState>()(
           };
         }),
       setTheme: (theme) => set({ theme }),
+      setFontStyle: (fontStyle) => set({ fontStyle }),
       setWallpaper: (url) => set({ wallpaper: url }),
       setImageBed: (url) => set({ imageBed: url }),
-      setUserName: (name) => set({ userName: name }),
+      setUserName: (name) =>
+        set((state) => ({
+          userName: name,
+          userProfiles: syncActiveUserProfilePreset(state.userProfiles, state.activeUserProfileId, { name }),
+        })),
       setUserAvatar: (url) => set({ userAvatar: url }),
+      setUserProfile: (updates) =>
+        set((state) => {
+          const userProfile = normalizeUserProfile({ ...state.userProfile, ...updates });
+          return {
+            userProfile,
+            userProfiles: syncActiveUserProfilePreset(state.userProfiles, state.activeUserProfileId, { profile: userProfile }),
+          };
+        }),
+      addUserProfilePreset: () => {
+        const id = createId('user');
+        set((state) => ({
+          userProfiles: [
+            ...state.userProfiles,
+            buildUserProfilePreset(`玩家${state.userProfiles.length + 1}`, defaultUserProfile, id),
+          ],
+        }));
+        return id;
+      },
+      selectUserProfilePreset: (id) =>
+        set((state) => {
+          const preset = state.userProfiles.find((item) => item.id === id);
+          if (!preset) return {};
+          return {
+            activeUserProfileId: preset.id,
+            userName: preset.name,
+            userProfile: normalizeUserProfile(preset.profile),
+          };
+        }),
+      updateUserProfilePreset: (id, updates) =>
+        set((state) => {
+          const nextProfiles = state.userProfiles.map((preset) =>
+            preset.id === id
+              ? {
+                  ...preset,
+                  name: updates.name ?? preset.name,
+                  profile: updates.profile ? normalizeUserProfile({ ...preset.profile, ...updates.profile }) : preset.profile,
+                  updatedAt: Date.now(),
+                }
+              : preset,
+          );
+          const active = nextProfiles.find((preset) => preset.id === state.activeUserProfileId);
+          return {
+            userProfiles: nextProfiles,
+            ...(id === state.activeUserProfileId && active
+              ? { userName: active.name, userProfile: normalizeUserProfile(active.profile) }
+              : {}),
+          };
+        }),
+      deleteUserProfilePreset: (id) =>
+        set((state) => {
+          if (state.userProfiles.length <= 1) return {};
+          const remaining = state.userProfiles.filter((preset) => preset.id !== id);
+          const nextActive = remaining.find((preset) => preset.id === state.activeUserProfileId) || remaining[0];
+          return {
+            userProfiles: remaining,
+            activeUserProfileId: nextActive.id,
+            userName: nextActive.name,
+            userProfile: normalizeUserProfile(nextActive.profile),
+            userProfileCharacterBindings: removeUserProfileBindingsForPreset(state.userProfileCharacterBindings, id),
+          };
+        }),
+      bindUserProfileToCharacter: (characterId, userProfileId) =>
+        set((state) => {
+          const safeCharacterId = characterId.trim();
+          if (!safeCharacterId) return {};
+          const nextBindings = { ...state.userProfileCharacterBindings };
+          const validProfile = userProfileId
+            ? state.userProfiles.some((profile) => profile.id === userProfileId)
+            : false;
+          if (userProfileId && validProfile) {
+            nextBindings[safeCharacterId] = userProfileId;
+          } else {
+            delete nextBindings[safeCharacterId];
+          }
+          return { userProfileCharacterBindings: nextBindings };
+        }),
       setWechatId: (id) => set({ wechatId: id }),
       setWechatStatus: (status) => set({ wechatStatus: status }),
       addWechatPhoto: (url) => set((state) => ({ wechatPhotos: [url, ...state.wechatPhotos].slice(0, 18) })),
       removeWechatPhoto: (url) => set((state) => ({ wechatPhotos: state.wechatPhotos.filter((photo) => photo !== url) })),
       addWechatMoment: (content) =>
+        set((state) => {
+          const normalized = normalizeMomentContent(content);
+          if (!normalized) return {};
+          return {
+            wechatMoments: limitWechatMoments([normalized, ...state.wechatMoments]),
+          };
+        }),
+      deleteWechatMoment: (index) =>
         set((state) => ({
-          wechatMoments: [content, ...state.wechatMoments].slice(0, 20),
+          wechatMoments: removeWechatMomentAt(state.wechatMoments, index),
         })),
       addSticker: (url, label) =>
         set((state) => ({
@@ -1589,6 +1893,11 @@ export const useAppStore = create<AppState>()(
               name: name.trim() || '新的群聊',
               memberIds,
               createdAt: Date.now(),
+              announcement: '',
+              files: [],
+              photos: [],
+              notices: [],
+              memberCards: {},
             },
             ...state.groupChats,
           ],
@@ -1601,6 +1910,11 @@ export const useAppStore = create<AppState>()(
                   ...group,
                   name: updates.name?.trim() || group.name,
                   memberIds: updates.memberIds || group.memberIds,
+                  announcement: typeof updates.announcement === 'string' ? updates.announcement.trim() : group.announcement,
+                  files: updates.files || group.files,
+                  photos: updates.photos || group.photos,
+                  notices: updates.notices || group.notices,
+                  memberCards: updates.memberCards || group.memberCards,
                 }
               : group,
           ),
@@ -1608,10 +1922,111 @@ export const useAppStore = create<AppState>()(
       deleteGroupChat: (id) =>
         set((state) => ({
           groupChats: state.groupChats.filter((group) => group.id !== id),
+          pinnedChatIds: removePinnedChatIds(state.pinnedChatIds, [id]),
           chatSessions: Object.fromEntries(
-            Object.entries(state.chatSessions).filter(([key]) => key !== sessionKey(id, 'wechat')),
+            Object.entries(state.chatSessions).filter(([key]) => key !== sessionKey(id, 'wechat') && key !== sessionKey(id, 'qq')),
           ),
         })),
+      toggleQqChannelFollow: (id) =>
+        set((state) => ({
+          qqChannels: state.qqChannels.map((channel) =>
+            channel.id === id ? { ...channel, followed: !channel.followed } : channel,
+          ),
+        })),
+      addQqChannelMessage: (message) => {
+        let messageId = '';
+        set((state) => {
+          const content = message.content.trim();
+          if (!content && !message.imageUrl) return {};
+          messageId = message.id || createId('qq-channel-message');
+          const authorName = message.authorName.trim() || state.userName.trim() || '我';
+          return {
+            qqChannelMessages: [
+              buildQqChannelMessage({
+                ...message,
+                id: messageId,
+                content,
+                authorId: message.authorId || 'user',
+                authorName,
+                authorAvatar: message.authorAvatar || (message.authorId === 'user' ? state.userAvatar || undefined : message.authorAvatar),
+                createdAt: Number.isFinite(message.createdAt) ? message.createdAt : Date.now(),
+              }),
+              ...state.qqChannelMessages,
+            ].slice(0, 300),
+          };
+        });
+        return messageId;
+      },
+      addQqDynamicPost: (post) => {
+        let postId = '';
+        set((state) => {
+          const content = post.content.trim();
+          if (!content && !post.imageUrl) return {};
+          postId = post.id || createId('qq-dynamic');
+          const authorName = post.authorName.trim() || state.userName.trim() || '我';
+          return {
+            qqDynamicPosts: [
+              buildQqDynamicPost({
+                ...post,
+                id: postId,
+                content,
+                authorId: post.authorId || 'user',
+                authorName,
+                authorAvatar: post.authorAvatar || (post.authorId === 'user' ? state.userAvatar || undefined : post.authorAvatar),
+                createdAt: Number.isFinite(post.createdAt) ? post.createdAt : Date.now(),
+              }),
+              ...state.qqDynamicPosts,
+            ].slice(0, 120),
+          };
+        });
+        return postId;
+      },
+      deleteQqDynamicPost: (id) =>
+        set((state) => ({
+          qqDynamicPosts: state.qqDynamicPosts.filter((post) => post.id !== id),
+        })),
+      toggleQqDynamicLike: (postId, userId = 'user') =>
+        set((state) => ({
+          qqDynamicPosts: state.qqDynamicPosts.map((post) =>
+            post.id === postId ? { ...post, likes: toggleQqDynamicLikeIds(post.likes, userId) } : post,
+          ),
+        })),
+      addQqDynamicComment: (postId, comment) => {
+        let commentId = '';
+        set((state) => {
+          const content = comment.content.trim();
+          if (!content) return {};
+          commentId = comment.id || createId('qq-dynamic-comment');
+          const authorName = comment.authorName.trim() || state.userName.trim() || '我';
+          return {
+            qqDynamicPosts: state.qqDynamicPosts.map((post) =>
+              post.id === postId
+                ? withQqDynamicComment(post, {
+                    ...comment,
+                    id: commentId,
+                    content,
+                    authorId: comment.authorId || 'user',
+                    authorName,
+                    authorAvatar: comment.authorAvatar || (comment.authorId === 'user' ? state.userAvatar || undefined : comment.authorAvatar),
+                    createdAt: Number.isFinite(comment.createdAt) ? comment.createdAt : Date.now(),
+                  })
+                : post,
+            ),
+          };
+        });
+        return commentId;
+      },
+      togglePinnedChat: (characterId, channel) =>
+        set((state) => {
+          const key = sessionKey(characterId, channel);
+          const pinnedChatIds = { ...state.pinnedChatIds };
+          if (pinnedChatIds[key]) {
+            delete pinnedChatIds[key];
+          } else {
+            pinnedChatIds[key] = Date.now();
+          }
+          return { pinnedChatIds };
+        }),
       setContactTag: (characterId, tag) =>
         set((state) => {
           const tags = tag
@@ -1655,6 +2070,8 @@ export const useAppStore = create<AppState>()(
           lifeEvents: state.lifeEvents.filter((event) => event.id !== id),
         })),
       setActiveEventLastRefreshAt: (time) => set({ activeEventLastRefreshAt: Number.isFinite(time) ? time : 0 }),
+      setActiveReminderAutomationEnabled: (enabled) => set({ activeReminderAutomationEnabled: Boolean(enabled) }),
+      setRandomProactiveMessagesEnabled: (enabled) => set({ randomProactiveMessagesEnabled: Boolean(enabled) }),
       addPhoneCallRecord: (record) => {
         const id = record.id || createId('call');
         set((state) => ({
@@ -2584,6 +3001,23 @@ export const useAppStore = create<AppState>()(
             ...updates,
           },
         })),
+      recordGeneratedImage: (record) => {
+        const imageId = record.imageId || createId('image');
+        set((state) => ({
+          generatedImageRecords: [
+            {
+              ...record,
+              imageId,
+              createdAt: Number.isFinite(record.createdAt) ? record.createdAt : Date.now(),
+              width: Math.max(1, Math.round(record.width || state.imageGenerationConfig.width || defaultImageGenerationConfig.width)),
+              height: Math.max(1, Math.round(record.height || state.imageGenerationConfig.height || defaultImageGenerationConfig.height)),
+              model: record.model || state.imageGenerationConfig.model || defaultImageGenerationConfig.model,
+            },
+            ...(state.generatedImageRecords || []),
+          ].slice(0, 300),
+        }));
+        return imageId;
+      },
       setCommunityVerificationConfig: (updates) =>
         set((state) => ({
           communityVerificationConfig: {
@@ -2700,10 +3134,18 @@ export const useAppStore = create<AppState>()(
         set((state) => ({
           customWidgets: state.customWidgets.filter((widget) => widget.id !== id),
         })),
+      setAppIconOverride: (screen, iconUrl) =>
+        set((state) => ({
+          appIconOverrides: updateAppIconOverride(state.appIconOverrides, screen, iconUrl),
+        })),
+      clearAppIconOverride: (screen) =>
+        set((state) => ({
+          appIconOverrides: updateAppIconOverride(state.appIconOverrides, screen, null),
+        })),
     }),
     {
       name: 'char-phone-framework',
-        version: 51,
+        version: 62,
       migrate: (persistedState) => {
         const state = persistedState as Partial<AppState>;
         const persistedStickers = Array.isArray(state.stickers) ? state.stickers : [];
@@ -2782,25 +3224,50 @@ export const useAppStore = create<AppState>()(
           name: migratedPresetValues.musicName,
           prompt: migratedPresetValues.musicPrompt,
         };
+        const userPresetState = normalizeUserProfilePresets(
+          state.userProfiles,
+          state.userName || '我',
+          state.userProfile,
+          state.activeUserProfileId,
+        );
+        const activeUserPreset = userPresetState.presets.find((preset) => preset.id === userPresetState.activeId) || userPresetState.presets[0];
+        const userProfileCharacterBindings = normalizeUserProfileCharacterBindings(
+          state.userProfileCharacterBindings,
+          userPresetState.presets,
+        );
         return {
           ...state,
           activeScreen: 'desktop',
           previousScreen: 'desktop',
           activeChatId: null,
           chatSessions: normalizeChatSessions(state.chatSessions),
+          pinnedChatIds: state.pinnedChatIds && typeof state.pinnedChatIds === 'object' && !Array.isArray(state.pinnedChatIds) ? state.pinnedChatIds : {},
           theme: state.theme || 'pastel',
+          fontStyle: state.fontStyle === 'system' || state.fontStyle === 'serif' || state.fontStyle === 'pixel' ? state.fontStyle : 'rounded',
           layoutPositions: {},
           desktopPage: 0,
+          appIconOverrides: normalizeAppIconOverrides(state.appIconOverrides),
           wechatId: !state.wechatId || state.wechatId === 'Muon0417' ? '9142' : state.wechatId,
+          userName: activeUserPreset.name,
+          userProfile: normalizeUserProfile(activeUserPreset.profile),
+          userProfiles: userPresetState.presets,
+          activeUserProfileId: userPresetState.activeId,
+          userProfileCharacterBindings,
           wechatStatus: state.wechatStatus && !legacyWechatStatuses.has(state.wechatStatus) ? state.wechatStatus : '',
           wechatPhotos: state.wechatPhotos || [],
           wechatMoments: state.wechatMoments || [],
           stickers: stickersWithStarters,
+          characters: stripRemovedDefaultCharacters(state.characters),
           groupChats: state.groupChats || [],
+          qqChannels: Array.isArray(state.qqChannels) && state.qqChannels.length > 0 ? state.qqChannels : getDefaultQqChannels(),
+          qqChannelMessages: Array.isArray(state.qqChannelMessages) ? state.qqChannelMessages : [],
+          qqDynamicPosts: Array.isArray(state.qqDynamicPosts) ? state.qqDynamicPosts : [],
           contactTags: state.contactTags || {},
           purchaseRecords: state.purchaseRecords || [],
           lifeEvents: normalizeLifeEvents(state.lifeEvents),
           activeEventLastRefreshAt: typeof state.activeEventLastRefreshAt === 'number' ? state.activeEventLastRefreshAt : 0,
+          activeReminderAutomationEnabled: typeof state.activeReminderAutomationEnabled === 'boolean' ? state.activeReminderAutomationEnabled : true,
+          randomProactiveMessagesEnabled: typeof state.randomProactiveMessagesEnabled === 'boolean' ? state.randomProactiveMessagesEnabled : false,
           phoneCallRecords,
           bilibiliEntries: Array.isArray(state.bilibiliEntries) ? state.bilibiliEntries : [],
           bilibiliSearches: Array.isArray(state.bilibiliSearches) ? state.bilibiliSearches : [],
@@ -2862,18 +3329,18 @@ export const useAppStore = create<AppState>()(
             ...defaultMusicSourceConfig,
             ...(state.musicSourceConfig && typeof state.musicSourceConfig === 'object' ? state.musicSourceConfig : {}),
           },
-          ttsConfig: {
-            ...defaultTtsConfig,
-            ...(state.ttsConfig && typeof state.ttsConfig === 'object' ? state.ttsConfig : {}),
-            provider: (state.ttsConfig as Partial<TtsConfig> | undefined)?.provider || 'browser',
-            apiKey: (state.ttsConfig as Partial<TtsConfig> | undefined)?.apiKey || '',
-            model: (state.ttsConfig as Partial<TtsConfig> | undefined)?.model || defaultTtsConfig.model,
-            voiceId: (state.ttsConfig as Partial<TtsConfig> | undefined)?.voiceId || defaultTtsConfig.voiceId,
-          },
+          ttsConfig: normalizeMigratedTtsConfig(state.ttsConfig),
           imageGenerationConfig: {
             ...defaultImageGenerationConfig,
             ...(state.imageGenerationConfig && typeof state.imageGenerationConfig === 'object' ? state.imageGenerationConfig : {}),
+            baseUrl:
+              typeof state.imageGenerationConfig?.baseUrl === 'string'
+              && state.imageGenerationConfig.baseUrl.trim()
+              && state.imageGenerationConfig.baseUrl.trim() !== 'https://image.novelai.net/ai/generate-image'
+                ? state.imageGenerationConfig.baseUrl
+                : defaultImageGenerationConfig.baseUrl,
           },
+          generatedImageRecords: Array.isArray(state.generatedImageRecords) ? state.generatedImageRecords : [],
           communityVerificationConfig: {
             ...defaultCommunityVerificationConfig,
             ...(state.communityVerificationConfig && typeof state.communityVerificationConfig === 'object' ? state.communityVerificationConfig : {}),

@@ -1,126 +1,64 @@
 ﻿/**
  * Small phone app shell and current production UI.
- * Main functions/components: App, LockScreen, NotificationCenter, AppErrorBoundary, Desktop, FeatureScreen, XiaohongshuApp, BilibiliScreen, WeChatApp,
- * WeChatApp, ChatScreen, Bubble, repairMojibake,
+ * Main functions/components: App, AppErrorBoundary, Desktop,
+ * ChatScreen, Bubble, repairMojibake,
  * fetchModelList, requestChatCompletion, describeChatMessage, getCharacterPrompt,
  * delay, formatMessageTime, clampNumber,
  * CalendarScreen, ContactsScreen, SettingsScreen, ThemesScreen, VideoCallScreen.
  * State dependencies: useAppStore from src/store.ts; Character/Screen/CalendarEvent/GalleryPhoto types.
- * Utility dependencies: pageApps/dockApps from src/shell/appCatalog.tsx, PhoneScreen from src/apps/phone/PhoneScreen.tsx, GalleryScreen from src/apps/gallery/GalleryScreen.tsx, BilibiliScreen from src/apps/bilibili/BilibiliScreen.tsx, MusicScreen from src/apps/music/MusicScreen.tsx, speakWithConfiguredTts from src/tts.ts, parseCharacterCard from src/lib/charaParser.ts, cn/createId from src/lib/utils.ts.
+ * Utility dependencies: Desktop/FeatureRouter/LockScreen/NotificationCenter from src/shell/, speakWithConfiguredTts from src/tts.ts, parseCharacterCard from src/lib/charaParser.ts, cn/createId from src/lib/utils.ts.
  * Styling dependencies: src/index.css owns base shell styles; full new theme visuals live in src/themes/.
- * Maintenance note: this file is still the active UI entry; src/pages/* are placeholders until routed in.
+ * Maintenance note: this file is still the active shell entry; feature screens live under src/apps/ and are routed by FeatureRouter.
  */
 import {
   Bell,
-  BellRing,
-  BookOpen,
-  Bot,
   CalendarDays,
-  Camera,
-  Check,
   ChevronLeft,
-  ChevronRight,
-  CircleUserRound,
-  Clock,
-  Clapperboard,
-  Compass,
-  Copy,
-  Droplets,
   FileText,
-  Gift,
-  Grid2X2,
-  Heart,
-  Headphones,
-  Image as ImageIcon,
   ImagePlus,
   Import,
-  KeyRound,
-  Link,
-  LockKeyhole,
-  MapPin,
   MessageCircle,
-  Mic,
-  MoreHorizontal,
-  Music,
   Pause,
-  Palette,
   Phone,
-  Play,
-  Plus,
-  Quote,
   RefreshCw,
-  Search,
   Send,
-  Settings,
   Shield,
   ShoppingBag,
-  Shuffle,
-  SkipBack,
-  SkipForward,
   SmilePlus,
-  Sparkles,
-  Star,
-  Tag,
-  Trash2,
   Undo2,
-  Unlock,
   Users,
-  UserPlus,
-  Video,
-  Volume2,
-  Wand2,
-  Zap,
 } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import { parseCharacterCard } from './lib/charaParser';
-import { PhoneScreen } from './apps/phone/PhoneScreen';
+import { buildHttpErrorMessage, readHttpErrorDetail } from './lib/httpErrors';
 import { speakWithConfiguredTts } from './tts';
-import { BrowserSearchResult, CalendarEvent, Character, ChatMessage, CustomWidget, DiaryEntry, GalleryPhoto, LayoutMode, MemoEntry, MemoEntryColor, MemoEntryType, MusicPlaylist, MusicTrack, Screen, StickerItem, TheaterScene, TheaterWorldBookEntry, useAppStore } from './store';
+import { BrowserSearchResult, CalendarEvent, Character, ChatMessage, DiaryEntry, GalleryPhoto, MemoEntry, MemoEntryColor, MemoEntryType, MusicPlaylist, MusicTrack, Screen, StickerItem, TheaterScene, TheaterWorldBookEntry, useAppStore } from './store';
 import { cn, createId } from './lib/utils';
-import { BilibiliScreen } from './apps/bilibili/BilibiliScreen';
-import { BrowserScreen } from './apps/browser/BrowserScreen';
-import { CalendarScreen } from './apps/calendar/CalendarScreen';
-import { DiaryScreen } from './apps/diary/DiaryScreen';
-import { PeekScreen } from './apps/diary/PeekScreen';
-import { MemoScreen } from './apps/memo/MemoScreen';
-import { MusicScreen } from './apps/music/MusicScreen';
-import { QQScreen } from './apps/qq/QQScreen';
-import { SettingsScreen } from './apps/settings/SettingsScreen';
-import { ThemesScreen } from './apps/themes/ThemesScreen';
-import { PresetsScreen } from './apps/presets/PresetsScreen';
-import { LogsScreen } from './apps/logs/LogsScreen';
-import { AIContextScreen } from './apps/ai-context/AIContextScreen';
-import { ActiveEventsScreen } from './apps/active-events/ActiveEventsScreen';
-import { ContactsScreen } from './apps/contacts/ContactsScreen';
-import { TheaterScreen } from './apps/theater/TheaterScreen';
-import { VideoCallScreen } from './apps/video/VideoCallScreen';
+import { buildRuntimeErrorLog } from './lib/runtimeErrorLog';
 import { ChatScreen } from './apps/wechat/chat/ChatScreen';
-import { WeChatApp } from './apps/wechat/WeChatApp';
-import { XiaohongshuApp } from './apps/xiaohongshu/XiaohongshuApp';
-import { GalleryScreen } from './apps/gallery/GalleryScreen';
 import { buildXiaohongshuContext } from './apps/xiaohongshu/xiaohongshuLogic';
 import type { XiaohongshuNote } from './apps/xiaohongshu/types';
-import { dockApps, pageApps } from './shell/appCatalog';
+import { Desktop } from './shell/Desktop';
+import { FeatureRouter } from './shell/FeatureRouter';
+import { GlobalMusicAudio } from './shell/GlobalMusicAudio';
+import { LockScreen } from './shell/LockScreen';
+import { NotificationCenter } from './shell/NotificationCenter';
 import { buildShellNotifications, getShellNotificationBadges, type ShellNotification } from './shell/notifications';
-import { buildWeChatSystemPrompt, fallbackWeChatReply, parseWeChatReplyParts } from './apps/wechat/ai/wechatAi';
+import { buildWeChatSystemPrompt, parseWeChatReplyParts } from './apps/wechat/ai/wechatAi';
 import type { WeChatAiParsedPart } from './apps/wechat/ai/wechatAiMessages';
+import { buildDueProactiveReminderWrites, buildRandomProactiveMessageWrites } from './apps/active-events/activeEventsLogic';
+import {
+  ackBackendProactiveReminderOutbox,
+  buildReminderMessageFromOutbox,
+  fetchBackendProactiveReminderOutbox,
+  getProactiveReminderClientId,
+  installNativePushTokenBridge,
+} from './apps/active-events/proactiveReminderClient';
 import { WeChatChats } from './apps/wechat/chats/WeChatChats';
 import { WeChatContacts } from './apps/wechat/contacts/WeChatContacts';
 import { WeChatDiscover } from './apps/wechat/discover/WeChatDiscover';
 import { WeChatMe } from './apps/wechat/me/WeChatMe';
 import { WeChatAvatar } from './apps/wechat/shared/WeChatShared';
-
-const gothicDesktopPositions: Record<string, { x: number; y: number }> = {
-  wechat: { x: 24, y: 72 },
-  qq: { x: 108, y: 72 },
-  gallery: { x: 24, y: 172 },
-  calendar: { x: 108, y: 172 },
-  diary: { x: 38, y: 382 },
-  memo: { x: 132, y: 382 },
-  peek: { x: 226, y: 382 },
-  'image-bed': { x: 198, y: 86 },
-  'time-card': { x: 12, y: 270 },
-};
 
 const presetCards = [
   ['手机沉浸破限预设', '允许模拟微信、QQ、电话、日记、查手机等手机行为。'],
@@ -161,7 +99,13 @@ async function fetchModelList(baseUrl: string, apiKey: string) {
   const response = await fetch(endpoint, {
     headers: apiKey ? { Authorization: `Bearer ${apiKey}` } : undefined,
   });
-  if (!response.ok) throw new Error(`拉取模型失败：${response.status}`);
+  if (!response.ok) {
+    throw new Error(buildHttpErrorMessage('拉取模型失败', {
+      status: response.status,
+      statusText: response.statusText,
+      detail: await readHttpErrorDetail(response),
+    }));
+  }
   const data = await response.json();
   const models = Array.isArray(data?.data)
     ? data.data.map((item: { id?: string }) => item.id).filter(Boolean)
@@ -204,8 +148,13 @@ async function requestChatCompletion({
     }),
   });
   if (!response.ok) {
-    useAppStore.getState().addAppLog?.({ type: 'error', title: 'AI 接口失败', detail: `${endpoint}\n${response.status}` });
-    throw new Error(`聊天接口失败：${response.status}`);
+    const message = buildHttpErrorMessage('聊天接口失败', {
+      status: response.status,
+      statusText: response.statusText,
+      detail: await readHttpErrorDetail(response),
+    });
+    useAppStore.getState().addAppLog?.({ type: 'error', title: 'AI 接口失败', detail: `${endpoint}\n${message}` });
+    throw new Error(message);
   }
   const data = await response.json();
   const content = data?.choices?.[0]?.message?.content || '';
@@ -242,7 +191,13 @@ async function requestChatCompletionStream({
       stream: true,
     }),
   });
-  if (!response.ok) throw new Error(`聊天接口失败：${response.status}`);
+  if (!response.ok) {
+    throw new Error(buildHttpErrorMessage('聊天接口失败', {
+      status: response.status,
+      statusText: response.statusText,
+      detail: await readHttpErrorDetail(response),
+    }));
+  }
   if ((response.headers.get('content-type') || '').includes('application/json')) {
     const data = await response.json();
     const content = data?.choices?.[0]?.message?.content || '';
@@ -480,9 +435,136 @@ function useMemoCharWriterAutomation() {
   }, [memoCharWriter, characters, chatSessions, wechatMoments, purchaseRecords, diaries, calendarEvents, galleryPhotos, memos, apiBaseUrl, apiKey, selectedModel, chatTemperature, appPresets.memo.prompt, addMemoEntry, setMemoCharWriter]);
 }
 
+function useProactiveReminderAutomation() {
+  useEffect(() => {
+    let syncing = false;
+    const tick = async () => {
+      const state = useAppStore.getState();
+      const writes = buildDueProactiveReminderWrites({
+        calendarEvents: state.calendarEvents,
+        lifeEvents: state.lifeEvents,
+        characters: state.characters,
+        now: Date.now(),
+        enabled: state.activeReminderAutomationEnabled,
+      });
+      writes.forEach((write) => {
+        state.addMessage(write.chatTarget.characterId, write.chatTarget.channel, write.chatMessage);
+        state.addLifeEvent(write.lifeEvent);
+        state.addAppLog?.({
+          type: 'info',
+          title: '微信主动提醒已发送',
+          detail: `calendar_id=${write.calendarEventId}; character=${write.chatTarget.characterId}; message_id=${write.chatMessage.id}; source_id=${write.lifeEvent.sourceId}`,
+        });
+      });
+      if (syncing || !state.activeReminderAutomationEnabled) return;
+      syncing = true;
+      try {
+        const clientId = getProactiveReminderClientId();
+        const items = await fetchBackendProactiveReminderOutbox(clientId);
+        const latestState = useAppStore.getState();
+        for (const item of items) {
+          if (!item.characterId) {
+            await ackBackendProactiveReminderOutbox(item.id, clientId);
+            continue;
+          }
+          const sourceId = `active-reminder-${item.occurrenceKey}`;
+          if (latestState.lifeEvents.some((event) => event.sourceId === sourceId)) {
+            await ackBackendProactiveReminderOutbox(item.id, clientId);
+            latestState.addAppLog?.({
+              type: 'info',
+              title: '后端主动提醒已去重',
+              detail: `outbox_id=${item.id}; character=${item.characterId}; occurrence=${item.occurrenceKey}; source_id=${sourceId}`,
+            });
+            continue;
+          }
+          latestState.addMessage(item.characterId, item.channel, buildReminderMessageFromOutbox(item));
+          latestState.addLifeEvent({
+            id: `life-${item.id}`,
+            type: 'calendar',
+            app: 'wechat',
+            characterId: item.characterId,
+            title: `后端主动提醒：${item.task}`,
+            summary: item.content,
+            importance: 4,
+            sourceId,
+            readableByChar: true,
+            tags: ['主动提醒', '长期记忆', '后端常驻'],
+            createdAt: item.createdAt,
+          });
+          await ackBackendProactiveReminderOutbox(item.id, clientId);
+          latestState.addAppLog?.({
+            type: 'info',
+            title: '后端主动提醒已同步到微信',
+            detail: `outbox_id=${item.id}; character=${item.characterId}; occurrence=${item.occurrenceKey}`,
+          });
+        }
+      } catch (error) {
+        useAppStore.getState().addAppLog?.({
+          type: 'error',
+          title: '后端主动提醒同步失败',
+          detail: error instanceof Error ? error.message : String(error),
+        });
+      } finally {
+        syncing = false;
+      }
+    };
+    const timer = window.setInterval(tick, 30000);
+    void tick();
+    return () => window.clearInterval(timer);
+  }, []);
+}
+
+function useNativePushTokenRegistration() {
+  useEffect(() => installNativePushTokenBridge((result) => {
+    useAppStore.getState().addAppLog?.({
+      type: result.ok ? 'info' : 'error',
+      title: result.ok ? '主动提醒推送设备已注册' : '主动提醒推送设备注册失败',
+      detail: result.ok
+        ? `token=${result.pushToken?.slice(0, 24) || 'unknown'}...`
+        : result.error || 'unknown error',
+    });
+  }), []);
+}
+
+function useRandomProactiveMessagesAutomation() {
+  useEffect(() => {
+    const tick = () => {
+      const state = useAppStore.getState();
+      const writes = buildRandomProactiveMessageWrites({
+        characters: state.characters,
+        chatSessions: state.chatSessions,
+        diaries: state.diaries,
+        calendarEvents: state.calendarEvents,
+        galleryPhotos: state.galleryPhotos,
+        memos: state.memos,
+        wechatMoments: state.wechatMoments,
+        musicTracks: state.musicTracks,
+        musicListenRecords: state.musicListenRecords,
+        xiaohongshuNotes: state.xiaohongshuNotes,
+        lifeEvents: state.lifeEvents,
+      }, {
+        now: Date.now(),
+        enabled: state.randomProactiveMessagesEnabled,
+      });
+      writes.forEach((write) => {
+        state.addMessage(write.chatTarget.characterId, write.chatTarget.channel, write.chatMessage);
+        state.addLifeEvent(write.lifeEvent);
+        state.addAppLog?.(write.appLog);
+      });
+    };
+    const timer = window.setInterval(tick, 2 * 60 * 1000);
+    const firstTick = window.setTimeout(tick, 10 * 1000);
+    return () => {
+      window.clearInterval(timer);
+      window.clearTimeout(firstTick);
+    };
+  }, []);
+}
+
 export default function App() {
   const {
     theme,
+    fontStyle,
     activeScreen,
     characters,
     chatSessions,
@@ -490,8 +572,6 @@ export default function App() {
     calendarEvents,
     memos,
     wallpaper,
-    communityVerificationConfig,
-    setCommunityVerificationConfig,
     setScreen,
     goBack,
   } = useAppStore();
@@ -500,19 +580,40 @@ export default function App() {
   const notifications = buildShellNotifications({ characters, chatSessions, phoneCallRecords, calendarEvents, memos });
   const notificationBadges = getShellNotificationBadges(notifications);
   const notificationCount = notifications.reduce((count, notification) => count + (notification.count || 1), 0);
-  const themeClass = theme === 'pastel' || theme === 'gothic' || theme === 'guofeng' || theme === 'celtic-paladin' ? theme : 'pastel';
-  const discordVerified = communityVerificationConfig.verificationMethod === 'discord'
-    && hasRequiredCommunityIdentity(communityVerificationConfig.verifiedGroups, communityVerificationConfig);
-  const backdoorVerified = communityVerificationConfig.verificationMethod === 'backdoor'
-    && typeof communityVerificationConfig.backdoorVerifiedUntil === 'number'
-    && communityVerificationConfig.backdoorVerifiedUntil > Date.now();
-  const communityVerified = discordVerified || backdoorVerified;
+  const themeClass = theme === 'pastel' || theme === 'gothic' || theme === 'guofeng' || theme === 'celtic-paladin' || theme === 'status-terminal' || theme === 'alcheris-pixel' ? theme : 'pastel';
+  const fontClass = fontStyle === 'system' || fontStyle === 'serif' || fontStyle === 'pixel' ? `font-${fontStyle}` : 'font-rounded';
   const openNotification = (notification: ShellNotification) => {
     setLocked(false);
     setShowNotificationCenter(false);
     setScreen(notification.screen);
   };
   useMemoCharWriterAutomation();
+  useProactiveReminderAutomation();
+  useRandomProactiveMessagesAutomation();
+  useNativePushTokenRegistration();
+
+  useEffect(() => {
+    const logRuntimeError = (title: string, error: unknown, source?: string) => {
+      useAppStore.getState().addAppLog?.(buildRuntimeErrorLog({
+        title,
+        error,
+        source,
+        url: window.location.href,
+      }));
+    };
+    const handleError = (event: ErrorEvent) => {
+      logRuntimeError('前端运行时错误', event.error || event.message, event.filename);
+    };
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      logRuntimeError('未处理 Promise 错误', event.reason, 'window.unhandledrejection');
+    };
+    window.addEventListener('error', handleError);
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+    return () => {
+      window.removeEventListener('error', handleError);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+    };
+  }, []);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -539,12 +640,10 @@ export default function App() {
 
   return (
     <AppErrorBoundary>
-      <div className={cn('min-h-screen phone-stage flex items-center justify-center bg-[#101010] p-2 sm:p-4', `theme-${themeClass}`)}>
+      <div className={cn('min-h-screen phone-stage flex items-center justify-center bg-[#101010] p-2 sm:p-4', `theme-${themeClass}`, fontClass)}>
         <main className={cn('phone-shell relative h-[844px] max-h-[calc(100dvh-16px)] w-[390px] max-w-full overflow-hidden bg-[var(--phone-bg)] text-[var(--phone-text)] rounded-[34px] border-[8px] border-[#111]', `screen-${activeScreen}`)}>
           <GlobalMusicAudio />
-          {!communityVerified ? (
-            <CommunityGate config={communityVerificationConfig} onUpdate={setCommunityVerificationConfig} />
-          ) : locked ? (
+          {locked ? (
             <LockScreen
               notifications={notifications}
               wallpaper={wallpaper}
@@ -566,13 +665,13 @@ export default function App() {
                 </button>
               )}
               {activeScreen === 'desktop' && <Desktop badges={notificationBadges} />}
-              {['wechat', 'xiaohongshu', 'bilibili', 'browser'].includes(activeScreen) && (
+              {['wechat', 'xiaohongshu', 'bilibili'].includes(activeScreen) && (
                 <button type="button" onClick={goBack} className="shell-app-back-button" aria-label="返回桌面">
                   <ChevronLeft className="h-7 w-7" />
                 </button>
               )}
               {activeScreen === 'chat' && <ChatScreen />}
-              {activeScreen !== 'desktop' && activeScreen !== 'chat' && <FeatureScreen screen={activeScreen} />}
+              {activeScreen !== 'desktop' && activeScreen !== 'chat' && <FeatureRouter screen={activeScreen} />}
               {activeScreen === 'desktop' && showNotificationCenter && (
                 <NotificationCenter
                   notifications={notifications}
@@ -970,154 +1069,6 @@ function CommunityGate({
   );
 }
 
-function LockScreen({
-  notifications,
-  wallpaper,
-  onUnlock,
-  onOpenNotification,
-}: {
-  notifications: ShellNotification[];
-  wallpaper: string | null;
-  onUnlock: () => void;
-  onOpenNotification: (notification: ShellNotification) => void;
-}) {
-  const now = new Date();
-  const visibleNotifications = notifications.slice(0, 4);
-  return (
-    <section className={cn('lock-screen', wallpaper ? 'has-custom-wallpaper' : 'has-default-lock-art')}>
-      {wallpaper && <img src={wallpaper} alt="" className="lock-wallpaper-image" onError={(event) => { event.currentTarget.style.display = 'none'; }} />}
-      <div className="lock-wallpaper-shade" />
-      <div className="lock-status-row">
-        <span>{now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
-        <span>WiFi · 88%</span>
-      </div>
-      <div className="lock-clock">
-        <p>{now.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' })}</p>
-        <h1>{now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false })}</h1>
-      </div>
-      <div className="lock-notification-stack">
-        {visibleNotifications.length > 0 ? (
-          visibleNotifications.map((notification) => (
-            <NotificationCard key={notification.id} notification={notification} compact onClick={() => onOpenNotification(notification)} />
-          ))
-        ) : (
-          <div className="lock-empty-card">
-            <BellRing className="h-5 w-5" />
-            <span>今天暂时很安静</span>
-          </div>
-        )}
-      </div>
-      <button type="button" onClick={onUnlock} className="lock-unlock-button">
-        <Unlock className="h-5 w-5" />
-        <span>解锁</span>
-      </button>
-    </section>
-  );
-}
-
-function NotificationCenter({
-  notifications,
-  onClose,
-  onOpenNotification,
-}: {
-  notifications: ShellNotification[];
-  onClose: () => void;
-  onOpenNotification: (notification: ShellNotification) => void;
-}) {
-  return (
-    <div className="notification-center">
-      <div className="notification-sheet">
-        <div className="notification-header">
-          <div>
-            <p>通知中心</p>
-            <h2>{notifications.length > 0 ? `${notifications.length} 条提醒` : '暂无提醒'}</h2>
-          </div>
-          <button type="button" onClick={onClose} className="widget-delete static">
-            ×
-          </button>
-        </div>
-        <div className="notification-list">
-          {notifications.length > 0 ? (
-            notifications.map((notification) => (
-              <NotificationCard key={notification.id} notification={notification} onClick={() => onOpenNotification(notification)} />
-            ))
-          ) : (
-            <div className="notification-empty">未读消息、未接电话和提醒会显示在这里。</div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function NotificationCard({ notification, compact, onClick }: { key?: React.Key; notification: ShellNotification; compact?: boolean; onClick: () => void }) {
-  const icon = notification.kind === 'chat'
-    ? <MessageCircle />
-    : notification.kind === 'call'
-      ? <Phone />
-      : notification.kind === 'calendar'
-        ? <CalendarDays />
-        : <FileText />;
-  return (
-    <button type="button" onClick={onClick} className={cn('notification-card', compact && 'compact')}>
-      <span className={cn('notification-icon', `kind-${notification.kind}`)}>
-        {React.cloneElement(icon as React.ReactElement<{ className?: string }>, { className: 'h-4 w-4' })}
-      </span>
-      <span className="min-w-0 flex-1 text-left">
-        <span className="notification-title">{notification.title}</span>
-        <span className="notification-body">{notification.body}</span>
-      </span>
-      {notification.count && notification.count > 1 ? <span className="notification-count">{notification.count}</span> : null}
-    </button>
-  );
-}
-
-function GlobalMusicAudio() {
-  const { musicTracks, musicPlayer, setMusicPlayer } = useAppStore();
-  const currentTrack = musicTracks.find((track) => track.id === musicPlayer.trackId);
-  const lastTrackId = useRef<string | undefined>(undefined);
-
-  useEffect(() => {
-    const audio = document.getElementById('global-music-audio') as HTMLAudioElement | null;
-    if (!audio || !currentTrack?.audioUrl) return;
-    if (lastTrackId.current !== currentTrack.id && audio.src !== currentTrack.audioUrl) {
-      audio.src = currentTrack.audioUrl;
-      lastTrackId.current = currentTrack.id;
-    }
-    if (musicPlayer.playing) {
-      audio.play().catch(() => setMusicPlayer({ playing: false }));
-    } else {
-      audio.pause();
-      audio.muted = false;
-      audio.volume = 1;
-    }
-  }, [currentTrack?.audioUrl, currentTrack?.id, musicPlayer.playing, setMusicPlayer]);
-
-  return (
-    <audio
-      id="global-music-audio"
-      preload="auto"
-      className="hidden"
-      onLoadedMetadata={(event) => setMusicPlayer({ duration: Number.isFinite(event.currentTarget.duration) ? event.currentTarget.duration : 0 })}
-      onTimeUpdate={(event) => {
-        const audio = event.currentTarget;
-        const duration = Number.isFinite(audio.duration) ? audio.duration : musicPlayer.duration;
-        setMusicPlayer({ duration, progress: duration > 0 ? (audio.currentTime / duration) * 100 : 0 });
-      }}
-      onEnded={(event) => {
-        if (musicPlayer.repeat) {
-          event.currentTarget.currentTime = 0;
-          event.currentTarget.play().catch(() => setMusicPlayer({ playing: false }));
-          setMusicPlayer({ playing: true, progress: 0 });
-          return;
-        }
-        setMusicPlayer({ playing: false, progress: 100 });
-      }}
-      onError={() => setMusicPlayer({ playing: false })}
-    />
-  );
-}
-
 class AppErrorBoundary extends React.Component<{ children: React.ReactNode }, { message: string | null }> {
   declare props: Readonly<{ children: React.ReactNode }>;
 
@@ -1125,6 +1076,16 @@ class AppErrorBoundary extends React.Component<{ children: React.ReactNode }, { 
 
   static getDerivedStateFromError(error: unknown) {
     return { message: error instanceof Error ? error.message : '未知界面错误' };
+  }
+
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    useAppStore.getState().addAppLog?.(buildRuntimeErrorLog({
+      title: '小手机界面崩溃',
+      error,
+      componentStack: info.componentStack,
+      source: 'React ErrorBoundary',
+      url: window.location.href,
+    }));
   }
 
   render() {
@@ -1146,525 +1107,6 @@ class AppErrorBoundary extends React.Component<{ children: React.ReactNode }, { 
 
     return this.props.children;
   }
-}
-
-function Desktop({ badges }: { badges: Partial<Record<Screen, number>> }) {
-  const {
-    theme,
-    setScreen,
-    imageBed,
-    setImageBed,
-    layoutPositions,
-    setLayoutPosition,
-    layoutMode,
-    setLayoutMode,
-    desktopPage,
-    setDesktopPage,
-    customWidgets,
-    addCustomWidget,
-    updateCustomWidget,
-    removeCustomWidget,
-  } = useAppStore();
-  const imageInputRef = useRef<HTMLInputElement>(null);
-  const [showGuide, setShowGuide] = useState(false);
-  const [showWidgetPicker, setShowWidgetPicker] = useState(false);
-  const [editMode, setEditMode] = useState(false);
-  const canvasRef = useRef<HTMLDivElement>(null);
-  const swipeStartRef = useRef<{ x: number; y: number } | null>(null);
-  const suppressClickRef = useRef(false);
-  const page = desktopPage;
-  const now = new Date();
-  const dateText = now.toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric', weekday: 'long' });
-  const themedPos = (id: string, fallback: { x: number; y: number }) =>
-    theme === 'gothic' ? gothicDesktopPositions[id] || fallback : fallback;
-
-  const uploadImage = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => setImageBed(reader.result as string);
-    reader.readAsDataURL(file);
-    event.target.value = '';
-  };
-
-  const setDesktopPageSafely = (nextPage: number) => {
-    setDesktopPage(nextPage <= 0 ? 0 : 1);
-  };
-
-  const finishPageSwipeAt = (x: number, y: number) => {
-    if (editMode || !swipeStartRef.current) return;
-    const deltaX = x - swipeStartRef.current.x;
-    const deltaY = y - swipeStartRef.current.y;
-    swipeStartRef.current = null;
-    if (Math.abs(deltaX) < 42 || Math.abs(deltaX) < Math.abs(deltaY) * 1.15) return;
-    suppressClickRef.current = true;
-    setDesktopPageSafely(deltaX < 0 ? page + 1 : page - 1);
-    window.setTimeout(() => { suppressClickRef.current = false; }, 220);
-  };
-
-  const startPageSwipe = (event: React.PointerEvent<HTMLElement>) => {
-    if (editMode) return;
-    swipeStartRef.current = { x: event.clientX, y: event.clientY };
-  };
-
-  const finishPageSwipe = (event: React.PointerEvent<HTMLElement>) => {
-    finishPageSwipeAt(event.clientX, event.clientY);
-  };
-
-  const startPageTouchSwipe = (event: React.TouchEvent<HTMLElement>) => {
-    if (editMode || event.touches.length !== 1) return;
-    const touch = event.touches[0];
-    swipeStartRef.current = { x: touch.clientX, y: touch.clientY };
-  };
-
-  const finishPageTouchSwipe = (event: React.TouchEvent<HTMLElement>) => {
-    const touch = event.changedTouches[0];
-    if (!touch) return;
-    finishPageSwipeAt(touch.clientX, touch.clientY);
-  };
-
-  const movePageTouchSwipe = (event: React.TouchEvent<HTMLElement>) => {
-    if (editMode || !swipeStartRef.current || event.touches.length !== 1) return;
-    const touch = event.touches[0];
-    const deltaX = touch.clientX - swipeStartRef.current.x;
-    const deltaY = touch.clientY - swipeStartRef.current.y;
-    if (Math.abs(deltaX) > 12 && Math.abs(deltaX) > Math.abs(deltaY)) {
-      event.preventDefault();
-    }
-  };
-
-  return (
-    <section
-      className={cn('cream-screen desktop-screen relative h-full overflow-hidden px-5 pb-28 pt-10', editMode && 'select-none')}
-      onPointerDown={startPageSwipe}
-      onPointerUp={finishPageSwipe}
-      onPointerCancel={() => { swipeStartRef.current = null; }}
-      onTouchStart={startPageTouchSwipe}
-      onTouchMove={movePageTouchSwipe}
-      onTouchEnd={finishPageTouchSwipe}
-      onTouchCancel={() => { swipeStartRef.current = null; }}
-      onClickCapture={(event) => {
-        if (!suppressClickRef.current) return;
-        event.preventDefault();
-        event.stopPropagation();
-      }}
-    >
-      <div className="layout-controls">
-        <button onClick={() => setEditMode(!editMode)} className={cn('layout-toggle', editMode && 'active')}>
-          {editMode ? '完成' : '编辑布局'}
-        </button>
-        {editMode && (
-          <>
-            <button onClick={() => setLayoutMode(layoutMode === 'snap' ? 'free' : 'snap')} className="layout-toggle">
-              {layoutMode === 'snap' ? '自动对齐' : '自由移动'}
-            </button>
-            <button onClick={() => setShowWidgetPicker(true)} className="layout-toggle">
-              <Plus className="h-3.5 w-3.5" /> 添加组件
-            </button>
-          </>
-        )}
-      </div>
-
-      <div ref={canvasRef} className={cn('desktop-canvas', layoutMode === 'snap' && editMode && 'snap-grid')}>
-        {page === 0 && (
-          <>
-            <Draggable id="image-bed" defaultPos={themedPos('image-bed', { x: 188, y: 24 })} editMode={editMode} layoutMode={layoutMode} canvasRef={canvasRef} positions={layoutPositions} setPosition={setLayoutPosition}>
-              <button onClick={() => !editMode && imageInputRef.current?.click()} className="image-bed">
-                {imageBed ? <img src={imageBed} className="h-full w-full object-cover" /> : <><ImageIcon className="mb-2 h-10 w-10" /><span>图床</span></>}
-              </button>
-            </Draggable>
-            <input ref={imageInputRef} type="file" accept="image/*" onChange={uploadImage} className="hidden" />
-
-            <Draggable id="time-card" defaultPos={themedPos('time-card', { x: 12, y: 242 })} editMode={editMode} layoutMode={layoutMode} canvasRef={canvasRef} positions={layoutPositions} setPosition={setLayoutPosition}>
-              <div className="time-card">
-                <div className="min-w-0">
-                  <div className="time-text">{now.toLocaleTimeString('zh-CN', { hour12: false })}</div>
-                  <div className="date-text">{dateText}</div>
-                </div>
-                <button onClick={() => !editMode && setShowGuide(!showGuide)} className="guide-mark" aria-label="教程">
-                  42
-                  <Sparkles className="absolute -right-2 -top-2 h-5 w-5 fill-[#f9e58f] text-[#111]" />
-                </button>
-              </div>
-            </Draggable>
-          </>
-        )}
-
-        {pageApps.filter((app) => app.page === page).map((app) => (
-          <Draggable key={app.id} id={app.id} defaultPos={themedPos(app.id, { x: app.x, y: app.y })} editMode={editMode} layoutMode={layoutMode} canvasRef={canvasRef} positions={layoutPositions} setPosition={setLayoutPosition}>
-            <AppIcon {...app} badge={badges[app.screen]} onClick={() => !editMode && setScreen(app.screen)} />
-          </Draggable>
-        ))}
-
-        {customWidgets.filter((widget) => widget.page === page).map((widget) => (
-          <Draggable key={widget.id} id={`widget-${widget.id}`} defaultPos={{ x: widget.x, y: widget.y }} editMode={editMode} layoutMode={layoutMode} canvasRef={canvasRef} positions={layoutPositions} setPosition={setLayoutPosition}>
-            <CustomWidgetView widget={widget} editMode={editMode} updateWidget={updateCustomWidget} removeWidget={removeCustomWidget} />
-          </Draggable>
-        ))}
-      </div>
-
-      <div className="page-dots">
-        <button type="button" aria-label="第 1 页" onClick={() => setDesktopPageSafely(0)} className={cn(page === 0 && 'active')} />
-        <button type="button" aria-label="第 2 页" onClick={() => setDesktopPageSafely(1)} className={cn(page === 1 && 'active')} />
-      </div>
-
-      {showGuide && (
-        <div className="guide-modal">
-          <div className="guide-panel">
-            <button onClick={() => setShowGuide(false)} className="widget-delete guide-close">
-              ×
-            </button>
-            <h2>小手机教程</h2>
-            <p>作者：宇宙的意义是42；发布平台：discord；性质：免费。</p>
-            <p>适用人群：使用酒馆的人群，支持一个中国原则，认可社会主义核心价值观，不是柜子。</p>
-            <p>通讯录负责导入和编辑酒馆卡，保存后会回到通讯录列表。微信里包含朋友圈和视频通话。</p>
-            <p>点“编辑布局”后可以拖动 app、图床、时间和小组件。布局模式可以在自动对齐和自由移动之间切换。</p>
-            <p>点“添加组件”会打开选择面板，可以添加便签、照片或状态组件。组件在编辑模式下可以改字、传照片、删除。</p>
-          </div>
-        </div>
-      )}
-
-      {showWidgetPicker && (
-        <div className="guide-modal">
-          <div className="guide-panel compact">
-            <button onClick={() => setShowWidgetPicker(false)} className="widget-delete guide-close">
-              ×
-            </button>
-            <h2>添加小组件</h2>
-            <div className="widget-picker">
-              <button onClick={() => { addCustomWidget(page, 'note'); setShowWidgetPicker(false); }} className="feature-tile">便签</button>
-              <button onClick={() => { addCustomWidget(page, 'photo'); setShowWidgetPicker(false); }} className="feature-tile">照片</button>
-              <button onClick={() => { addCustomWidget(page, 'status'); setShowWidgetPicker(false); }} className="feature-tile">状态</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div className="dock">
-        {dockApps.map((app) => (
-          <button key={app.label} onClick={() => setScreen(app.screen)} className="flex flex-col items-center gap-1" data-screen={app.screen}>
-            <span className={cn('dock-icon', app.color)} data-screen={app.screen}>
-              {React.cloneElement(app.icon as React.ReactElement<{ className?: string }>, { className: 'h-6 w-6' })}
-              {badges[app.screen] ? <span className="shell-badge dock-badge">{badges[app.screen]! > 99 ? '99+' : badges[app.screen]}</span> : null}
-            </span>
-            <span className="text-[11px] font-black">{app.label}</span>
-          </button>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function Draggable({
-  id,
-  defaultPos,
-  editMode,
-  layoutMode,
-  canvasRef,
-  positions,
-  setPosition,
-  children,
-}: {
-  key?: React.Key;
-  id: string;
-  defaultPos: { x: number; y: number };
-  editMode: boolean;
-  layoutMode: LayoutMode;
-  canvasRef: React.RefObject<HTMLDivElement | null>;
-  positions: Record<string, { x: number; y: number }>;
-  setPosition: (id: string, position: { x: number; y: number }) => void;
-  children: React.ReactNode;
-}) {
-  const position = positions[id] || defaultPos;
-
-  const startDrag = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (!editMode) return;
-    event.preventDefault();
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const rect = canvas.getBoundingClientRect();
-    const startX = event.clientX - rect.left - position.x;
-    const startY = event.clientY - rect.top - position.y;
-    const target = event.currentTarget;
-    target.setPointerCapture(event.pointerId);
-
-    const move = (moveEvent: PointerEvent) => {
-      const rawX = moveEvent.clientX - rect.left - startX;
-      const rawY = moveEvent.clientY - rect.top - startY;
-      const snappedX = layoutMode === 'snap' ? Math.round(rawX / 16) * 16 : rawX;
-      const snappedY = layoutMode === 'snap' ? Math.round(rawY / 16) * 16 : rawY;
-      const nextX = Math.max(0, Math.min(rect.width - target.offsetWidth, snappedX));
-      const nextY = Math.max(0, Math.min(rect.height - target.offsetHeight, snappedY));
-      setPosition(id, { x: nextX, y: nextY });
-    };
-
-    const stop = () => {
-      window.removeEventListener('pointermove', move);
-      window.removeEventListener('pointerup', stop);
-    };
-
-    window.addEventListener('pointermove', move);
-    window.addEventListener('pointerup', stop);
-  };
-
-  return (
-    <div className={cn('draggable-item', editMode && 'editing')} style={{ left: position.x, top: position.y }} onPointerDown={startDrag}>
-      {children}
-    </div>
-  );
-}
-
-function CustomWidgetView({
-  widget,
-  editMode,
-  updateWidget,
-  removeWidget,
-}: {
-  widget: CustomWidget;
-  editMode: boolean;
-  updateWidget: (id: string, updates: Partial<CustomWidget>) => void;
-  removeWidget: (id: string) => void;
-}) {
-  const photoInputRef = useRef<HTMLInputElement>(null);
-
-  const uploadWidgetImage = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => updateWidget(widget.id, { image: reader.result as string });
-    reader.readAsDataURL(file);
-    event.target.value = '';
-  };
-
-  return (
-    <div className={cn('custom-widget', `widget-${widget.type}`)}>
-      {editMode && (
-        <button
-          className="widget-delete"
-          onPointerDown={(event) => event.stopPropagation()}
-          onClick={(event) => {
-            event.stopPropagation();
-            removeWidget(widget.id);
-          }}
-        >
-          <Trash2 className="h-4 w-4" />
-        </button>
-      )}
-      {editMode ? (
-        <>
-          <input
-            value={widget.title}
-            onPointerDown={(event) => event.stopPropagation()}
-            onChange={(event) => updateWidget(widget.id, { title: event.target.value })}
-            className="widget-input font-black"
-          />
-          {widget.type === 'photo' && (
-            <>
-              <button
-                onPointerDown={(event) => event.stopPropagation()}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  photoInputRef.current?.click();
-                }}
-                className="widget-photo-button"
-              >
-                {widget.image ? <img src={widget.image} className="h-full w-full object-cover" /> : '上传照片'}
-              </button>
-              <input ref={photoInputRef} type="file" accept="image/*" onChange={uploadWidgetImage} className="hidden" />
-            </>
-          )}
-          <textarea
-            value={widget.content}
-            onPointerDown={(event) => event.stopPropagation()}
-            onChange={(event) => updateWidget(widget.id, { content: event.target.value })}
-            className="widget-input mt-2 min-h-12 resize-none text-sm"
-          />
-        </>
-      ) : (
-        <>
-          {widget.type === 'photo' && widget.image && <img src={widget.image} className="mb-2 h-20 w-full rounded-xl border-2 border-[#111] object-cover" />}
-          <p className="font-black">{widget.title}</p>
-          <p className="mt-1 text-sm font-bold opacity-70">{widget.type === 'photo' && !widget.content ? '编辑布局后可上传照片/填描述' : widget.content}</p>
-        </>
-      )}
-    </div>
-  );
-}
-
-function AppIcon({ label, icon, color, badge, screen, onClick }: { key?: React.Key; label: string; icon: React.ReactNode; color: string; badge?: number; screen: Screen; onClick: () => void }) {
-  return (
-    <button onClick={onClick} className="app-button" data-screen={screen}>
-      <span className={cn('app-icon', color)} data-screen={screen}>
-        {React.cloneElement(icon as React.ReactElement<{ className?: string }>, { className: 'h-7 w-7' })}
-        {badge ? <span className="shell-badge">{badge > 99 ? '99+' : badge}</span> : null}
-      </span>
-      <span className="app-label">{label}</span>
-    </button>
-  );
-}
-
-function Header({
-  title,
-  subtitle,
-  tabs,
-  onSave,
-  onBack,
-  saveLabel = '保存',
-}: {
-  title: string;
-  subtitle?: string;
-  tabs?: React.ReactNode;
-  onSave?: () => void;
-  onBack?: () => void;
-  saveLabel?: string;
-}) {
-  const { goBack } = useAppStore();
-  return (
-    <header className="sticky top-0 z-30 bg-[var(--phone-bg)] px-4 pb-4 pt-6">
-      <div className="grid grid-cols-[48px_1fr_56px] items-center">
-        <button onClick={onBack || goBack} className="circle-button">
-          <ChevronLeft className="h-7 w-7" />
-        </button>
-        <div className="min-w-0 text-center">
-          <h1 className="truncate text-2xl font-black">{title}</h1>
-          {subtitle && <p className="truncate text-xs font-bold opacity-60">{subtitle}</p>}
-        </div>
-        {onSave ? <button onClick={onSave} className="save-button">{saveLabel}</button> : <span />}
-      </div>
-      {tabs && <div className="no-scrollbar mt-5 flex gap-2 overflow-x-auto">{tabs}</div>}
-    </header>
-  );
-}
-
-function FeatureScreen({ screen }: { screen: Screen }) {
-  if (screen === 'wechat') return <WeChatApp />;
-  if (screen === 'qq') return <QQScreen />;
-  if (screen === 'phone') return <PhoneScreen />;
-  if (screen === 'video') return <VideoCallScreen />;
-  if (screen === 'diary') return <DiaryScreen />;
-  if (screen === 'calendar') return <CalendarScreen />;
-  if (screen === 'gallery') return <GalleryScreen />;
-  if (screen === 'peek') return <PeekScreen />;
-  if (screen === 'settings') return <SettingsScreen />;
-  if (screen === 'themes') return <ThemesScreen />;
-  if (screen === 'presets') return <PresetsScreen />;
-  if (screen === 'backup') return <BackupScreen />;
-  if (screen === 'logs') return <LogsScreen />;
-  if (screen === 'ai-context') return <AIContextScreen />;
-  if (screen === 'active-events' || screen === 'char-active') return <ActiveEventsScreen />;
-  if (screen === 'import' || screen === 'contacts') return <ContactsScreen />;
-  if (screen === 'memo') return <MemoScreen />;
-  if (screen === 'browser') return <BrowserScreen />;
-  if (screen === 'bilibili') return <BilibiliScreen />;
-  if (screen === 'xiaohongshu') return <XiaohongshuApp />;
-  if (screen === 'music') return <MusicScreen />;
-  if (screen === 'theater') return <TheaterScreen />;
-
-  const copy: Record<string, [string, string, string[]]> = {
-    gallery: ['相册 / 图床', '上传图片，给 char 看，也能换壁纸。', ['图床点击上传照片', '相册分类：自拍、截图、风景、隐藏相册', '后续接图片理解，让 char 点评生活']],
-    calendar: ['日历', '纪念日、约会、事件提醒。', ['日程安排', '生日/纪念日', '触发剧情事件']],
-    moments: ['朋友圈', '动态、评论、可见范围。', ['char 发动态', 'NPC 评论区', '仅你可见 / 不让你看见']],
-    xiaohongshu: ['小红书', '图文笔记和生活感。', ['穿搭/探店/心情帖子', '收藏夹', '评论互动']],
-    bilibili: ['B站', '视频、弹幕、评论区。', ['刷到的视频', 'char 投稿', '弹幕吐槽']],
-    theater: ['小剧场', '输入主题生成角色剧情。', ['日常/暧昧/吵架/梦境', '可保存到日记', '可变成聊天事件']],
-    music: ['音乐', '一起听歌和共同歌单。', ['播放页', '共同听过的歌', '歌单心情']],
-    browser: ['浏览器', '搜索记录和浏览历史。', ['搜索历史', '浏览记录', '隐藏标签页']],
-  };
-  const [title, subtitle, bullets] = copy[screen] || ['功能', '先占位，后面继续填。', []];
-
-  return (
-    <section className="h-full overflow-y-auto pb-8">
-      <Header title={title} subtitle={subtitle} />
-      <Panel>
-        {bullets.map((item) => (
-          <Row key={item} icon={<Sparkles />} title={item} desc="保留入口和数据结构，下一步接 AI 生成逻辑。" />
-        ))}
-      </Panel>
-    </section>
-  );
-}
-
-function BackupScreen() {
-  const fileRef = useRef<HTMLInputElement | null>(null);
-  const [status, setStatus] = useState('导出后可以在更新 APK 或网页版本后再导入，恢复聊天、角色、相册、设置和主题。');
-
-  const exportBackup = () => {
-    const raw = window.localStorage.getItem('char-phone-framework');
-    if (!raw) {
-      setStatus('还没有可导出的本地数据。');
-      return;
-    }
-    const payload = {
-      app: 'small-phone',
-      exportedAt: new Date().toISOString(),
-      storageKey: 'char-phone-framework',
-      data: JSON.parse(raw),
-    };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `small-phone-backup-${new Date().toISOString().slice(0, 10)}.json`;
-    link.click();
-    URL.revokeObjectURL(url);
-    setStatus('备份文件已经导出。');
-  };
-
-  const importBackup = (file?: File) => {
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      try {
-        const parsed = JSON.parse(String(reader.result || ''));
-        const data = parsed?.storageKey === 'char-phone-framework' ? parsed.data : parsed;
-        if (!data || typeof data !== 'object' || !('state' in data)) {
-          throw new Error('备份格式不正确');
-        }
-        window.localStorage.setItem('char-phone-framework', JSON.stringify(data));
-        setStatus('导入成功，正在重新打开小手机。');
-        window.setTimeout(() => window.location.reload(), 350);
-      } catch (error) {
-        setStatus(error instanceof Error ? error.message : '导入失败，请确认是小手机备份 JSON。');
-      }
-    };
-    reader.readAsText(file);
-  };
-
-  const clearLocalData = () => {
-    if (!window.confirm('确认清空当前小手机本地数据？建议先导出备份。')) return;
-    window.localStorage.removeItem('char-phone-framework');
-    setStatus('本地数据已清空，正在重新打开小手机。');
-    window.setTimeout(() => window.location.reload(), 350);
-  };
-
-  return (
-    <section className="no-scrollbar h-full overflow-y-auto pb-8">
-      <Header title="数据备份" subtitle="导出 / 导入小手机本地数据" />
-      <Panel>
-        <Row icon={<FileText />} title="导出备份" desc="保存当前所有本地数据，更新版本前先导出。" />
-        <button type="button" onClick={exportBackup} className="fetch-button mt-3">
-          <Copy className="h-5 w-5" />
-          导出 JSON
-        </button>
-      </Panel>
-      <Panel>
-        <Row icon={<Import />} title="导入备份" desc="选择之前导出的 JSON，导入后会自动刷新小手机。" />
-        <input ref={fileRef} type="file" accept="application/json,.json" hidden onChange={(event) => importBackup(event.target.files?.[0])} />
-        <button type="button" onClick={() => fileRef.current?.click()} className="fetch-button mt-3">
-          <Import className="h-5 w-5" />
-          导入 JSON
-        </button>
-      </Panel>
-      <Panel>
-        <Row icon={<Trash2 />} title="清空本地数据" desc="只在确认备份已经可用时使用。" />
-        <button type="button" onClick={clearLocalData} className="fetch-button mt-3 bg-[#ffd6d6]">
-          <Trash2 className="h-5 w-5" />
-          清空数据
-        </button>
-        <p className="mt-3 text-sm font-black leading-5 opacity-70">{status}</p>
-      </Panel>
-    </section>
-  );
 }
 
 type CalendarTab = 'month' | 'today' | 'list';
@@ -1695,75 +1137,4 @@ const calendarSourceLabels: Record<NonNullable<CalendarEvent['source']>, string>
   moment: '朋友圈',
   order: '订单',
 };
-
-function Pill({ icon, label, active, onClick }: { key?: React.Key; icon: React.ReactNode; label: string; active?: boolean; onClick?: () => void }) {
-  return (
-    <button onClick={onClick} className={cn('pill', active && 'active')}>
-      {React.cloneElement(icon as React.ReactElement<{ className?: string }>, { className: 'h-4 w-4' })}
-      {label}
-    </button>
-  );
-}
-
-function Field({ icon, label, children }: { icon: React.ReactNode; label: string; children: React.ReactNode }) {
-  return (
-    <label className="mb-5 block last:mb-0">
-      <span className="mb-2 flex items-center gap-2 text-lg font-black">
-        {React.cloneElement(icon as React.ReactElement<{ className?: string }>, { className: 'h-5 w-5' })}
-        {label}
-      </span>
-      {children}
-    </label>
-  );
-}
-
-function Panel({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <div className={cn('hand-panel mx-4 mt-4 p-5', className)}>{children}</div>;
-}
-
-function Row({ icon, title, desc }: { key?: React.Key; icon: React.ReactNode; title: string; desc: string }) {
-  return (
-    <div className="flex gap-3 border-b-[2px] border-[#111]/15 py-3 last:border-b-0">
-      <div className="app-chip">
-        {React.cloneElement(icon as React.ReactElement<{ className?: string }>, { className: 'h-5 w-5' })}
-      </div>
-      <div className="min-w-0">
-        <p className="text-lg font-black">{title}</p>
-        <p className="line-clamp-2 text-sm font-bold opacity-60">{desc}</p>
-      </div>
-    </div>
-  );
-}
-
-function Empty({ text }: { text: string }) {
-  return <p className="py-8 text-center text-sm font-black opacity-55">{text}</p>;
-}
-
-function EmptyScreen({ title }: { title: string }) {
-  return (
-    <section className="h-full overflow-y-auto pb-8">
-      <Header title={title} />
-      <Empty text="返回桌面重新选择。" />
-    </section>
-  );
-}
-
-function Avatar({ character, large }: { character?: Character; large?: boolean }) {
-  const size = large ? 'h-24 w-24' : 'h-12 w-12';
-  return (
-    <div className={cn('flex shrink-0 items-center justify-center overflow-hidden rounded-2xl border-[3px] border-[#111] bg-white', size)}>
-      {character?.avatar ? <img src={character.avatar} className="h-full w-full object-cover" /> : <CircleUserRound className="h-1/2 w-1/2 opacity-60" />}
-    </div>
-  );
-}
-
-function CallButton({ icon, label, danger, onClick }: { icon: React.ReactNode; label: string; danger?: boolean; onClick?: () => void }) {
-  return (
-    <button onClick={onClick} className={cn('call-button', danger ? 'bg-[#ff7b7b]' : 'bg-white')}>
-      {React.cloneElement(icon as React.ReactElement<{ className?: string }>, { className: 'h-5 w-5' })}
-      {label}
-    </button>
-  );
-}
-
 

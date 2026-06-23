@@ -25,6 +25,7 @@ import {
 import React, { useEffect, useRef, useState } from 'react';
 
 import { parseCharacterCard } from '../../lib/charaParser';
+import { buildHttpErrorMessage, readHttpErrorDetail } from '../../lib/httpErrors';
 import { cn } from '../../lib/utils';
 import type { Character, ChatMessage, DiaryEntry, GalleryPhoto, MemoEntry, MemoEntryColor, MemoEntryType, MusicTrack, Screen } from '../../store';
 import { useAppStore } from '../../store';
@@ -33,9 +34,10 @@ import type { XiaohongshuNote } from '../xiaohongshu/types';
 import { buildXiaohongshuContext } from '../xiaohongshu/xiaohongshuLogic';
 import { Header, Panel, Pill, Field, Row, Empty, Avatar } from '../shared/AppPrimitives';
 import { describeChatMessage } from '../shared/aiText';
-import { themeOptions } from '../../themes/themeOptions';
+import { buildContextBudgetStats, buildPreviewRowKey, getPreviewRowExcerpt } from '../ai-context/aiContextPreview';
 import { appPresetDefinitions, roleMap, type AppPresetEntry, type AppPresetKey, type GeminiPresetRole } from '../../presets/softwarePresets';
 import { parseWorldBookDraft, stringifyWorldBookForEditing } from './worldBookText';
+import { buildSettingsSelfCheckReport, summarizeSettingsSelfCheck, type SettingsSelfCheckItem } from '../settings/settingsSelfCheck';
 
 const presetCards = [
   ['手机沉浸破限预设', '允许模拟微信、QQ、电话、日记、查手机等手机行为。'],
@@ -57,7 +59,13 @@ async function fetchModelList(baseUrl: string, apiKey: string) {
   const response = await fetch(endpoint, {
     headers: apiKey ? { Authorization: 'Bearer ' + apiKey } : undefined,
   });
-  if (!response.ok) throw new Error('Failed to fetch models: ' + response.status);
+  if (!response.ok) {
+    throw new Error(buildHttpErrorMessage('拉取模型失败', {
+      status: response.status,
+      statusText: response.statusText,
+      detail: await readHttpErrorDetail(response),
+    }));
+  }
   const data = await response.json();
   return Array.isArray(data?.data) ? data.data.map((item: { id?: string }) => item.id).filter(Boolean) as string[] : [];
 }
@@ -96,10 +104,23 @@ export function SettingsScreen() {
     setCommunityVerificationConfig,
     addAppLog,
   } = useAppStore();
-  const [tab, setTab] = useState<'model' | 'tts' | 'image' | 'community'>('model');
+  const [tab, setTab] = useState<'self-check' | 'model' | 'tts' | 'image' | 'community'>('self-check');
   const [modelStatus, setModelStatus] = useState('');
   const [saveStatus, setSaveStatus] = useState('');
   const [modelPulled, setModelPulled] = useState(false);
+  const [selfCheckRunning, setSelfCheckRunning] = useState(false);
+  const [selfCheckStatus, setSelfCheckStatus] = useState('');
+
+  const selfCheckItems = buildSettingsSelfCheckReport({
+    apiBaseUrl,
+    availableModels,
+    selectedModel,
+    ttsEnabled,
+    ttsConfig,
+    imageGenerationConfig,
+    communityBackdoorApiUrl: communityVerificationConfig.backdoorApiUrl,
+  });
+  const selfCheckSummary = summarizeSettingsSelfCheck(selfCheckItems);
 
   const pullModels = async () => {
     if (!apiBaseUrl.trim()) {
@@ -126,6 +147,35 @@ export function SettingsScreen() {
     window.setTimeout(() => setSaveStatus(''), 1800);
   };
 
+  const runSettingsSelfCheck = async () => {
+    setSelfCheckRunning(true);
+    setSelfCheckStatus('正在检查配置...');
+    try {
+      if (apiBaseUrl.trim()) {
+        const models = await fetchModelList(apiBaseUrl, apiKey);
+        setAvailableModels(models);
+        const detail = models.length > 0 ? `模型接口可用，返回 ${models.length} 个模型。` : '模型接口可访问，但没有返回模型列表。';
+        setSelfCheckStatus(detail);
+        addAppLog({ type: models.length > 0 ? 'success' : 'info', title: '设置自检：模型接口', detail: models.join('\n') || detail });
+      } else {
+        setSelfCheckStatus('已完成本地配置检查；文本大模型接口地址还没填写。');
+        addAppLog({ type: 'info', title: '设置自检：跳过模型接口', detail: '未填写大模型接口地址。' });
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '模型接口检查失败';
+      setSelfCheckStatus(message);
+      addAppLog({ type: 'error', title: '设置自检：模型接口失败', detail: message });
+    } finally {
+      setSelfCheckRunning(false);
+    }
+  };
+
+  const statusClass = (status: SettingsSelfCheckItem['status']) => {
+    if (status === 'ok') return 'bg-[#dceecd] text-[#244b25]';
+    if (status === 'warn') return 'bg-[#fff0b8] text-[#6c4b00]';
+    return 'bg-[#ffd6d6] text-[#8f1d1d]';
+  };
+
   return (
     <section className="no-scrollbar flex h-full flex-col overflow-y-auto pb-4">
       <Header
@@ -133,6 +183,7 @@ export function SettingsScreen() {
         onSave={saveSettings}
         tabs={
           <>
+            <Pill active={tab === 'self-check'} icon={<Shield />} label="一键自检" onClick={() => setTab('self-check')} />
             <Pill active={tab === 'model'} icon={<Settings />} label="文本大模型" onClick={() => setTab('model')} />
             <Pill active={tab === 'tts'} icon={<Mic />} label="TTS 语音" onClick={() => setTab('tts')} />
             <Pill active={tab === 'image'} icon={<Palette />} label="生图配置" onClick={() => setTab('image')} />
@@ -149,6 +200,48 @@ export function SettingsScreen() {
         </div>
       ) : (
         <>
+
+      {tab === 'self-check' && (
+        <>
+          <Panel>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className={cn('rounded-full border-[2px] border-[#111] px-3 py-1.5 text-xs font-black', statusClass(selfCheckSummary.status))}>
+                {selfCheckSummary.status === 'ok' ? '可用' : selfCheckSummary.status === 'warn' ? '需确认' : '需修复'}
+              </span>
+              <span className="rounded-full bg-[#dceecd] px-3 py-1.5 text-xs font-black">通过 {selfCheckSummary.ok}</span>
+              <span className="rounded-full bg-[#fff0b8] px-3 py-1.5 text-xs font-black">提醒 {selfCheckSummary.warn}</span>
+              <span className="rounded-full bg-[#ffd6d6] px-3 py-1.5 text-xs font-black">错误 {selfCheckSummary.error}</span>
+            </div>
+            <button onClick={runSettingsSelfCheck} disabled={selfCheckRunning} className="fetch-button mt-4 bg-[#d9e8f6]">
+              <RefreshCw className={cn('h-5 w-5', selfCheckRunning && 'animate-spin')} />
+              {selfCheckRunning ? '正在自检' : '运行自检'}
+            </button>
+            {selfCheckStatus && <p className="mt-3 text-sm font-black leading-6 opacity-70">{selfCheckStatus}</p>}
+          </Panel>
+
+          <Panel>
+            {selfCheckItems.map((item) => (
+              <article key={item.id} className="border-b-[2px] border-[#111]/15 py-3 first:pt-0 last:border-b-0 last:pb-0">
+                <div className="flex items-center gap-2">
+                  <span className={cn('rounded-full px-2.5 py-1 text-[10px] font-black', statusClass(item.status))}>
+                    {item.status === 'ok' ? 'OK' : item.status === 'warn' ? '提醒' : '错误'}
+                  </span>
+                  <h3 className="text-base font-black">{item.label}</h3>
+                </div>
+                <p className="mt-2 text-sm font-bold leading-6 opacity-70">{item.detail}</p>
+                <p className="mt-1 text-xs font-black leading-5 opacity-55">{item.action}</p>
+              </article>
+            ))}
+          </Panel>
+
+          <div className="hand-note mx-4 mt-5 p-4">
+            <div className="flex gap-3">
+              <Zap className="mt-1 h-6 w-6 shrink-0" />
+              <p className="text-sm font-black leading-relaxed">自检只会尝试拉取文本模型列表；TTS 和生图这里只检查配置，不会自动播放语音或生成图片。</p>
+            </div>
+          </div>
+        </>
+      )}
 
       {tab === 'model' && (
         <>
@@ -244,7 +337,7 @@ export function SettingsScreen() {
               value={imageGenerationConfig.baseUrl}
               onChange={(event) => setImageGenerationConfig({ baseUrl: event.target.value })}
               className="hand-input w-full"
-              placeholder="https://image.novelai.net/ai/generate-image"
+              placeholder="/api/nai/generate-image"
             />
           </Field>
           <Field icon={<KeyRound />} label="NAI API Key">
@@ -261,8 +354,14 @@ export function SettingsScreen() {
               value={imageGenerationConfig.model}
               onChange={(event) => setImageGenerationConfig({ model: event.target.value })}
               className="hand-input w-full"
-              placeholder="nai-diffusion-3"
+              list="system-image-generation-models"
+              placeholder="nai-diffusion-4-5-full"
             />
+            <datalist id="system-image-generation-models">
+              {(imageGenerationConfig.availableModels || []).map((model) => (
+                <option key={model} value={model}>{model}</option>
+              ))}
+            </datalist>
           </Field>
           <Field icon={<ImageIcon />} label="默认尺寸">
             <div className="grid grid-cols-2 gap-2">
@@ -384,29 +483,10 @@ export function LogsScreen() {
   );
 }
 
-export function ThemesScreen() {
-  const { theme, setTheme } = useAppStore();
-  return (
-    <section className="h-full overflow-y-auto pb-8">
-      <Header title="主题" subtitle="保持干净手机尺寸，也支持多个主题" />
-      <Panel className="themes-panel">
-        <div className="grid gap-3">
-          {themeOptions.map((item) => (
-            <button key={item.id} onClick={() => setTheme(item.id)} className={cn('theme-card', theme === item.id && 'active')}>
-              <p className="text-lg font-black">{item.name}</p>
-              <p className="text-sm font-bold opacity-65">{item.desc}</p>
-            </button>
-          ))}
-        </div>
-      </Panel>
-    </section>
-  );
-}
+export type ContextRangeKey = 'today' | '1d' | '3d' | '5d' | '7d';
+export type ContextBudgetKey = 'light' | 'standard' | 'full';
 
-type ContextRangeKey = 'today' | '1d' | '3d' | '5d' | '7d';
-type ContextBudgetKey = 'light' | 'standard' | 'full';
-
-const contextRangeOptions: Array<{ id: ContextRangeKey; label: string; days: number; desc: string }> = [
+export const contextRangeOptions: Array<{ id: ContextRangeKey; label: string; days: number; desc: string }> = [
   { id: 'today', label: '今天', days: 0, desc: '当天 00:00 到现在' },
   { id: '1d', label: '近1天', days: 1, desc: '往前 24 小时' },
   { id: '3d', label: '近3天', days: 3, desc: '短期连续剧情' },
@@ -414,19 +494,20 @@ const contextRangeOptions: Array<{ id: ContextRangeKey; label: string; days: num
   { id: '7d', label: '近7天', days: 7, desc: '周总结' },
 ];
 
-const contextBudgetOptions: Record<ContextBudgetKey, { label: string; min: number; max: number }> = {
+export const contextBudgetOptions: Record<ContextBudgetKey, { label: string; min: number; max: number }> = {
   light: { label: '轻量', min: 8000, max: 12000 },
   standard: { label: '标准', min: 15000, max: 25000 },
   full: { label: '完整', min: 30000, max: 50000 },
 };
 
-type ContextPreviewRow = {
+export type ContextPreviewRow = {
   app: string;
   range: string;
   content: string;
   count: number;
   method: string;
   chars: number;
+  detail: string;
 };
 
 function getContextRangeStart(range: ContextRangeKey) {
@@ -513,7 +594,7 @@ function buildChatSection({
   ].join('\n');
 }
 
-function buildContextPackage({
+export function buildContextPackage({
   character,
   range,
   wechatLimit,
@@ -532,9 +613,9 @@ function buildContextPackage({
   const todayStart = getContextRangeStart('today');
   const previewRows: ContextPreviewRow[] = [];
   const sections: string[] = [];
-  const addSection = (row: Omit<ContextPreviewRow, 'chars'>, content: string) => {
+  const addSection = (row: Omit<ContextPreviewRow, 'chars' | 'detail'>, content: string) => {
     const chars = content.length;
-    previewRows.push({ ...row, chars });
+    previewRows.push({ ...row, chars, detail: content });
     sections.push(content);
   };
 
@@ -549,17 +630,28 @@ function buildContextPackage({
     buildChatSection({ title: `${character.name} / QQ单聊`, messages: qqMessages, character, speakers: state.characters }),
   );
 
-  const groupSections = state.groupChats
+  const buildGroupContextSections = (channel: 'wechat' | 'qq', label: string, limit: number) => state.groupChats
     .filter((group) => group.memberIds.includes(character.id))
     .map((group) => {
-      const messages = getSessionMessages(state.chatSessions, 'wechat', group.id, startAt, Math.min(wechatLimit, 200));
-      return { group, messages, content: buildChatSection({ title: `${character.name} / 微信群聊 / ${group.name}`, messages, character, speakers: state.characters }) };
+      const messages = getSessionMessages(state.chatSessions, channel, group.id, startAt, Math.min(limit, 200));
+      return { group, messages, content: buildChatSection({ title: `${character.name} / ${label} / ${group.name}`, messages, character, speakers: state.characters }) };
     })
     .filter((item) => item.messages.length > 0);
-  if (groupSections.length > 0) {
-    const content = groupSections.map((item) => item.content).join('\n\n');
+
+  const wechatGroupSections = buildGroupContextSections('wechat', '微信群聊', wechatLimit);
+  if (wechatGroupSections.length > 0) {
+    const content = wechatGroupSections.map((item) => item.content).join('\n\n');
     addSection(
-      { app: '微信群聊', range: rangeLabel, content: `${character.name} 参与的群聊`, count: groupSections.reduce((sum, item) => sum + item.messages.length, 0), method: '只含当前角色参与群' },
+      { app: '微信群聊', range: rangeLabel, content: `${character.name} 参与的微信群聊`, count: wechatGroupSections.reduce((sum, item) => sum + item.messages.length, 0), method: '只含当前角色参与群' },
+      content,
+    );
+  }
+
+  const qqGroupSections = buildGroupContextSections('qq', 'QQ群聊', qqLimit);
+  if (qqGroupSections.length > 0) {
+    const content = qqGroupSections.map((item) => item.content).join('\n\n');
+    addSection(
+      { app: 'QQ群聊', range: rangeLabel, content: `${character.name} 参与的 QQ 群聊`, count: qqGroupSections.reduce((sum, item) => sum + item.messages.length, 0), method: '只含当前角色参与群' },
       content,
     );
   }
@@ -708,6 +800,8 @@ export function AIContextScreen() {
   const [wechatLimit, setWechatLimit] = useState(300);
   const [qqLimit, setQqLimit] = useState(200);
   const [status, setStatus] = useState('');
+  const [expandedPreviewRows, setExpandedPreviewRows] = useState<Record<string, boolean>>({});
+  const [showGeneratedContent, setShowGeneratedContent] = useState(false);
   const character = characters.find((item) => item.id === characterId) || characters[0];
 
   useEffect(() => {
@@ -727,8 +821,13 @@ export function AIContextScreen() {
 
   const contextPackage = buildContextPackage({ character, range, wechatLimit, qqLimit, state });
   const budgetInfo = contextBudgetOptions[budget];
-  const overBudget = contextPackage.totalChars > budgetInfo.max;
-  const overHardLimit = contextPackage.totalChars > 60000;
+  const budgetStats = buildContextBudgetStats(contextPackage.text, budgetInfo);
+  const overBudget = budgetStats.status === 'over-budget';
+  const overHardLimit = budgetStats.status === 'over-hard-limit';
+
+  const togglePreviewRow = (key: string) => {
+    setExpandedPreviewRows((current) => ({ ...current, [key]: !current[key] }));
+  };
 
   const copyContext = async () => {
     try {
@@ -1005,6 +1104,7 @@ function repairMojibake(text: string) {
 export function ContactsScreen() {
   const { characters, addCharacter, updateCharacter, deleteCharacter, openChat } = useAppStore();
   const inputRef = useRef<HTMLInputElement>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
   const [status, setStatus] = useState('支持导入酒馆 PNG/JSON 角色卡。');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [worldBookDrafts, setWorldBookDrafts] = useState<Record<string, string>>({});
@@ -1046,6 +1146,17 @@ export function ContactsScreen() {
       setEditingId(null);
       setStatus(`已删除：${character.name}`);
     };
+    const updateAvatar = (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        updateCharacter(character.id, { avatar: String(reader.result || '') });
+        setStatus(`已更换头像：${character.name}`);
+      };
+      reader.readAsDataURL(file);
+      event.target.value = '';
+    };
     return (
       <section className="character-profile-screen h-full overflow-y-auto pb-4">
         <Header title="角色资料" subtitle="人设、世界书和开场白都可以自己改" onSave={saveCharacter} />
@@ -1057,6 +1168,16 @@ export function ContactsScreen() {
               <p className="text-xs font-bold opacity-60">导入后停留在资料页，不会强制跳微信</p>
             </div>
           </div>
+          <div className="character-avatar-actions">
+            <button type="button" onClick={() => avatarInputRef.current?.click()} className="character-avatar-button">
+              <ImageIcon className="h-5 w-5" />
+              更换头像
+            </button>
+            <button type="button" onClick={() => updateCharacter(character.id, { avatar: '' })} className="character-avatar-button secondary">
+              恢复默认
+            </button>
+          </div>
+          <input ref={avatarInputRef} type="file" accept="image/*" onChange={updateAvatar} className="hidden" />
           <Field icon={<CircleUserRound />} label="名字">
             <input value={character.name} onChange={(event) => updateCharacter(character.id, { name: event.target.value })} className="hand-input w-full" />
           </Field>

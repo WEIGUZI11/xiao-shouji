@@ -1,7 +1,7 @@
 {
   "name": "react-example",
   "private": true,
-  "version": "1.0.1",
+  "version": "1.0.3",
   "type": "module",
   "engines": {
     "node": "22.x"
@@ -12,7 +12,12 @@
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
-    "backdoor:server": "node server/community-backdoor.cjs"
+    "backdoor:server": "node server/community-backdoor.cjs",
+    "phone:backend": "node server/nai-proxy.cjs",
+    "nai:proxy": "node server/nai-proxy.cjs",
+    "nai:test": "tsx scripts/nai-smoke-test.ts",
+    "nai:model-matrix:test": "tsx scripts/nai-model-matrix-smoke-test.ts",
+    "wechat:proactive-image:test": "tsx scripts/wechat-proactive-image-smoke-test.ts"
   },
   "dependencies": {
     "@google/genai": "^1.29.0",
