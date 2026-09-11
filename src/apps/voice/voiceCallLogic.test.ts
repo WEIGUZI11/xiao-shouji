@@ -6,6 +6,7 @@ import {
   cleanVoiceCallReply,
   getVoiceCallDefaultScene,
   getVoiceCallDurationLabel,
+  getVoiceCallAudioIssue,
   getVoiceCallPhaseText,
   isVoiceCallAudioAvailable,
   isVoiceCallSpeechRecognitionAvailable,
@@ -28,7 +29,12 @@ assert.equal(isVoiceCallAudioAvailable({ ttsEnabled: true, provider: 'local', ba
 assert.equal(isVoiceCallAudioAvailable({ ttsEnabled: true, provider: 'openai', apiKey: '' }), false);
 assert.equal(isVoiceCallAudioAvailable({ ttsEnabled: true, provider: 'openai', apiKey: 'sk-test' }), true);
 assert.equal(isVoiceCallAudioAvailable({ ttsEnabled: true, provider: 'doubao', apiKey: '' }), false);
-assert.equal(isVoiceCallAudioAvailable({ ttsEnabled: true, provider: 'doubao', apiKey: 'doubao-test' }), true);
+assert.equal(isVoiceCallAudioAvailable({ ttsEnabled: true, provider: 'doubao', apiKey: 'doubao-test', voiceId: '' }), false);
+assert.equal(isVoiceCallAudioAvailable({ ttsEnabled: true, provider: 'doubao', apiKey: 'doubao-test', voiceId: 'zh_female_vv_uranus_bigtts' }), true);
+assert.equal(isVoiceCallAudioAvailable({ ttsEnabled: true, provider: 'doubao', apiKey: 'doubao-test', model: 'seed-tts-1.0', voiceId: 'zh_female_vv_uranus_bigtts' }), false);
+assert.match(getVoiceCallAudioIssue({ ttsEnabled: true, provider: 'doubao', apiKey: 'doubao-test', model: 'seed-tts-1.0', voiceId: 'zh_female_vv_uranus_bigtts' }), /不匹配/);
+assert.equal(getVoiceCallAudioIssue({ ttsEnabled: true, provider: 'doubao', apiKey: 'doubao-test', model: 'seed-icl-2.0', voiceId: 'S_MY_CLONE' }), '');
+assert.equal(isVoiceCallAudioAvailable({ ttsEnabled: false, provider: 'doubao', apiKey: 'doubao-test', voiceId: 'zh_female_vv_uranus_bigtts' }), false);
 
 assert.equal(isVoiceCallSpeechRecognitionAvailable({ hasBrowserSpeechRecognition: true, muted: false }), true);
 assert.equal(isVoiceCallSpeechRecognitionAvailable({ hasBrowserSpeechRecognition: false, muted: false }), false);

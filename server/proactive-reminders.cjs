@@ -11,9 +11,20 @@ function pad(value) {
   return String(value).padStart(2, '0');
 }
 
+function resolveTimeZone(timeZone) {
+  const candidate = String(timeZone || 'Asia/Shanghai').trim() || 'Asia/Shanghai';
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone: candidate }).format(new Date(0));
+    return candidate;
+  } catch {
+    return 'Asia/Shanghai';
+  }
+}
+
 function getTimeParts(now, timeZone) {
+  const resolvedTimeZone = resolveTimeZone(timeZone);
   const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone,
+    timeZone: resolvedTimeZone,
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
@@ -31,37 +42,51 @@ function getTimeParts(now, timeZone) {
   };
 }
 
-function getTimeZoneLabel(timeZone) {
-  const labels = {
-    'Asia/Shanghai': 'Beijing time',
-    'Asia/Tokyo': 'Tokyo time',
-    'Asia/Seoul': 'Seoul time',
-    'America/New_York': 'New York time',
-    'America/Los_Angeles': 'Los Angeles time',
-    'America/Chicago': 'US Central time',
-    'America/Denver': 'US Mountain time',
-    'Europe/London': 'London time',
-    'Europe/Paris': 'Central Europe time',
-    'Australia/Sydney': 'Sydney time',
-  };
-  return labels[timeZone] || '';
+function getWeekdayLabel(now, timeZone) {
+  const resolvedTimeZone = resolveTimeZone(timeZone);
+  const parts = new Intl.DateTimeFormat('zh-CN', {
+    timeZone: resolvedTimeZone,
+    weekday: 'long',
+  }).formatToParts(new Date(now));
+  return parts.find((part) => part.type === 'weekday')?.value || '';
 }
 
-function getSlotLabel(hour) {
-  if (hour >= 5 && hour < 11) return 'morning';
-  if (hour >= 11 && hour < 14) return 'noon';
-  if (hour >= 14 && hour < 18) return 'afternoon';
-  if (hour >= 18 && hour < 23) return 'evening';
-  return 'late night';
+function getDayPeriod(hour) {
+  if (hour >= 23) return '深夜';
+  if (hour < 5) return '凌晨';
+  if (hour < 7) return '清晨';
+  if (hour < 11) return '上午';
+  if (hour < 14) return '中午';
+  if (hour < 18) return '下午';
+  return '晚上';
+}
+
+function formatUtcOffset(now, timeZone) {
+  const resolvedTimeZone = resolveTimeZone(timeZone);
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: resolvedTimeZone,
+      hour: '2-digit',
+      timeZoneName: 'shortOffset',
+    }).formatToParts(new Date(now));
+    const offset = parts.find((part) => part.type === 'timeZoneName')?.value || 'GMT';
+    if (offset === 'GMT' || offset === 'UTC') return 'UTC+00:00';
+    const match = offset.match(/GMT([+-])(\d{1,2})(?::?(\d{2}))?/);
+    if (!match) return offset.replace('GMT', 'UTC');
+    const [, sign, hour, minute = '00'] = match;
+    return `UTC${sign}${hour.padStart(2, '0')}:${minute.padStart(2, '0')}`;
+  } catch {
+    return 'UTC+00:00';
+  }
 }
 
 function formatReminderMessage(reminder, now) {
-  const timeZone = reminder.timeZone || 'Asia/Shanghai';
+  const timeZone = resolveTimeZone(reminder.timeZone);
   const parts = getTimeParts(now, timeZone);
-  const zoneLabel = getTimeZoneLabel(timeZone);
-  const slotLabel = getSlotLabel(parts.hour);
-  const prefix = zoneLabel ? `${zoneLabel} ${slotLabel}` : slotLabel;
-  return `Now is ${prefix} ${pad(parts.hour)}:${pad(parts.minute)}. Reminder: ${reminder.task || reminder.title || 'this task'}`;
+  const weekday = getWeekdayLabel(now, timeZone);
+  const dayPeriod = getDayPeriod(parts.hour);
+  const utcOffset = formatUtcOffset(now, timeZone);
+  return `现在是用户所在地时间 ${parts.year}年${parts.month}月${parts.day}日 ${pad(parts.hour)}:${pad(parts.minute)}（${weekday}，${dayPeriod}，时区 ${timeZone}，${utcOffset}）。提醒：${reminder.task || reminder.title || 'this task'}`;
 }
 
 function occurrenceKey(reminder, now) {

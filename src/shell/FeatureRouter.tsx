@@ -7,6 +7,7 @@
 import { Sparkles } from 'lucide-react';
 
 import { ActiveEventsScreen } from '../apps/active-events/ActiveEventsScreen';
+import { AccountingScreen } from '../apps/accounting/AccountingScreen';
 import { AIContextScreen } from '../apps/ai-context/AIContextScreen';
 import { BackupScreen } from '../apps/backup/BackupScreen';
 import { BilibiliScreen } from '../apps/bilibili/BilibiliScreen';
@@ -16,6 +17,7 @@ import { ContactsScreen } from '../apps/contacts/ContactsScreen';
 import { DiaryScreen } from '../apps/diary/DiaryScreen';
 import { PeekScreen } from '../apps/diary/PeekScreen';
 import { GalleryScreen } from '../apps/gallery/GalleryScreen';
+import { ImageTasksScreen } from '../apps/image-tasks/ImageTasksScreen';
 import { LogsScreen } from '../apps/logs/LogsScreen';
 import { MemoScreen } from '../apps/memo/MemoScreen';
 import { MusicScreen } from '../apps/music/MusicScreen';
@@ -41,7 +43,9 @@ export function FeatureRouter({ screen }: { screen: Screen }) {
   if (screen === 'video') return <VideoCallScreen />;
   if (screen === 'diary') return <DiaryScreen />;
   if (screen === 'calendar') return <CalendarScreen />;
+  if (screen === 'accounting') return <AccountingScreen />;
   if (screen === 'gallery') return <GalleryScreen />;
+  if (screen === 'image-tasks') return <ImageTasksScreen />;
   if (screen === 'peek') return <PeekScreen />;
   if (screen === 'settings') return <SettingsScreen />;
   if (screen === 'themes') return <ThemesScreen />;

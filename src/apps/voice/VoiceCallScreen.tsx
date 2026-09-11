@@ -11,6 +11,7 @@ import {
   buildVoiceCallOpeningLine,
   buildVoiceCallSystemPrompt,
   cleanVoiceCallReply,
+  getVoiceCallAudioIssue,
   getVoiceCallDurationLabel,
   getVoiceCallPhaseText,
   isVoiceCallAudioAvailable,
@@ -114,13 +115,17 @@ export function VoiceCallScreen() {
   const duration = getVoiceCallDurationLabel(connectedAt, now);
   const hasChatTarget = Boolean(activeChatId && (activeChannel === 'qq' || activeChannel === 'wechat'));
   const session = activeChatId ? chatSessions[`${activeChannel}:${activeChatId}`] : undefined;
-  const audioAvailable = isVoiceCallAudioAvailable({
+  const audioAvailabilityInput = {
     ttsEnabled,
     provider: ttsConfig.provider,
     apiKey: ttsConfig.apiKey,
     baseUrl: ttsConfig.baseUrl,
+    model: ttsConfig.model,
+    voiceId: ttsConfig.voiceId,
     hasBrowserSpeechSynthesis: typeof window !== 'undefined' && 'speechSynthesis' in window,
-  });
+  };
+  const audioIssue = getVoiceCallAudioIssue(audioAvailabilityInput);
+  const audioAvailable = isVoiceCallAudioAvailable(audioAvailabilityInput);
   const speechRecognitionAvailable = isVoiceCallSpeechRecognitionAvailable({
     hasBrowserSpeechRecognition: Boolean(getSpeechRecognitionConstructor()),
     muted,
@@ -129,7 +134,7 @@ export function VoiceCallScreen() {
   const lastCharLine = [...transcriptLines].reverse().find((line) => line.speaker === 'char')?.text || scene;
   const lastLine = transcriptLines[transcriptLines.length - 1];
   const callLines = useMemo(() => {
-    if (phase === 'ready') return ['听筒还没响', '点呼唤开始拨出'];
+    if (phase === 'ready') return ['听筒还没响', '点呼唤开始拨出', audioIssue ? `语音未就绪：${audioIssue}` : '语音自检：配置完整，接通后会自动出声'];
     if (phase === 'calling') return ['正在拨号', '铃声隔一会儿响一次', '头像随着呼叫轻轻亮起'];
     if (phase === 'connected') return [
       lastLine ? `${lastLine.speaker === 'user' ? '你' : characterName}：${lastLine.text}` : '电话已接通',
@@ -138,7 +143,7 @@ export function VoiceCallScreen() {
       speakerOn ? '免提打开' : '听筒模式',
     ];
     return ['语音通话结束', '聊天记录里会留下这次通话'];
-  }, [audioAvailable, callMode, characterName, lastLine, listening, phase, speakerOn, thinking]);
+  }, [audioAvailable, audioIssue, callMode, characterName, lastLine, listening, phase, speakerOn, thinking]);
 
   const playCallLine = async (text: string, status = '正在播放语音...') => {
     setScene(text);
@@ -238,7 +243,7 @@ export function VoiceCallScreen() {
       setConnectedAt(Date.now());
       setNow(Date.now());
       setPhase('connected');
-      setAudioStatus(audioAvailable ? '语音已接入，接通后会自动开口。' : '未接入语音，会使用文字通话。');
+      setAudioStatus(audioAvailable ? '语音配置完整，接通后会自动开口。' : `语音未就绪：${audioIssue}。本次改用文字通话。`);
     }, 1400);
   };
 

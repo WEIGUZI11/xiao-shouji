@@ -22,9 +22,11 @@ import {
   UserRound,
 } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
+import { PersistentImage } from '../../components/PersistentImage';
 import { useAppStore } from '../../store';
 import { cn } from '../../lib/utils';
-import { buildNovelAiPrompt, requestNaiImage } from '../../lib/naiImage';
+import { requestAppImage } from '../../lib/appImageGeneration';
+import { buildNovelAiPrompt } from '../../lib/naiImage';
 import type { XiaohongshuNote } from './types';
 import {
   buildGeneratedXiaohongshuNotes,
@@ -95,7 +97,7 @@ function parseAvatarToken(value?: string) {
 function VisualAvatar({ src, name, className = '' }: { src?: string; name: string; className?: string }) {
   const token = parseAvatarToken(src);
   const canUseImage = src && !token && !src.startsWith('avatar://') && !src.startsWith('xhs-cover:');
-  if (canUseImage) return <img src={src} alt="" className={cn('h-full w-full object-cover', className)} />;
+  if (canUseImage) return <PersistentImage src={src} alt="" className={cn('h-full w-full object-cover', className)} />;
   const [main, bg] = avatarPalettes[(token?.index || name.length) % avatarPalettes.length];
   return (
     <div
@@ -137,7 +139,7 @@ function NoteCard({ note, onOpen }: { note: XiaohongshuNote; onOpen: (note: Xiao
       onClick={() => onOpen(note)}
       className="xhs-note-card overflow-hidden rounded-[10px] bg-white text-left shadow-[0_1px_8px_rgba(0,0,0,.06)]"
     >
-      {note.imageUrl ? <img src={note.imageUrl} alt="" className="aspect-[3/4] w-full bg-[#f7f7f7] object-cover" /> : null}
+      {note.imageUrl ? <PersistentImage src={note.imageUrl} alt="" className="aspect-[3/4] w-full bg-[#f7f7f7] object-cover" /> : null}
       <div className={cn('space-y-2 p-2.5', !note.imageUrl && 'min-h-[142px]')}>
         <p className="xhs-title line-clamp-2 text-[13px] font-bold leading-5 text-[#222]">{note.title}</p>
         {!note.imageUrl && <p className="xhs-muted line-clamp-3 text-xs leading-5 text-[#656565]">{note.content}</p>}
@@ -175,6 +177,8 @@ export function XiaohongshuApp() {
     replaceXiaohongshuGeneratedNotes,
     addGalleryPhoto,
     imageGenerationConfig,
+    imageGenerationEnabled,
+    proactiveImageGenerationEnabled,
     addAppLog,
     goBack,
   } = useAppStore();
@@ -317,9 +321,13 @@ export function XiaohongshuApp() {
     setGeneratingImage(true);
     setImageStatus('正在生成封面...');
     try {
-      const imageUrl = await requestNaiImage({
+      const imageUrl = await requestAppImage({
         config: imageGenerationConfig,
         prompt: buildNovelAiPrompt(prompt, 'xiaohongshu'),
+        triggerType: 'manual',
+        imageGenerationEnabled,
+        proactiveImageGenerationEnabled,
+        source: 'xiaohongshu',
       });
       addGalleryPhoto({
         url: imageUrl,
@@ -568,15 +576,17 @@ export function XiaohongshuApp() {
               <div className="mb-2 flex items-center justify-between">
                 <p className="text-sm font-black">图片</p>
                 <div className="flex gap-1.5">
-                  <button
-                    type="button"
-                    onClick={generateNoteImage}
-                    disabled={generatingImage}
-                    className="xhs-icon-button inline-flex items-center gap-1 rounded-full bg-[#f6f6f6] px-2.5 py-1.5 text-xs font-bold text-[#555]"
-                  >
-                    {generatingImage ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-                    NAI
-                  </button>
+                  {imageGenerationEnabled && (
+                    <button
+                      type="button"
+                      onClick={generateNoteImage}
+                      disabled={generatingImage}
+                      className="xhs-icon-button inline-flex items-center gap-1 rounded-full bg-[#f6f6f6] px-2.5 py-1.5 text-xs font-bold text-[#555]"
+                    >
+                      {generatingImage ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                      AI 配图
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => noteImageInputRef.current?.click()}
@@ -587,12 +597,14 @@ export function XiaohongshuApp() {
                   </button>
                 </div>
               </div>
-              <input
-                value={imagePrompt}
-                onChange={(event) => setImagePrompt(event.target.value)}
-                className="xhs-input mb-2 w-full rounded-[10px] bg-[#f6f6f6] px-3 py-2 text-xs outline-none"
-                placeholder="可选：单独写封面提示词"
-              />
+              {imageGenerationEnabled && (
+                <input
+                  value={imagePrompt}
+                  onChange={(event) => setImagePrompt(event.target.value)}
+                  className="xhs-input mb-2 w-full rounded-[10px] bg-[#f6f6f6] px-3 py-2 text-xs outline-none"
+                  placeholder="可选：单独写封面提示词"
+                />
+              )}
               {imageStatus && <p className="xhs-muted mb-2 text-xs font-bold text-[#777]">{imageStatus}</p>}
               {selectedImage ? (
                 <button
@@ -601,7 +613,7 @@ export function XiaohongshuApp() {
                   className="relative block overflow-hidden rounded-[10px]"
                   aria-label="移除已选图片"
                 >
-                  <img src={selectedImage} alt="" className="aspect-video w-full object-cover" />
+                  <PersistentImage src={selectedImage} alt="" className="aspect-video w-full object-cover" />
                   <span className="absolute right-2 top-2 rounded-full bg-black/55 px-2 py-1 text-xs font-bold text-white">移除</span>
                 </button>
               ) : (
@@ -620,7 +632,7 @@ export function XiaohongshuApp() {
                       onClick={() => setDraft((current) => ({ ...current, imageUrl: photo.url }))}
                       className="xhs-soft overflow-hidden rounded-[10px] bg-[#f4f4f4]"
                     >
-                      <img src={photo.url} alt="" className="aspect-square w-full object-cover" />
+                      <PersistentImage src={photo.url} alt="" className="aspect-square w-full object-cover" />
                     </button>
                   ))}
                 </div>
@@ -659,7 +671,7 @@ export function XiaohongshuApp() {
 
         {view === 'detail' && activeNote && (
           <article className="xhs-detail bg-white">
-            {activeNote.imageUrl ? <img src={activeNote.imageUrl} alt="" className="max-h-[430px] w-full object-cover" /> : null}
+            {activeNote.imageUrl ? <PersistentImage src={activeNote.imageUrl} alt="" className="max-h-[430px] w-full object-cover" /> : null}
             <div className="space-y-4 p-4">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full">

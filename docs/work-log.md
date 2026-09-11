@@ -2,6 +2,51 @@
 
 每次修改项目都要在这里追加记录。记录只写本次真实发生的事情，不写未来愿望。
 
+## 2026-08-13 潮汐邮局结构化重设计
+
+- 范围：只重做 `tidal-post-office` 的专属桌面身份、布局坐标和预览表现，保留其它主题与并行任务改动。
+- 原因：第一版完整但视觉结构仍接近通用小手机，仅靠色彩、纹理与角标不足以形成独立主题识别。
+- 内容：新增信封锚徽标与 `ROUTE 09` 邮路铭牌；为桌面两页提供独立应用坐标；用 24 枚海事邮戳字标替代潮汐主题中的通用图标；把图床改成横向“漂流投递窗”，把时间卡改成到件凭条，把 Dock 改成邮袋标签栏；同步强化通知到件票、微信/QQ 邮路抬头与气泡暗记、主题卡缩略整机和机身顶部航线铭牌。
+- 验证：`desktopLayout.test.ts`、`tidalPostOfficeTheme.test.ts`、`themesScreen.test.ts`、`themeOptions.test.ts`、`npm run lint` 与 `npm run build` 通过，源码无直接 `randomUUID` 调用；构建仅保留既有的大 chunk 提示。应用内浏览器在 `http://127.0.0.1:3013/`、390×844 下抽查锁屏、桌面两页、Dock、主题卡、通知中心、微信与 QQ，页面宽度保持 390 且无横向溢出。当前没有导入角色，微信/QQ 仅确认真实空状态和主题外壳，没有伪造会话气泡截图；结果仍不替代实体手机验收。
+
+## 2026-08-09 潮汐邮局独立整机主题
+
+- 范围：只扩展整机主题选项、主题入口、潮汐邮局专属 CSS、主题测试与维护文档；保留微信/QQ 会话数据、回复拆泡方式、独立气泡皮肤和其它整机主题不变。
+- 原因：已有“潮汐邮票”只是一套微信/QQ 气泡外观，用户需要在主题页单独出现一张可切换的“潮汐邮局”完整整机主题卡。
+- 内容：新增 `tidal-post-office` 主题 ID、主题卡和根级主题类；专属样式覆盖手机壳、锁屏、桌面、邮票齿孔图标、海玻璃 Dock、通知、通用卡片/按钮/输入框、微信和 QQ 的跟随主题气泡及主题页缩略预览。配色使用深海蓝绿、海玻璃绿、旧天蓝、羊皮纸、珊瑚粉和氧化铜，装饰限制在背景、边框和角标，不覆盖动态内容。
+- 验证：`npx tsx src/themes/themeOptions.test.ts`、`npx tsx src/apps/themes/themesScreen.test.ts`、`npx tsx src/themes/tidal-post-office/tidalPostOfficeTheme.test.ts`、`npm run lint` 与 `npm run build` 通过；构建仅保留既有的大 chunk 提示。应用内浏览器在 390×844 下确认主题卡可单独选择且刷新后保留，根节点应用 `theme-tidal-post-office`；锁屏、桌面、通知、微信和 QQ 无横向溢出。当前测试数据未导入角色，聊天房间气泡仅完成 CSS 结构门禁，没有冒充真实会话截图验证。
+
+## 2026-08-07 预设页紧凑交互与删除修复
+
+- 原因：预设管理页继承手写字体，两个选择区长期展开，当前选择反馈不明显；条目卡过高，删除藏在展开编辑器内并依赖 WebView 不稳定的系统确认框。
+- 内容：预设页固定使用正常系统中文字体；“手机整体风格”和“软件预设”默认折叠并显示当前值；选中项改成深色高亮、白字和勾选/圆点反馈；条目卡改成紧凑行，点击正文展开编辑，右侧常显删除按钮，排序按钮收进展开区；所有删除改成页面内红色确认条，不再调用 `window.confirm`。当前导入预设增加“删除预设”，软件恢复操作改成文字按钮。
+- 稳定性：新增条目放到列表顶部并立即展开，避免 159 条分页时新增后看不到；删除临时新条目后条目数和开启数能准确恢复。
+- 验证：82 个 TypeScript/TSX 测试、类型检查、生产构建和离线 WebView 刷新通过；本地页面确认系统中文字体、两个折叠区、黑底白字选中态、紧凑条目和右侧删除键。实际新增临时条目后从 159/61 变为 160/62，页面内确认删除后恢复 159/61；整个 `Monster_Hone_v1.4` 预设的删除确认只打开后取消，用户预设未删除。未打 APK。
+
+## 2026-08-07 预设条目管理迁回“预设”App
+
+- 原因：完整的酒馆条目编辑器误放在微信“我 > 设置”，和桌面已有的“预设”App职责重复，用户也不容易找到。
+- 内容：酒馆 JSON/TXT 导入、粘贴导入、条目总数/开启数、搜索、筛选、新增、编辑、角色身份、开关、排序、删除和发送预览全部迁到桌面“预设”App的微信分类；微信设置只保留当前预设选择、条目摘要、“去预设 App 管理条目”入口及上下文、温度、最大长度、RP 长短。迁移沿用原 `chatPresetEntries` 状态，已导入数据无需重导。
+- 修正：恢复微信默认预设或全部默认预设时会同步清空旧结构化条目，避免界面显示默认预设但请求仍偷偷发送旧条目。
+- 性能：条目列表默认只渲染前 30 条，可每次继续显示 30 条；搜索和开关统计仍覆盖全部条目，避免 159 条预设一次性铺满页面造成明显卡顿。
+- 验证：82 个 TypeScript/TSX 测试、`npm run lint` 和生产构建通过；本地页面确认预设 App 显示 `Monster_Hone_v1.4`、159 条/开启 61 条，条目搜索正常；微信设置只保留摘要和跳转入口，原条目状态未改动。未调用真实聊天 API，未打 APK。
+
+## 2026-08-07 酒馆式聊天预设条目管理
+
+- 原因：原导入器只把酒馆预设中判定为开启的内容拼成一个大文本框，条目名称、关闭项、顺序和角色身份无法在小手机内查看或调整；并且 Monster Hone 的真实开关保存在 `prompt_order[].order`，与部分 `prompts[].enabled` 不一致，旧逻辑会读错。
+- 内容：新增结构化 `chatPresetEntries`，persist 71→72；导入时完整保留最多 500 个条目的名称、内容、system/user/assistant 身份、酒馆顺序和实际开关。微信设置新增条目总数/开启数、搜索、开启/关闭筛选、新增、展开编辑、角色选择、显式保存、上下移动和二次确认删除；只读发送预览只组合已开启且有正文的条目。切换回内置预设会退出结构化条目模式，不影响旧纯文本预设兼容。
+- 发送：结构化条目不再只作为一个系统大文本发送；ChatScreen 按条目顺序生成独立 system/user/assistant 消息，关闭项和空占位不会进入请求。小手机自身的人设、RP 长短、生活动作和上下文规则仍由基础系统消息注入。
+- 实测：重新导入 `D:\Monster_Hone_v1.4.json` 后，页面显示预设名 `Monster_Hone_v1.4`、159 条、开启 61 条，其中 49 条含正文会实际发送；开关从 61→62→61 可恢复，搜索“思维链测试·改”只显示一个条目，展开后可见角色、保存和删除操作。刷新页面后 159/61 状态仍保留，页面无横向溢出和控制台错误。
+- 验证：81 个 TypeScript/TSX 测试全部通过；`npm run lint`、`npm run build` 通过。未调用真实聊天 API，未打 APK。
+
+## 2026-08-07 聊天截断、短 RP 与长 RP 修复
+
+- 原因：用户确认接口后台已经返回完整正文，实际问题是小手机把回复拆成多条后使用延迟逐条写入；页面切换、WebView 暂停或异常格式会让后续气泡没有落库，最终只剩“最”或 `[` 之类片段。短气泡连发本身是正常的短 RP，不应被统一改成单气泡。
+- 截断修复：AI 完整回复先完成解析和图片动作准备，再通过新增的 `addMessages()` 在一次状态更新中保存全部气泡，移除每条消息保存前 420–1400ms 的人工等待。JSON 数组、代码围栏、对象式 `messages/replies/content` 和未配平数组行都能提取正文，单独的 `[`/`]` 不再显示；闭合或未闭合 `<think>` 内容会被过滤。`reasoning_content` 不再作为正文兜底，接口只有思维内容而无最终正文时会明确报错，不把原生思维链显示给用户。
+- RP 分类：微信设置把原“气泡方式”改为“RP 长短”，提供“自动选择短 / 长 RP”“短 RP（多条短气泡）”“长 RP（完整单气泡）”。短 RP 保留两到四条真人式短气泡并禁止长段括号旁白；长 RP 在单个气泡中保留完整正文和自然分段，只允许情节需要时低频出现一小段括号动作/心理描写；自动模式按情境选择。三种模式都使用同一套完整落库逻辑。
+- 兼容修复：默认最大回复长度由 520 提升到 1200，v70 旧默认迁移到 1200且自定义值不变；OpenAI 兼容地址支持域名、`/v1`、Gemini `/v1beta/openai` 和完整 `/chat/completions`；数组式正文、空正文和 `finish_reason=length` 均有明确处理；主动生图关闭且模型只输出图片动作时补可见文字，避免整轮静默。
+- 验证：78 个 TypeScript/TSX 测试和 5 个 Node 后端/移动桥测试通过；`npm run lint`、`npm run build`、`mobile-export/refresh-web.ps1` 通过。本地页面确认默认最大回复长度为 1200，RP 下拉框完整显示三个分类和说明，页面无横向溢出、控制台无 error/warn。未调用用户真实聊天 API，未产生接口费用，未打 APK。
+
 ## 记录格式
 
 ## 2026-06-23 TTS 设置页收起音色区
@@ -206,7 +251,7 @@
 - 内容：`src/apps/system/SystemScreens.tsx` 的 `PresetsScreen` 改为按软件分卡片编辑预设名称和内容，并保留微信内置聊天预设套用；`src/store.ts` 新增 `defaultSoftwarePresets` 以及 `xiaohongshuPreset*`、`bilibiliPreset*`、`phonePreset*`、`musicPreset*` 字段，persist version 升到 45；`BilibiliScreen` 改读 B站专属预设；`XiaohongshuApp` 刷新生成时把小红书预设传入生成逻辑；`PhoneScreen` 电话回复读电话预设；`MusicScreen` char 写歌读音乐预设；`AppPrimitives.Panel` 类型兼容 JSX key。
 - 文档：同步 `PROJECT_OUTLINE.md` 和本工作记录。
 - 验证：`npm run lint` 通过；全部 `src/**/*.test.ts` 通过，保留 Node 环境中 zustand storage unavailable 提示；`npm run build` 通过，保留 Vite chunk 体积提示；`rg -n "crypto\.randomUUID|randomUUID" src` 无命中。
-- 后续：微信“我”里仍保留导入酒馆/聊天预设入口，后续可把导入入口也复制到预设 App 顶部。
+- 后续修正（2026-08-07）：导入与完整条目管理已经统一迁到桌面“预设”App；微信“我”里不再保留重复编辑器。
 
 ## 2026-05-11 P5R 红黑主题调整
 
@@ -575,6 +620,24 @@
 - 内容：`qqChannelsLogic.ts` 新增 `buildPersonaQqChannelMessageDraft()`，从角色的 `description/personality/firstMessage/imagePromptTags` 生成频道发言；`qqDynamicLogic.ts` 新增 `buildPersonaQqDynamicDraft()`，生成角色空间说说和配图提示词；频道页新增“角色冒泡”，空间页新增“角色发动态”，都会优先读取已导入角色资料，并给空间动态附本地文字图片。
 - 验证：`npx tsx src/apps/qq/channels/qqChannelsLogic.test.ts`、`npx tsx src/apps/qq/dynamic/qqDynamicLogic.test.ts`、`npx tsx src/storeQqFeeds.test.ts` 均通过；`npm run lint` 通过；`npm run build` 通过，仅保留 Vite chunk 体积提示；`powershell -ExecutionPolicy Bypass -File mobile-export\refresh-web.ps1` 通过并刷新离线 WebView。
 
+## 2026-07-05 AI 兼容发送和设置能力核查
+
+- 范围：只改聊天补全请求的消息 role 兼容层、电话/B站/音乐局部请求函数、共享 AI 文本测试和维护文档；未改 store 持久化版本、主动事件调度策略、TTS 播放实现或 NAI 生图接口。
+- 原因：用户需要确认角色主动/Chat 主动是否有后端、是否支持 8 点/12 点提醒、生图、豆包、MiniMax，以及 DV4/Gemini 类接口下“系统设置发送改为用户设置发送”。
+- 内容：新增 `prepareChatCompletionMessages()`，把所有发送到 `/chat/completions` 的 `role: "system"` 转成 `role: "user"` 且保留 `System settings:` 前缀；共享 `requestChatCompletion`/`requestChatCompletionStream` 和 `App`、音乐、电话、B站里的本地补全请求都改用转换后的消息体；测试直接 mock `fetch` 检查请求 body 不再包含 system role。
+- 结论：现有 `char主动` 支持本地随机主动和后端每日提醒 outbox 同步；每日提醒解析和到点发送已有测试覆盖，能解析晚上 8 点半并在 20:31 发送，也已有早上 6 点/中午 12 点作息主动测试。生图已有 NAI V4/V4.5 payload、服务端代理、自定义 NAI relay 和主动图片 gate；TTS 设置已包含 MiniMax 与豆包新版 seed-tts-2.0 请求构造。
+- 文档：同步 `PROJECT_OUTLINE.md` 的 `src/apps/shared/` 职责说明，并追加本记录。
+- 验证：`npx tsx src/apps/shared/aiText.test.ts`、`npx tsx src/apps/active-events/activeEventsLogic.test.ts`、`npx tsx src/lib/naiImage.test.ts`、`npx tsx src/tts.test.ts`、`npx tsx src/apps/settings/settingsTtsPresets.test.ts`、`npx tsx src/apps/music/musicGeneration.test.ts` 均通过；`npm run lint` 通过；在 `C:\Users\凡人歌\Documents\Codex\小手机` 真实目录运行 `npm run build` 通过，仅保留 Vite chunk 体积提示。在 `C:\codex-smallphone` junction 路径运行 build 会触发 Vite/Rollup HTML 输出名路径错误，应优先使用真实目录构建。
+- 后续：Discord 最新评论尚未读取；当前 in-app browser 打开 Discord 超时，Chrome 插件未连接，Edge 暂无可控插件。需要用户授权启动/登录 Chrome，或把 Discord 评论贴到线程里后再按评论继续改。
+
+## 2026-07-05 Chrome 连接、后端启动和豆包试听实测
+
+- 范围：连接 Codex Chrome Extension，启动本地小手机后端和代理前端，实测设置页豆包 TTS；只改 `src/tts.ts` 的豆包缺 Key 校验、`src/tts.test.ts` 和工作日志。
+- 原因：用户指出之前只验证了豆包请求构造，没有实际听到声音，并追问主动后端是否已经跑起来。
+- 内容：确认 Chrome 已安装，Codex Chrome Extension 在 Chrome `Profile 5` 已安装启用，本机桥正确；启动 `npm run phone:backend`，后端监听 `8789`；另启动带 `VITE_API_PROXY_TARGET=http://127.0.0.1:8789` 的前端 `http://127.0.0.1:3002/`。后端 `/api/proactive-reminders/health` 和经前端代理的同一路径均返回 `ok: true`。浏览器实测设置页切到豆包后发现 `TTS API 密钥` 为空，先前会卡在“正在试听...”；新增缺豆包 API Key 的同步校验，修复后页面立即提示“先填写豆包TTS API Key。”。
+- 验证：`npx tsx src/tts.test.ts` 先因“Missing expected exception”失败，补实现后通过；`node server/nai-proxy.test.cjs` 通过，覆盖主动提醒入队和 push 通知发送；`npx tsx src/apps/active-events/proactiveReminderClient.test.ts` 通过；`npx tsx src/apps/active-events/activeEventsLogic.test.ts` 通过。Chrome 中未听到豆包声音，因为当前本地设置未填写豆包 API Key；这不是已播放成功。
+- 后续：填入真实豆包 API Key 后，再点豆包音色预设和“试听 TTS”才能完成真实出声验证；当前后端进程和代理前端进程保持运行，供继续联调。
+
 ## 2026-06-23 朋友圈好友动态流和 char 主页
 
 - 范围：只改微信朋友圈逻辑、朋友圈主页 UI、朋友圈样式、维护文档和移动端导出；未改 QQ、聊天 API、store 持久化版本或其他 App。
@@ -582,3 +645,113 @@
 - 内容：`momentsLogic.ts` 新增 `buildCharacterMomentProfile`、`generateSettingFriendComments` 和 `getCharacterMomentFeed`，从角色描述/性格/开场白里提取摄影社朋友、室友、同学、同事等好友身份；好友动态流中点击 char 头像或名字进入 TA 的朋友圈主页；TA 主页显示封面、签名、好友身份标签、只属于 TA 的动态，并可“刷 TA 的朋友圈”；char 动态评论区混入设定好友评论，同时过滤“慢热但很照顾朋友”这类性格描述，避免误当好友名。
 - 文档：同步 `PROJECT_OUTLINE.md` 和 `docs/wechat.md`，记录朋友圈好友动态流、char 主页和设定好友评论能力。
 - 验证：`npx tsx src/apps/wechat/moments/wechatMoments.test.ts` 先因新 helper 缺失失败，补实现后通过；`npx tsx src/apps/wechat/wechatModules.test.ts` 通过；`npm run lint` 通过；`npm run build` 通过，仅保留既有 Vite chunk 体积提示；`powershell -ExecutionPolicy Bypass -File mobile-export\refresh-web.ps1` 通过并刷新离线 WebView；Playwright 390x844 打开 `http://127.0.0.1:3001/`，确认点击 char 动态可进入 TA 的朋友圈主页，主页显示摄影社朋友/室友阿柚标签和评论，且不再把性格描述当好友标签；`rg -n "crypto\.randomUUID|randomUUID" src package.json vite.config.ts` 无命中。
+
+## 2026-07-05 提示词模式、当前时间和消息多选删除
+
+- 范围：只改共享聊天补全消息准备、设置页模型选项、微信/QQ 共用聊天房间的消息多选删除、相关样式、测试和维护文档；未改 NAI 生图请求、主动提醒后端服务实现、TTS 真实鉴权或移动端导出。
+- 原因：Discord 反馈要求 AI 至少知道当前时间和日期，且 DeepSeek/DV4 等接口需要可选择把系统设定按 user prompt 发送；用户进一步确认“系统提示词/默认提示词/用户提示词”需要是三个可在设置或上下文里切换的版本。同时补上长按消息进入多选后统一删除多条消息的交互。
+- 内容：`aiText.ts` 在发往 `/chat/completions` 前注入 `当前本地时间`，并支持 `chatPromptRoleMode: "default" | "system" | "user"`；默认仍为用户提示词模式，设置页“模型”标签新增“提示词发送方式”三段按钮。`ChatBubble` 新增选择模式和小圆点入口；`ChatScreen` 维护选中消息 ID，长按进入多选，输入栏上方显示“已选择 N 条”和删除按钮，批量删除同时支持用户消息和角色消息，删除待回复用户消息时同步清理待回复草稿。
+- 文档：同步 `PROJECT_OUTLINE.md` 和 `docs/wechat.md`，记录提示词发送模式、当前时间注入和聊天多选删除职责。
+- 验证：`npx tsx src/apps/wechat/chat/components/ChatBubble.test.tsx` 先因缺少 `wechat-selection-dot` 失败，补实现后通过；`npx tsx src/apps/shared/aiText.test.ts` 通过；`npx tsx src/tts.test.ts` 通过；`npx tsx src/apps/active-events/activeEventsLogic.test.ts` 通过；`npm run lint` 通过；`npm run build` 通过，仅保留 Vite chunk 体积提示；`Invoke-RestMethod http://127.0.0.1:3002/api/proactive-reminders/health` 返回 `{"ok":true,"reminders":0,"outbox":0,"devices":0,"tickMs":30000}`。
+- 结论：本地后端和带代理前端仍在运行，健康检查正常。豆包试听当前只验证到“缺 API Key 会立即提示”，没有真实豆包 API Key 时不能证明已经听到声音；填入真实 key 后需要再次点“试听 TTS”做出声验证。
+
+## 2026-07-17 生图与 TTS 完全分离
+
+- 状态：持久化版本升到 67，新增 TTS provider profiles、生图 provider profiles、生图总开关和主动生图开关。MiniMax、豆包、NovelAI、ComfyUI 和多个公益站配置互不覆盖，也不交叉复用 Key。
+- UI：TTS 页常显总开关、服务商、模型、音色和试听，地址/Key/高级参数收起；生图页常显两个开关、服务商、命名配置、模型和小图测试。公益站删除保留二次确认。
+- 统一入口：微信/QQ 聊天、朋友圈、QQ 空间、小红书、相册和 char 主动全部进入 `requestAppImage()`，开关判定发生在网络请求之前。生图适配包含 NAI、ComfyUI、OpenAI Images、MJ 任务和通用 JSON。
+- 存储：生成图写入 IndexedDB，状态保存引用；聊天、QQ、小红书、朋友圈、相册和锁屏均能解析。备份/恢复包含图片资产、朋友圈元数据和 TTS 自定义音色。
+- 网络：TTS 网页代理限制官方可信域名、GET/POST、45 秒和 20 MiB 响应；APK 仍走原生网络桥。
+- 验证：`npm run lint`和 `npm run build` 通过；所有 `src/**/*.test.ts(x)` 分组运行通过。本地浏览器验收确认 TTS 切换/刷新恢复、公益站新增/命名/二次确认删除、生图关闭后测试禁用、相册和朋友圈 AI 配图输入联动。安全配置核查显示豆包、MiniMax、NAI 和公益站 Key 均未配置，本轮未发真实计费请求。
+- 发版：移动端版本升到 1.09 / versionCode 27，刷新离线 WebView 后成功构建 `小手机-v27-版本1.09-生图TTS分离.apk`（65.96 MiB，SHA-256 `BBE25AC45FB8133462E7CBCE45134A6225FA2DC51F6E00497004CDF9DBDB9D31`）。
+
+## 2026-07-17 界面重叠、主题与目录职责修正
+
+- 范围：修正桌面主题、Dock、短屏安全区和设置页交互；拆出设置页供应商 UI helper；隔离不同主题的桌面拖拽坐标；未改变 TTS、生图接口协议、Key 保存边界或聊天数据结构。
+- 重叠修正：Pixel Dock 恢复绝对定位并完整留在短屏 WebView 内；P5R 的编辑入口下移避开顶部状态；页面圆点与 Dock 明确层级；桌面内容在 760px 以下使用统一安全高度。
+- 主题修正：P5R 减少大面积高饱和红色并改用暗色手机外景；凯尔特主题恢复可识别的软件图标并提高配色层次；国风 Dock 恢复中文标签；状态终端主题提高文本和图标对比度。
+- 交互与逻辑：设置页五个入口改为单行横向滚动，避免两列三行挤占表单空间；用户名只在模型页显示；音乐页明确 MiniMax 音乐 Key 与 TTS Key 独立；桌面自定义位置使用主题作用域键，避免切换主题后坐标串用和图标重叠。
+- 目录：新增 `src/apps/settings/settingsConfigUi.ts`，集中供应商标签、地址占位、模型拉取和本地音色预设读取；新增 `src/themes/polish/index.css`，集中跨主题安全区与短屏修正，不再把零散覆盖继续堆进单一主题或页面组件。
+- 验证：`npm run lint` 通过；主题规则、设置 UI helper 和主题桌面坐标均增加单元测试。浏览器 390×844 回归确认奶油、Pixel、凯尔特、国风与 P5R 桌面主要重叠已消除，设置页表单可用空间增加。
+- 完整验收：68 个 `src/**/*.test.ts(x)` 与 3 个 `server/*.test.cjs` 全部通过；`npm run build` 通过，仅保留既有 Vite chunk 体积提示；`randomUUID` 搜索无命中；离线 WebView 刷新成功。
+- 发版：移动端版本升到 1.10 / versionCode 28，并成功构建 `小手机-v28-版本1.10-界面主题修复.apk`（65.97 MiB，SHA-256 `5E6959C20C6B2E8F55ACDCB8F5D55A2F885CCEEB66D33481F4646988C6720FD1`）；`aapt` 已核对包名 `com.smallphone.app`、versionCode 28、versionName 1.10。
+
+## 2026-07-17 生图与 TTS 稳定性收口、全手动存储管理
+
+- 范围：完成生图任务中心、TTS 全局队列与缓存、付费请求防重复、全手动资产管理、持久化 v68、系统页面拆分、备份回滚、网页/APK 发版验证；不增加 B站、日记、小剧场或音乐封面生图，也不做供应商自动切换。
+- 生图：`requestAppImage()` 为每次请求记录 queued/running/success/failure/interrupted，桌面新增“生图任务”入口，可筛选、复制提示词、手动重画和删除记录。任务历史最多 100 条；刷新时未完成任务标记中断，不自动重试。
+- TTS：新增全局 FIFO 队列、顶部状态条和“停止全部”；停止会中止当前网络与播放并清空等待项。外部 TTS 音频缓存硬上限 64 MiB，达到上限后只跳过新缓存写入，不自动删除旧缓存。
+- 防重复：文本生成、生图、TTS、MiniMax 音乐和供应商测试按功能使用全局在途锁；同一功能不能并发计费，不同功能可以并行。没有自动付费重试或失败切换。
+- 全手动清理：数据备份新增“存储管理”，只允许人工选择删除孤立图片、清空未引用图片、删除选中 TTS 缓存或清空缓存；没有 LRU、按时间或按容量自动清理。备份导入改为先快照旧状态和图片，任一步失败会回滚。
+- 迁移与目录：persist 67→68 保留主题桌面位置和各供应商 profiles，活动配置不再覆盖已保存公益站/TTS 配置；`migratePersistedAppState()` 可直接单测。删除 1257 行 `SystemScreens.tsx`，拆为 `ai-context/contextPackage.ts`、`presets/PresetsScreen.tsx`、`contacts/ContactsScreen.tsx`，世界书 helper 归入通讯录目录。
+- UI 验收：内置浏览器以 390×844 验收桌面第二页、生图任务、数据备份/存储管理、TTS 设置和生图设置；所有页面 `bodyScrollWidth === bodyClientWidth === 390`，无横向溢出，控制台无 error。当前设置显示 NAI/公益站 Key 未配置，TTS 当前为浏览器服务商，因此没有执行真实计费请求。
+- 自动验证：74 个 `src/**/*.test.ts(x)` 全部通过；3 个 `server/*.test.cjs` 全部通过；`npm run lint`、`npm run build`、离线 WebView 刷新均通过；`randomUUID` 搜索无命中。
+- 发版：版本升到 1.11 / versionCode 29，成功构建 `小手机-v29-版本1.11-生图TTS稳定版.apk`（69,214,861 bytes，SHA-256 `FF40C2BA66D4C9A86E3EBDBDA5CA5808A1CC68A9DE6BB809B5CCDCC912007C2D`）；ASCII 路径下 `aapt` 已核对包名 `com.smallphone.app`、versionCode 29、versionName 1.11、minSdk 24、targetSdk 36。
+- 升级测试限制：已安装 Android Emulator、API 35 镜像和 Google Android Emulator Hypervisor Driver 安装包，并创建 `XiaoPhoneUpgrade` AVD；驱动安装脚本需要 Windows 管理员确认，当前会话无法完成提权，`emulator-check accel` 仍返回驱动未安装，因此未能实际执行 v28→v29 覆盖安装。v67→v68 状态迁移已由单测覆盖，真机/具备硬件加速的模拟器覆盖安装仍需补做。
+- 升级测试补强：新增 `scripts/test-apk-upgrade.ps1`，会在 adb-root 测试设备上以应用数据哨兵验证 `adb install -r` 后数据仍存在，并校验最终 versionCode。当前 `-MetadataOnly` 已通过：v28 `28/1.10` → v29 `29/1.11`，包名均为 `com.smallphone.app`，签名证书 SHA-256 均为 `fac61745dc0903786fb9ede62a962b399f7348f0bb6f899b8332667591033b9c`。另尝试 API 24 ARM 软件模拟器，但新版 QEMU2 已不再支持 ARM CPU 架构，不能绕过 Windows Hypervisor 限制。
+- 付费入口审计：新增 `src/lib/paidRequestCoverage.test.ts`，静态门禁文本补全只走共享 `aiText`、生图只从 `appImageGeneration` 调 NAI 适配层、TTS/音乐均持有对应付费任务锁；新增后单测与 TypeScript 检查通过。
+
+## 2026-07-18 APK 覆盖升级与数据保留实测
+
+- 环境：Google Android Emulator Hypervisor Driver 2.2 已安装并运行；使用 ASCII 路径 `C:\Temp\XiaoPhoneAvdHomeX86-20260718` 创建 Android 15 / API 35 / x86_64 的 `XiaoPhoneUpgradeX86Ascii` AVD，AEHD 硬件加速检查通过。
+- 执行：运行 `scripts/test-apk-upgrade.ps1`，先安装 v28（versionName 1.10），在 `/data/user/0/com.smallphone.app/files/codex-upgrade-sentinel.txt` 写入哨兵，再使用 `adb install -r` 安装 v29（versionName 1.11）。
+- 结果：两次安装均返回 `Success`；脚本确认包名均为 `com.smallphone.app`、versionCode 从 28 增加到 29、签名证书 SHA-256 均为 `fac61745dc0903786fb9ede62a962b399f7348f0bb6f899b8332667591033b9c`，覆盖安装后哨兵仍可读取。
+- 启动验证：`com.smallphone.app/.MainActivity` 成为 `topResumedActivity`，应用进程存在；最近 400 行错误级别 logcat 中未发现该应用的 `FATAL EXCEPTION` 或 AndroidRuntime 崩溃。
+- 回归验证：覆盖升级实测后再次运行全部 74 个 `src/**/*.test.ts(x)` 和 3 个 `server/*.test.cjs`，全部通过；`npm run lint` 与 `npm run build` 通过，生产构建仅保留已有的大 chunk 提示，`randomUUID` 搜索无命中。
+- 结论：此前“缺少可用 Hypervisor，真实覆盖安装待补做”的限制已解除。v28→v29 的包签名、版本递增、覆盖安装、应用私有数据保留和启动均已在模拟器中形成可重复证据。
+
+## 2026-07-18 v1.12 生图与交互回归修复
+
+- 生图协议：修正 GPT Image 地址规范、合法尺寸、`quality`、低额度测试和 150 秒超时；OpenAI 请求不再强制 `response_format`，解析 URL、`b64_json`、通用 base64 与 Responses `output[].result`。NAI、ComfyUI、MJ 和通用 JSON 保持各自尺寸与 90 秒默认超时。
+- 双端网络：新增 `src/lib/nativeImageBridge.ts`、网页 `/api/image/proxy`、Vite/Node/Vercel 代理和 APK `small-phone-image-fetch/cancel/response` 协议。原生桥限制 GET/POST、HTTP(S)、150 秒和 32 MiB；任务中心停止按钮会真实中止原生请求，不自动重试或切换供应商。
+- 设置交互：测试前显示脱敏后的域名、模型和尺寸；错误区分鉴权、额度、模型、尺寸、跨域、超时和返回字段；模型列表提示“可访问不代表支持生图”。设置文本输入改为 300ms 合并写入并在失焦时立即提交；生图测试结果改用 `PersistentImage` 读取 IndexedDB 引用。
+- 聊天与上下文：新增 `MessageKind: "theater"` 剧情卡，并兼容旧 `call-note + 【小剧场】` 删除；聊天最近 200 条分页、每次加载 100 条。AI 上下文增加稳定 `sectionId`、按角色排除/恢复和恢复全部，persist 68→69，来源数据不会被删除。
+- 卡顿与键盘：App、桌面、聊天、ChatBubble、设置、AI 上下文、小剧场和生图任务中心改为精确 selector，ChatBubble 使用 `React.memo`；移除聊天页重复键盘 lift，只保留 App 壳 `visualViewport`/`--app-vvh`，输入面板按可视高度滚动。
+- 自动验收：76 个 TypeScript/TSX 直接测试文件和 5 个 Node 服务/脚本测试文件全部通过；`npm run lint`、生产构建、离线 WebView 刷新通过。Playwright 390×844/390×600 模拟 OpenAI 代理生图成功，确认最终请求为 `gpt-image-1.5 + low + 1024×1024`、没有 `response_format`、图片从持久化引用显示、无横向溢出和控制台错误。
+- APK：版本升级为 1.12 / versionCode 30；ASCII 独立目录构建成功，产物 `小手机-v30-版本1.12-生图交互回归版.apk` 为 69,250,721 bytes，SHA-256 `85347DB2748AE314A3728BEBC1D84B8067318AFADB165BD720D2800C10E53683`。`aapt` 核对包名 `com.smallphone.app`、minSdk 24、targetSdk 36。
+- 覆盖升级：在 Android 15 / API 35 / x86_64 模拟器执行 v29→v30，签名证书 SHA-256 保持 `fac61745dc0903786fb9ede62a962b399f7348f0bb6f899b8332667591033b9c`，两次安装均为 `Success`，应用私有目录哨兵保留；v30 `MainActivity` 成为 top resumed activity，未发现应用 FATAL EXCEPTION。
+- 真实计费：当前工作区没有可用的豆包、MiniMax、NAI 或公益站 Key，本轮只完成模拟接口和 APK 协议验收，没有声称真实计费生图/TTS 成功。
+
+## 2026-08-06 多主题预览与微信/QQ气泡美化
+
+- 范围：只扩展主题 App、主题/气泡选项、微信与 QQ 共用气泡视觉、持久化迁移、测试和维护文档；未改聊天数据、AI 回复、气泡拆分、通知、主动事件或供应商配置。
+- 原因：主题页原先只有文字卡片，六套整机主题不便于切换前辨认；微信/QQ 气泡外观只能被整机主题带动，没有可独立选择的美化入口。
+- 内容：六套整机主题卡增加对应配色、形状和 Dock 的缩略预览；新增 `bubbleStyle`，提供跟随主题、微信青绿、QQ 晴空、雾面玻璃、手账贴纸、像素电波六个选项，同时覆盖微信/QQ文字和语音气泡。显式气泡皮肤从 `src/themes/bubbles/index.css` 最后加载，确保能覆盖各整机主题自带气泡；`theme` 不增加覆盖，继续保留每套主题原设计。
+- 持久化：persist 69→70；旧数据或未知气泡 ID 归一为 `theme`，不改变用户现有主题观感。
+- 文档：同步 `PROJECT_OUTLINE.md`、`docs/wechat.md`、`模块/主题/README.md`、`模块/微信/README.md` 和 `模块/QQ/README.md`，明确“气泡美化”与微信设置里的“气泡方式”互不影响。
+- 验证：针对性主题、主题页和迁移测试通过；`npm run lint` 通过。生产构建和 390×844 浏览器视觉检查在本条后续验收时补充结果。
+
+## 2026-08-06 取消社区验证并改为问题反馈社区
+
+- 设置：把“社区验证”标签改为“问题反馈”，移除后门服务地址、Discord Client ID、Guild ID 和身份组输入，只保留固定的问题反馈社区入口 `https://discord.gg/VpM25X3edm`。
+- 行为：加入社区不再是使用条件；网页端直接跳转邀请页，APK 端通过已有 `open-url` 原生消息交给系统浏览器，不读取 Discord 身份、不保存验证信息。
+- 自检：删除社区验证检查项，自检只报告文本模型、TTS 和生图，避免已取消功能继续产生警告。
+- 兼容：旧版持久化数据中的社区验证字段暂不强删，导入旧备份时会被忽略，当前界面和运行逻辑均不使用。
+- 文档：宣传文档、配置教程、桌面教程和项目结构说明同步改为问题反馈入口，删除已过期的后门码及登录说明。
+- 验证：82 个测试全部通过；`npm run lint`、生产构建和离线 WebView 刷新通过。浏览器确认设置页不再出现“社区验证”，并实际跳转到 `https://discord.com/invite/VpM25X3edm` 后返回小手机。
+
+## 2026-08-11 v1.15 短长 RP 预设稳定版
+
+- 预设收口：微信内置聊天预设只保留“小手机 · 短 RP”和“小手机 · 长 RP”，删除自然微信、活人感微信、AI助手、黏人连发、克制冷淡及旧“自动判断”条目；短 / 长只从“正在使用”下拉框切换。
+- 互斥逻辑：短、长规则保留在同一可编辑条目表中，但当前模式只能开启一条，模式开关由下拉框锁定；括号风格同组也不能同时开启或全部关闭。切换短 / 长时保留玩家修改过的公共条目、顺序、角色和括号选择。
+- 微信 / QQ 共用：两端读取同一 `chatPresetEntries`、`chatPresetPrompt` 和 `chatReplyStyle`；预设 App 点击微信或 QQ 都进入同一管理面板，旧 QQ 扁平提示词不再覆盖聊天请求。
+- 数据迁移：persist 72→73；旧“小手机专用 · 短长 RP”按已选回复模式迁移，移除旧自动规则；旧内置预设迁到短 RP；导入的自定义预设和本地角色卡原样保留。
+- 验证：浏览器实际切换确认短/长为 `true/false` 互斥、括号风格互斥、微信与 QQ 同显“长 RP”；87 个 `src/**/*.test.ts(x)` 全部通过，`npm run lint`、生产构建和离线 WebView 刷新通过。
+- 发版：版本升到 1.15 / versionCode 33，ASCII 路径原生构建成功。产物 `小手机-v1.15-短长RP预设稳定版.apk` 为 69,487,437 bytes，SHA-256 `99DDBD5DB2E94E661C9D648256D6D83423D21F35BA699378607591DEE5B1DD9F`；`aapt` 核对包名 `com.smallphone.app`、minSdk 24、targetSdk 36。v32→v33 元数据升级门禁及签名一致性通过，未在本轮重复执行真机覆盖安装。
+
+## 2026-08-13 聊天背景、软件头像与记账接入
+
+- 聊天背景：主题页新增全局聊天背景上传、预览和恢复默认；微信与 QQ 共用，只覆盖消息区，不改锁屏壁纸。图片写入 IndexedDB，store 只保存 `xiaophone://image/...` 引用。
+- 软件头像：修复原先只保存字符串、桌面却不能读取持久图片的问题；主题页 24 个软件均可单独选择图片、预览和恢复默认，桌面与 Dock 统一通过 `PersistentImage` 显示。
+- 记账：新增独立记账 App 并接入桌面和路由；收入、支出、分类、角色、备注、筛选、汇总和单条删除均写入原有 `purchaseRecords`，微信“我 → 记账与订单”打开同一本账，不复制旧数据。
+- 数据迁移：persist 73→74；旧订单默认迁为支出，原聊天、角色卡、预设、订单和自定义软件头像均保留；继续坚持全手动清理，不自动删除用户资产。
+- 浏览器验收：实际新增 12.34 元测试支出并刷新确认持久化，随后删除；实际上传软件头像并刷新确认仍显示，随后恢复默认；实际上传聊天背景确认预览与状态，随后恢复默认；临时图片资产已通过存储管理手动清理，最终图片资产为 0，未动原有 TTS 缓存。
+- 自动验证：90 个 `src/**/*.test.ts(x)` 全部通过；`npm run lint`、生产构建和离线 WebView 刷新通过；浏览器控制台无应用错误。构建仍只有既有的大 chunk 提示。本轮未生成 APK、未执行真机验收。
+
+## 2026-08-13 仓库字体本地接入
+
+- 来源：从用户公开仓库 `jiuyi777/sillytavern-theme-assets` 的提交 `358a9f9e18c996f0042c82cfcd6ac1f7455ad05c` 稀疏复制 10 套 WOFF2；每套字体旁保留 `OFL.txt`、`source.json` 和元数据，未引入仓库中授权不清晰的条目。
+- 字体选择器：主题页由原先 4 个系统字体名扩展为 11 个真实入口，包括霞鹜漫黑、系统清爽、朱雀仿宋、DotGothic16、Zen Maru Gothic、站酷快乐体、站酷小薇体、站酷庆科黄油体、马善政毛笔、龙藏和 Zen Old Mincho；选中态增加 `aria-pressed`，卡片直接使用对应字体预览。
+- 持久化：persist 74→75；旧 `rounded/system/serif/pixel` 值原样保留并映射到真实字体，无效值回落霞鹜漫黑。字体文件属于应用静态资源，不进入玩家存档，也不改角色卡、预设或聊天数据。
+- APK 离线链路：修复 `mobile-export/refresh-web.ps1`，把 Vite 生成的 WOFF2 转成 `data:font/woff2;base64` 内嵌到 WebView HTML。最终离线内容包含 10 个字体数据 URL、0 个相对 WOFF2 URL，`web-content.js` 为 33,977,096 bytes。
+- 验证：浏览器实际选择龙藏书法后整机立即换字，刷新后仍保持，随后恢复原霞鹜漫黑；91 个 `src/**/*.test.ts(x)` 全部通过，`npm run lint`、生产构建和离线 WebView 刷新通过。生产构建逐个输出 10 个字体资产，只保留既有大 chunk 提示；本轮未生成 APK、未执行真机字体渲染验收。

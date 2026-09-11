@@ -95,6 +95,7 @@ export function LogsScreen() {
           ))}
         </div>
         {status && <p className="mt-3 text-xs font-black opacity-65">{status}</p>}
+        <p className="mt-3 text-[11px] font-bold leading-5 opacity-60">AI 请求日志展开后显示完整发送顺序和全文；复制按钮也会复制完整内容。最近 8 条完整请求会跨刷新保留。</p>
       </Panel>
 
       <Panel>

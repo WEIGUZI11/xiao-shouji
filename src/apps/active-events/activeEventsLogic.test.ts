@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   ACTIVE_EVENT_REFRESH_COOLDOWN_MS,
   buildActiveEventWrites,
+  buildCharacterProactiveReminderSetup,
   buildDueProactiveReminderWrites,
   buildRandomProactiveMessageWrites,
   buildTodayLifeRefreshSuggestions,
@@ -225,6 +226,37 @@ assert.ok(reminderParsed.calendarEvent.tags.includes('主动提醒'));
 assert.ok(reminderParsed.calendarEvent.tags.includes('长期记忆'));
 assert.match(reminderParsed.calendarEvent.title, /喝水/);
 assert.match(reminderParsed.lifeEvent.summary, /每天 20:30/);
+
+const characterProactiveSetup = buildCharacterProactiveReminderSetup({
+  character: americaCharacter,
+  hour: 6,
+  minute: 5,
+  now: new Date('2026-05-10T18:01:00+08:00').getTime(),
+  clientId: 'client-active-ui',
+});
+assert.equal(characterProactiveSetup.calendarEvent.id, 'character-proactive-char-america-0605');
+assert.equal(characterProactiveSetup.calendarEvent.characterId, 'char-america');
+assert.equal(characterProactiveSetup.calendarEvent.repeat, 'daily');
+assert.equal(characterProactiveSetup.calendarEvent.reminderAt, characterProactiveSetup.calendarEvent.startAt);
+assert.equal(characterProactiveSetup.calendarEvent.source, 'manual');
+assert.ok(characterProactiveSetup.calendarEvent.tags.includes('角色主动'));
+assert.ok(characterProactiveSetup.calendarEvent.tags.includes('玩家设置'));
+assert.equal(characterProactiveSetup.backendReminder.calendarEventId, 'character-proactive-char-america-0605');
+assert.equal(characterProactiveSetup.backendReminder.timeZone, 'America/New_York');
+assert.equal(characterProactiveSetup.backendReminder.hour, 6);
+assert.equal(characterProactiveSetup.backendReminder.minute, 5);
+assert.equal(characterProactiveSetup.backendReminder.clientId, 'client-active-ui');
+assert.equal(characterProactiveSetup.nativeLocalReminder.id, 'char-active-character-proactive-char-america-0605');
+assert.equal(characterProactiveSetup.nativeLocalReminder.title, '纽约角色主动联系');
+assert.match(characterProactiveSetup.nativeLocalReminder.body, /06:05/);
+assert.equal(characterProactiveSetup.nativeLocalReminder.hour, 6);
+assert.equal(characterProactiveSetup.nativeLocalReminder.minute, 5);
+assert.deepEqual(characterProactiveSetup.nativeLocalReminder.data, {
+  type: 'proactive-reminder',
+  calendarEventId: 'character-proactive-char-america-0605',
+  characterId: 'char-america',
+  channel: 'wechat',
+});
 
 const dueReminder = buildDueProactiveReminderWrites({
   calendarEvents: [{

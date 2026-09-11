@@ -90,6 +90,38 @@ export interface ParsedDailyWechatReminder {
   lifeEvent: LifeEventDraft;
 }
 
+export interface CharacterProactiveReminderSetup {
+  calendarEvent: Omit<CalendarEvent, 'createdAt' | 'updatedAt'> & Partial<Pick<CalendarEvent, 'createdAt' | 'updatedAt'>>;
+  nativeLocalReminder: {
+    id: string;
+    title: string;
+    body: string;
+    hour: number;
+    minute: number;
+    data: {
+      type: 'proactive-reminder';
+      calendarEventId: string;
+      characterId: string;
+      channel: 'wechat';
+    };
+  };
+  backendReminder: {
+    clientId?: string;
+    calendarEventId: string;
+    characterId: string;
+    characterName: string;
+    channel: 'wechat';
+    title: string;
+    task: string;
+    hour: number;
+    minute: number;
+    timeZone: string;
+    enabled: boolean;
+    sourceMessageId?: string;
+    createdAt?: number;
+  };
+}
+
 export interface ProactiveReminderWrite {
   calendarEventId: string;
   chatTarget: { characterId: string; channel: 'wechat' };
@@ -268,6 +300,73 @@ export function parseDailyWechatReminderRequest(
       sourceId: sourceMessageId ? `wechat-reminder-${sourceMessageId}` : undefined,
       readableByChar: true,
       tags: ['主动提醒', '长期记忆', '微信'],
+      createdAt: now,
+    },
+  };
+}
+
+export function buildCharacterProactiveReminderSetup({
+  character,
+  hour,
+  minute,
+  now = Date.now(),
+  clientId,
+}: {
+  character: Character;
+  hour: number;
+  minute: number;
+  now?: number;
+  clientId?: string;
+}): CharacterProactiveReminderSetup {
+  const safeHour = Math.max(0, Math.min(23, Math.round(hour)));
+  const safeMinute = Math.max(0, Math.min(59, Math.round(minute)));
+  const label = `${padTime(safeHour)}:${padTime(safeMinute)}`;
+  const id = `character-proactive-${character.id}-${padTime(safeHour)}${padTime(safeMinute)}`;
+  const timeZone = getCharacterTimeZone(character).timeZone;
+  const startAt = nextLocalTime(now, safeHour, safeMinute);
+  const title = `每天 ${label} ${character.name} 主动联系`;
+  const task = '主动联系用户';
+  return {
+    calendarEvent: {
+      id,
+      owner: 'user',
+      characterId: character.id,
+      title,
+      note: `玩家在角色主动中设置：每天 ${label} 让${character.name}主动联系用户。`,
+      startAt,
+      allDay: false,
+      repeat: 'daily',
+      reminderAt: startAt,
+      tags: ['主动提醒', '长期记忆', '角色主动', '玩家设置'],
+      source: 'manual',
+      relatedMessageIds: [],
+    },
+    nativeLocalReminder: {
+      id: `char-active-${id}`,
+      title: `${character.name}主动联系`,
+      body: `${label} 到点后会像微信消息一样弹出，打开小手机后同步到聊天。`,
+      hour: safeHour,
+      minute: safeMinute,
+      data: {
+        type: 'proactive-reminder',
+        calendarEventId: id,
+        characterId: character.id,
+        channel: 'wechat',
+      },
+    },
+    backendReminder: {
+      clientId,
+      calendarEventId: id,
+      characterId: character.id,
+      characterName: character.name,
+      channel: 'wechat',
+      title,
+      task,
+      hour: safeHour,
+      minute: safeMinute,
+      timeZone,
+      enabled: true,
+      sourceMessageId: id,
       createdAt: now,
     },
   };

@@ -158,8 +158,10 @@ function extractCharaData(json: any, avatarUrl: string) {
   const description = normalizeCardText(data.description || data.desc || '');
   const personality = normalizeCardText(data.personality || '');
   const scenario = normalizeCardText(data.scenario || '');
+  const messageExamples = normalizeCardText(data.mes_example || data.message_examples || data.messageExamples || '');
   const firstMessage = normalizeCardText(data.first_mes || data.firstMessage || '');
   const worldBook = normalizeCardText(data.character_book || data.worldBook || data.world_book || undefined);
+  const systemPrompt = normalizeCardText(data.system_prompt || data.systemPrompt || data.post_history_instructions || '');
 
   return {
     id: createId('char'),
@@ -167,8 +169,10 @@ function extractCharaData(json: any, avatarUrl: string) {
     avatar: avatarUrl,
     description,
     personality,
+    scenario,
+    messageExamples,
     firstMessage,
-    systemPrompt: [description, personality, scenario].filter(Boolean).join('\n'),
+    systemPrompt,
     worldBook,
   };
 }

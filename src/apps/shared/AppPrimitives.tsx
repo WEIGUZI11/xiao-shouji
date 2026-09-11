@@ -9,6 +9,7 @@ export function Header({
   title,
   subtitle,
   tabs,
+  tabsClassName,
   onSave,
   onBack,
   saveLabel = '保存',
@@ -16,6 +17,7 @@ export function Header({
   title: string;
   subtitle?: string;
   tabs?: React.ReactNode;
+  tabsClassName?: string;
   onSave?: () => void;
   onBack?: () => void;
   saveLabel?: string;
@@ -33,7 +35,7 @@ export function Header({
         </div>
         {onSave ? <button onClick={onSave} className="save-button">{saveLabel}</button> : <span />}
       </div>
-      {tabs && <div className="no-scrollbar mt-5 flex gap-2 overflow-x-auto">{tabs}</div>}
+      {tabs && <div className={cn('no-scrollbar mt-5 gap-2', tabsClassName || 'flex overflow-x-auto')}>{tabs}</div>}
     </header>
   );
 }
@@ -73,12 +75,9 @@ export function Field({ icon, label, children }: { icon: React.ReactNode; label:
 export function Panel({
   children,
   className,
-}: {
-  key?: React.Key;
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return <div className={cn('hand-panel mx-4 mt-4 p-5', className)}>{children}</div>;
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) {
+  return <div {...props} className={cn('hand-panel mx-4 mt-4 p-5', className)}>{children}</div>;
 }
 
 export function Row({

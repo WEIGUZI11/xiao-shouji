@@ -7,6 +7,7 @@
 import { BellRing, Unlock } from 'lucide-react';
 
 import { cn } from '../lib/utils';
+import { PersistentImage } from '../components/PersistentImage';
 import { NotificationCard } from './NotificationCenter';
 import type { ShellNotification } from './notifications';
 
@@ -25,7 +26,7 @@ export function LockScreen({
   const visibleNotifications = notifications.slice(0, 4);
   return (
     <section className={cn('lock-screen', wallpaper ? 'has-custom-wallpaper' : 'has-default-lock-art')}>
-      {wallpaper && <img src={wallpaper} alt="" className="lock-wallpaper-image" onError={(event) => { event.currentTarget.style.display = 'none'; }} />}
+      {wallpaper && <PersistentImage src={wallpaper} alt="" className="lock-wallpaper-image" onError={(event) => { event.currentTarget.style.display = 'none'; }} />}
       <div className="lock-wallpaper-shade" />
       <div className="lock-status-row">
         <span>{now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false })}</span>

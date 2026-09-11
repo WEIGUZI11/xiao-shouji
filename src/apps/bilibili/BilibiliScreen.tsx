@@ -9,15 +9,12 @@ import { useState } from 'react';
 import { buildBilibiliRefreshQuery, buildFallbackBilibiliPayload, parseBilibiliPayload, withBilibiliRoleComments } from './bilibiliLogic';
 import type { BilibiliVideoEntry } from './bilibiliTypes';
 import { useAppStore } from '../../store';
+import { requestChatCompletion } from '../shared/aiText';
 
 type BilibiliView = 'feed' | 'search' | 'detail';
 
 function formatBilibiliDate(timestamp: number) {
   return new Date(timestamp).toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' });
-}
-
-function normalizeApiBaseUrl(url: string) {
-  return url.trim().replace(/\/+$/, '').replace(/\/chat\/completions$/, '').replace(/\/v1$/, '/v1');
 }
 
 async function requestBilibiliPayload({
@@ -35,37 +32,30 @@ async function requestBilibiliPayload({
   temperature: number;
   preset: string;
 }) {
-  const response = await fetch(`${normalizeApiBaseUrl(baseUrl)}/chat/completions`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
+  const messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }> = [
+    {
+      role: 'system',
+      content: [
+        '你是虚拟手机里的 B站 app。输出严格 JSON，不要 Markdown。',
+        '结构：{"summary":"...","entries":[{"title":"...","upName":"...","url":"https://www.bilibili.com/video/BV...","description":"...","tags":["..."],"playCount":"...","danmakuCount":"...","danmaku":["..."],"comments":[{"userName":"...","content":"...","likedCount":"..."}]}]}。',
+        '只能生成 B站视频条目。不要出现知乎、豆瓣、小红书、微博、贴吧、百科、新闻站等其他平台。',
+        '不要声称真实抓取网页或真实播放视频。标题、弹幕、评论要像中文视频社区。',
+        preset,
+      ].filter(Boolean).join('\n'),
     },
-    body: JSON.stringify({
-      model,
-      temperature,
-      max_tokens: 900,
-      messages: [
-        {
-          role: 'system',
-          content: [
-            '你是虚拟手机里的 B站 app。输出严格 JSON，不要 Markdown。',
-            '结构：{"summary":"...","entries":[{"title":"...","upName":"...","url":"https://www.bilibili.com/video/BV...","description":"...","tags":["..."],"playCount":"...","danmakuCount":"...","danmaku":["..."],"comments":[{"userName":"...","content":"...","likedCount":"..."}]}]}。',
-            '只能生成 B站视频条目。不要出现知乎、豆瓣、小红书、微博、贴吧、百科、新闻站等其他平台。',
-            '不要声称真实抓取网页或真实播放视频。标题、弹幕、评论要像中文视频社区。',
-            preset,
-          ].filter(Boolean).join('\n'),
-        },
-        {
-          role: 'user',
-          content: `搜索词：${query}`,
-        },
-      ],
-    }),
+    {
+      role: 'user',
+      content: `搜索词：${query}`,
+    },
+  ];
+  return requestChatCompletion({
+    baseUrl,
+    apiKey,
+    model,
+    temperature,
+    maxTokens: 900,
+    messages,
   });
-  if (!response.ok) throw new Error(`B站搜索生成失败：${response.status}`);
-  const data = await response.json();
-  return data?.choices?.[0]?.message?.content || '';
 }
 
 function BilibiliCover({ entry }: { entry: BilibiliVideoEntry }) {

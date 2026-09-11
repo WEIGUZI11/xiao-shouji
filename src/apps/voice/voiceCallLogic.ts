@@ -16,6 +16,8 @@ export interface VoiceCallAudioAvailability {
   provider?: TtsProvider;
   apiKey?: string;
   baseUrl?: string;
+  model?: string;
+  voiceId?: string;
   hasBrowserSpeechSynthesis?: boolean;
 }
 
@@ -60,19 +62,34 @@ export function getVoiceCallDurationLabel(startedAt: number | null, now: number)
   return `${String(minutes).padStart(2, '0')}:${String(rest).padStart(2, '0')}`;
 }
 
-export function isVoiceCallAudioAvailable(input: VoiceCallAudioAvailability) {
-  if (!input.ttsEnabled) return false;
-  if (input.provider === 'browser') return Boolean(input.hasBrowserSpeechSynthesis);
-  if (input.provider === 'local') return Boolean(input.baseUrl?.trim());
-  if (
-    input.provider === 'openai' ||
-    input.provider === 'gemini' ||
-    input.provider === 'minimax' ||
-    input.provider === 'doubao'
-  ) {
-    return Boolean(input.apiKey?.trim());
+export function getVoiceCallAudioIssue(input: VoiceCallAudioAvailability) {
+  if (!input.ttsEnabled) return 'TTS 总开关已关闭';
+  if (input.provider === 'browser') return input.hasBrowserSpeechSynthesis ? '' : '当前设备没有浏览器语音能力';
+  if (input.provider === 'local') return input.baseUrl?.trim() ? '' : '本地 TTS 接口地址为空';
+  if (input.provider === 'doubao') {
+    if (!input.apiKey?.trim()) return '豆包 API Key 为空';
+    if (!input.voiceId?.trim()) return '豆包音色 Speaker ID 为空';
+    const model = input.model?.trim() || 'seed-tts-2.0';
+    const voiceId = input.voiceId.trim();
+    if (model === 'seed-tts-2.0' && /(?:_moon_bigtts|_mars_bigtts|^ICL_|^S_)/i.test(voiceId)) {
+      return '豆包 2.0 服务与当前 1.0/复刻音色不匹配';
+    }
+    if (model === 'seed-tts-1.0' && /(?:_uranus_bigtts|^saturn_|^S_)/i.test(voiceId)) {
+      return '豆包 1.0 服务与当前 2.0/复刻音色不匹配';
+    }
+    if (model === 'seed-icl-2.0' && /(?:_bigtts|^ICL_)/i.test(voiceId)) {
+      return '豆包复刻服务需要控制台生成的 Speaker ID';
+    }
+    return '';
   }
-  return false;
+  if (input.provider === 'openai' || input.provider === 'gemini' || input.provider === 'minimax') {
+    return input.apiKey?.trim() ? '' : `${input.provider} API Key 为空`;
+  }
+  return '没有选择可用的 TTS 提供商';
+}
+
+export function isVoiceCallAudioAvailable(input: VoiceCallAudioAvailability) {
+  return !getVoiceCallAudioIssue(input);
 }
 
 export function isVoiceCallSpeechRecognitionAvailable(input: VoiceCallSpeechRecognitionAvailability) {

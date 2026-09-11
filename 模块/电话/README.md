@@ -22,11 +22,14 @@
 
 - `src/apps/phone/PhoneScreen.tsx`：电话模块 UI 和电话 AI 短句逻辑。包含最近通话、未接/拨出/来电筛选、角色拨号、呼叫中、来电中、通话中计时、通话详情、收藏、删除、再次拨打、写入聊天记录。
 - `src/store.ts`：`PhoneCallRecord[] phoneCallRecords` 和 `addPhoneCallRecord` / `updatePhoneCallRecord` / `deletePhoneCallRecord` / `togglePhoneCallFavorite`。
-- `src/tts.ts`：电话 TTS 播放工具，支持浏览器免费语音、本地 HTTP、OpenAI、Gemini。
+- `src/tts.ts`：电话 TTS 播放工具，支持浏览器免费语音、本地 HTTP、OpenAI、Gemini、MiniMax 和豆包。
+- `src/ttsQueue.ts`：所有聊天和电话语音进入同一 FIFO 队列；“停止全部”会中止当前播放与请求，并清空等待项。
+- `src/ttsAudioCache.ts`：外部 TTS 音频缓存，上限 64 MiB；达到上限后不自动删除任何内容，只停止写入新缓存。
 - `src/App.tsx`：只在 `FeatureScreen` 分发 `phone` 到 `PhoneScreen`；不要把电话业务逻辑重新塞进 `App.tsx`。
 
 维护边界：
 
 - 电话记录是独立状态，不再只靠聊天 `call-note` 假装电话。
 - 写入聊天记录是详情页按钮触发，不强制。
+- `ttsEnabled` 关闭时不自动出声，设置页主动试听仍可用；TTS 配置和 Key 不得给生图或 MiniMax 音乐复用。
 - 不要改微信、QQ、小剧场、日记等模块，除非只是消费电话记录或写入一条通话摘要。

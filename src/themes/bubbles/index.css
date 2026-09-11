@@ -1,0 +1,839 @@
+/*
+ * Selectable chat-bubble skins and the visual previews shown in the theme screen.
+ * Loaded after individual themes so an explicit bubble choice wins; `theme` adds no chat override.
+ */
+
+.theme-section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.theme-section-heading p {
+  margin-top: 2px;
+  color: color-mix(in srgb, currentColor 62%, transparent);
+  font-size: 11px;
+  font-weight: 750;
+  line-height: 1.45;
+}
+
+.theme-section-heading > span {
+  flex: 0 0 auto;
+  border: 1px solid color-mix(in srgb, var(--theme-accent, currentColor) 34%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--theme-accent, currentColor) 12%, transparent);
+  padding: 4px 8px;
+  color: var(--theme-text, currentColor);
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.theme-choice-card,
+.bubble-choice-card {
+  display: grid;
+  width: 100%;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+}
+
+.bubble-styles-disclosure {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  text-align: left;
+}
+
+.appearance-disclosure {
+  display: flex;
+  width: 100%;
+  min-height: 54px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  text-align: left;
+}
+
+.appearance-disclosure p {
+  margin-top: 2px;
+  color: color-mix(in srgb, currentColor 58%, transparent);
+  font-size: 13px;
+  font-weight: 780;
+  line-height: 1.4;
+}
+
+.appearance-disclosure > span {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--theme-accent, currentColor) 10%, transparent);
+  padding: 5px 8px;
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.appearance-selected {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: 7px;
+  border-radius: 999px;
+  background: #e5ebff;
+  padding: 3px 7px;
+  color: #485a93;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 950;
+}
+
+.bubble-styles-disclosure p {
+  margin-top: 3px;
+  color: color-mix(in srgb, var(--theme-text, currentColor) 64%, transparent);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.bubble-styles-disclosure > span {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--theme-accent, currentColor) 12%, transparent);
+  padding: 5px 8px;
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.theme-choice-card {
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  min-width: 0;
+  min-height: 144px;
+  gap: 7px;
+  padding: 8px !important;
+}
+
+.theme-choice-copy,
+.bubble-choice-copy {
+  display: block;
+  min-width: 0;
+}
+
+.theme-choice-copy strong,
+.theme-choice-copy small,
+.bubble-choice-copy strong,
+.bubble-choice-copy small {
+  display: block;
+}
+
+.theme-choice-copy strong,
+.bubble-choice-copy strong {
+  color: var(--theme-text, currentColor);
+  font-size: 16px;
+  font-weight: 950;
+}
+
+.theme-choice-card .theme-choice-copy strong {
+  overflow: hidden;
+  font-size: 13px;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.theme-choice-card .theme-choice-copy small {
+  display: -webkit-box;
+  min-height: 27px;
+  overflow: hidden;
+  font-size: 11px;
+  line-height: 1.4;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.theme-choice-copy small,
+.bubble-choice-copy small {
+  margin-top: 4px;
+  color: color-mix(in srgb, var(--theme-text, currentColor) 66%, transparent);
+  font-size: 11px;
+  font-weight: 750;
+  line-height: 1.45;
+}
+
+.theme-choice-visual {
+  --preview-bg: #fff8e8;
+  --preview-panel: #fffef8;
+  --preview-accent: #86a88b;
+  --preview-ink: #1f2420;
+  position: relative;
+  display: block;
+  order: -1;
+  width: 100%;
+  height: 74px;
+  overflow: hidden;
+  border: 2px solid var(--preview-ink);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 78% 14%, color-mix(in srgb, var(--preview-accent) 34%, transparent), transparent 30%),
+    var(--preview-bg);
+  box-shadow: 3px 3px 0 color-mix(in srgb, var(--preview-ink) 80%, transparent);
+}
+
+.theme-choice-brand,
+.theme-choice-route {
+  display: none;
+}
+
+[data-theme-preview="gothic"] .theme-choice-visual {
+  --preview-bg: #161215;
+  --preview-panel: #f5f1f2;
+  --preview-accent: #de2f3f;
+  --preview-ink: #080708;
+  border-radius: 4px 15px 4px 13px;
+  transform: skewX(-2deg);
+}
+
+[data-theme-preview="guofeng"] .theme-choice-visual {
+  --preview-bg: #eee3cc;
+  --preview-panel: #faf2df;
+  --preview-accent: #a54a3d;
+  --preview-ink: #263c38;
+  border-radius: 3px;
+  box-shadow: inset 0 0 0 2px #d5c3a2, 3px 3px 0 rgba(63, 52, 38, 0.28);
+}
+
+[data-theme-preview="celtic-paladin"] .theme-choice-visual {
+  --preview-bg: #d8c89f;
+  --preview-panel: #eee0bb;
+  --preview-accent: #315f55;
+  --preview-ink: #29362d;
+  border-color: #8d753f;
+  border-radius: 10px;
+  box-shadow: inset 0 0 0 2px #d7bf78, 3px 3px 0 #29362d;
+}
+
+[data-theme-preview="status-terminal"] .theme-choice-visual {
+  --preview-bg: #e8eaf6;
+  --preview-panel: rgba(255, 255, 255, 0.78);
+  --preview-accent: #8a90c7;
+  --preview-ink: #4a4a5a;
+  border: 1px solid rgba(112, 119, 169, 0.36);
+  border-radius: 20px;
+  box-shadow: 0 10px 22px rgba(93, 99, 148, 0.2);
+}
+
+[data-theme-preview="alcheris-pixel"] .theme-choice-visual {
+  --preview-bg: #050407;
+  --preview-panel: #160b24;
+  --preview-accent: #9b4dff;
+  --preview-ink: #62f6ff;
+  border-radius: 0;
+  box-shadow: 3px 3px 0 #9b4dff;
+  image-rendering: pixelated;
+}
+
+[data-theme-preview="lotus-letter"] .theme-choice-visual {
+  --preview-bg: #f2e8d3;
+  --preview-panel: #fbf4e5;
+  --preview-accent: #6a784d;
+  --preview-ink: #202808;
+  border: 1px solid #c4866d;
+  border-radius: 16px;
+  background:
+    radial-gradient(ellipse at 78% 14%, rgba(106, 120, 77, 0.26), transparent 25%),
+    radial-gradient(ellipse at 23% 74%, rgba(51, 67, 43, 0.16), transparent 28%),
+    repeating-linear-gradient(96deg, rgba(32, 40, 8, 0.025) 0 1px, transparent 1px 9px),
+    var(--preview-bg);
+  box-shadow: inset 0 0 0 3px rgba(222, 197, 158, 0.52), 0 8px 18px rgba(51, 67, 43, 0.16);
+}
+
+.theme-choice-status {
+  position: absolute;
+  top: 8px;
+  left: 10px;
+  width: 24px;
+  height: 3px;
+  border-radius: 99px;
+  background: var(--preview-ink);
+  opacity: 0.64;
+}
+
+.theme-choice-bubble {
+  position: absolute;
+  display: block;
+  height: 16px;
+  border: 1px solid color-mix(in srgb, var(--preview-ink) 55%, transparent);
+}
+
+.theme-choice-bubble-model {
+  top: 22px;
+  left: 9px;
+  width: 48px;
+  border-radius: 7px 7px 7px 2px;
+  background: var(--preview-panel);
+}
+
+.theme-choice-bubble-user {
+  top: 43px;
+  right: 9px;
+  width: 55px;
+  border-radius: 7px 7px 2px;
+  background: var(--preview-accent);
+}
+
+.theme-choice-dock {
+  position: absolute;
+  right: 8px;
+  bottom: 6px;
+  left: 8px;
+  display: flex;
+  height: 11px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--preview-panel) 86%, transparent);
+}
+
+.theme-choice-dock b {
+  display: block;
+  width: 5px;
+  height: 5px;
+  border-radius: 2px;
+  background: var(--preview-accent);
+}
+
+.bubble-choice-card {
+  grid-template-columns: minmax(0, 1fr) 126px;
+  min-height: 112px;
+}
+
+.bubble-choice-copy em {
+  display: inline-flex;
+  margin-top: 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--theme-accent, currentColor) 12%, transparent);
+  padding: 3px 7px;
+  color: color-mix(in srgb, var(--theme-text, currentColor) 68%, transparent);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.bubble-choice-number {
+  display: inline-grid;
+  min-width: 29px;
+  height: 24px;
+  margin-right: 7px;
+  place-items: center;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--theme-accent, currentColor) 16%, transparent);
+  font-size: 11px;
+  font-weight: 1000;
+  vertical-align: 2px;
+}
+
+.bubble-choice-preview {
+  display: flex;
+  min-height: 82px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 7px;
+  overflow: hidden;
+  border: 1px solid rgba(17, 17, 17, 0.1);
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 82% 16%, color-mix(in srgb, var(--bubble-preview-accent) 26%, transparent), transparent 34%),
+    var(--bubble-preview-surface, #f2f3f5);
+  padding: 10px 8px;
+}
+
+.bubble-choice-preview i {
+  position: relative;
+  display: block;
+  width: fit-content;
+  max-width: 92%;
+  padding: 6px 8px;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 800;
+  line-height: 1.2;
+  border: 1px solid color-mix(in srgb, var(--bubble-preview-accent) 54%, transparent);
+  box-shadow: 0 4px 9px color-mix(in srgb, var(--bubble-preview-ink) 12%, transparent);
+}
+
+.bubble-choice-preview i b {
+  position: absolute;
+  pointer-events: none;
+}
+
+.bubble-choice-preview i span { position: relative; z-index: 1; }
+
+.bubble-preview-model {
+  align-self: flex-start;
+}
+
+.bubble-preview-user {
+  align-self: flex-end;
+}
+
+.bubble-choice-preview .bubble-preview-model {
+  border-radius: 11px 11px 11px 3px;
+  background: var(--bubble-preview-model);
+  color: var(--bubble-preview-ink);
+}
+
+.bubble-choice-preview .bubble-preview-user {
+  border-radius: 11px 11px 3px;
+  background: var(--bubble-preview-user);
+  color: var(--bubble-preview-user-ink);
+}
+
+[data-bubble-preview="signal-terminal"] i,
+[data-bubble-preview="puzzle-alert"] i,
+[data-bubble-preview="neon-cassette"] i { border-radius: 5px; }
+
+[data-bubble-preview="black-wing-gaze"] i,
+[data-bubble-preview="rose-window"] i { box-shadow: inset 0 0 0 1px var(--bubble-preview-accent), 0 5px 12px rgba(0, 0, 0, 0.28); }
+
+[data-bubble-preview="rainbow-raincloud"] i { border-radius: 18px; }
+[data-bubble-preview="chocolate-waffle"] i { background-image: repeating-linear-gradient(45deg, transparent 0 7px, rgba(90, 46, 28, 0.07) 7px 8px); }
+[data-bubble-preview="tidal-stamp"] i { border-style: dashed; }
+
+/* Picker thumbnails reproduce each structure instead of showing one recolored rectangle. */
+[data-bubble-preview="lunar-halo"] i { border-radius: 16px 16px 5px 16px; }
+[data-bubble-preview="lunar-halo"] i b { right: -9px; bottom: -7px; width: 18px; height: 18px; border: 1px solid currentColor; border-left-color: transparent; border-radius: 50%; }
+[data-bubble-preview="constellation-aurora"] i { border-radius: 13px 13px 3px; }
+[data-bubble-preview="constellation-aurora"] i b { inset: 4px; background: linear-gradient(25deg,transparent 45%,currentColor 47% 49%,transparent 51%); opacity: .3; }
+[data-bubble-preview="rainbow-raincloud"] i::before { content: ""; position: absolute; left: 8px; top: -7px; width: 17px; height: 12px; border-radius: 50%; background: inherit; box-shadow: 12px 2px 0 2px var(--bubble-preview-model), 26px 1px 0 var(--bubble-preview-model); }
+[data-bubble-preview="butterfly-flower-letter"] i { border-radius: 13px 3px 13px 13px; }
+[data-bubble-preview="butterfly-flower-letter"] i b { right: -5px; top: -5px; width: 16px; height: 20px; border: 1px solid currentColor; border-radius: 80% 8%; transform: rotate(24deg); }
+[data-bubble-preview="feather-wax-seal"] i { border-radius: 8px 2px 8px 8px; }
+[data-bubble-preview="feather-wax-seal"] i b { right: -6px; bottom: -7px; width: 17px; height: 17px; border: 3px double #7c2d2f; border-radius: 50%; background: #a33b36; }
+[data-bubble-preview="signal-terminal"] i { padding-top: 11px; }
+[data-bubble-preview="signal-terminal"] i b { top: 3px; right: 5px; left: 5px; height: 3px; border-top: 1px solid currentColor; border-bottom: 1px dotted currentColor; }
+[data-bubble-preview="floating-web-window"] i { padding-top: 12px; border-radius: 8px 8px 2px 8px; }
+[data-bubble-preview="floating-web-window"] i b { top: 3px; left: 5px; width: 4px; height: 4px; border-radius: 50%; background: #ef6f61; box-shadow: 7px 0 #efb550,14px 0 #63a98d; }
+[data-bubble-preview="puzzle-alert"] i { clip-path: polygon(0 0,90% 0,90% 34%,100% 34%,100% 72%,90% 72%,90% 100%,0 100%); }
+[data-bubble-preview="puzzle-alert"] i b { right: -1px; top: 50%; width: 13px; height: 14px; border: 1px solid #074ec5; background: #ffd200; transform: translateY(-50%); }
+[data-bubble-preview="black-wing-gaze"] i { border-radius: 18px 12px 12px 4px; }
+[data-bubble-preview="black-wing-gaze"] i b { left: -6px; top: 50%; width: 13px; height: 13px; border: 3px double #a48872; border-radius: 50%; background: #765ba7; transform: translateY(-50%); }
+[data-bubble-preview="sprinkle-bow"] i { margin-inline: 7px; border-radius: 999px; }
+[data-bubble-preview="sprinkle-bow"] i b { inset: 3px; border: 2px dotted #f27a9d; border-radius: inherit; }
+[data-bubble-preview="chocolate-waffle"] i { padding-top: 10px; border-radius: 5px; }
+[data-bubble-preview="chocolate-waffle"] i b { top: 0; right: 0; left: 0; height: 7px; border-radius: 5px 5px 50% 35%; background: #6b2b17; }
+[data-bubble-preview="celadon-koi"] i { border-radius: 11px 3px 11px 11px; }
+[data-bubble-preview="celadon-koi"] i b { right: 5px; bottom: 3px; width: 25px; height: 7px; background: repeating-radial-gradient(ellipse at bottom,transparent 0 3px,#4d8681 4px 5px,transparent 6px 9px); }
+[data-bubble-preview="library-card"] i { padding-top: 11px; border-radius: 2px; clip-path: polygon(0 0,100% 0,100% 75%,93% 75%,93% 100%,0 100%); }
+[data-bubble-preview="library-card"] i b { left: 10px; top: -4px; width: 7px; height: 16px; border: 1px solid #a6843d; border-radius: 6px; }
+[data-bubble-preview="holographic-jelly"] i { overflow: hidden; border: 2px solid white; border-radius: 17px 10px 18px 4px; }
+[data-bubble-preview="holographic-jelly"] i b { inset: 0; background: linear-gradient(115deg,transparent 16%,rgba(255,255,255,.8) 35%,transparent 52%); }
+[data-bubble-preview="neon-cassette"] i { padding-top: 11px; clip-path: polygon(5% 0,95% 0,100% 20%,100% 80%,95% 100%,5% 100%,0 80%,0 20%); }
+[data-bubble-preview="neon-cassette"] i b { right: 6px; bottom: 3px; width: 8px; height: 8px; border: 2px double currentColor; border-radius: 50%; box-shadow: -14px 0 0 -1px transparent,-14px 0 0 1px currentColor; }
+[data-bubble-preview="snow-globe"] i { overflow: hidden; border: 2px solid white; border-radius: 17px 17px 13px 4px; }
+[data-bubble-preview="snow-globe"] i b { inset: 0; background: radial-gradient(circle at 20% 25%,white 0 1px,transparent 2px),radial-gradient(circle at 72% 65%,white 0 1px,transparent 2px); }
+[data-bubble-preview="moss-specimen"] i { border-radius: 5px 5px 12px 3px; }
+[data-bubble-preview="moss-specimen"] i b { right: 4px; top: -5px; width: 22px; height: 10px; border: 1px solid #b46e55; background: #ead4ba; transform: rotate(5deg); }
+[data-bubble-preview="rose-window"] i { overflow: hidden; border: 2px double #b28a31; border-radius: 5px; }
+[data-bubble-preview="rose-window"] i b { left: 4px; top: 50%; width: 14px; height: 14px; border: 2px double #b28a31; border-radius: 50%; background: conic-gradient(#152e5f,#6d2130,#d2a834,#152e5f); transform: translateY(-50%); }
+[data-bubble-preview="tidal-stamp"] i { border-radius: 1px; clip-path: polygon(0 3px,3px 3px,3px 0,calc(100% - 3px) 0,calc(100% - 3px) 3px,100% 3px,100% calc(100% - 3px),calc(100% - 3px) calc(100% - 3px),calc(100% - 3px) 100%,3px 100%,3px calc(100% - 3px),0 calc(100% - 3px)); }
+[data-bubble-preview="tidal-stamp"] i b { right: 3px; top: 2px; width: 13px; height: 13px; border: 1px dashed #4a91a5; border-radius: 50%; }
+
+.bubble-choice-preview[data-bubble-preview="lunar-halo"] i { border-radius: 16px 16px 5px 16px; }
+.bubble-choice-preview[data-bubble-preview="constellation-aurora"] i { border-radius: 13px 13px 3px; }
+.bubble-choice-preview[data-bubble-preview="rainbow-raincloud"] i { border-radius: 18px; }
+.bubble-choice-preview[data-bubble-preview="butterfly-flower-letter"] i { border-radius: 13px 3px 13px 13px; }
+.bubble-choice-preview[data-bubble-preview="feather-wax-seal"] i { border-radius: 8px 2px 8px 8px; }
+.bubble-choice-preview[data-bubble-preview="floating-web-window"] i { border-radius: 8px 8px 2px 8px; }
+.bubble-choice-preview[data-bubble-preview="black-wing-gaze"] i { border-radius: 18px 12px 12px 4px; }
+.bubble-choice-preview[data-bubble-preview="sprinkle-bow"] i { border-radius: 999px; }
+.bubble-choice-preview[data-bubble-preview="chocolate-waffle"] i { border-radius: 5px; }
+.bubble-choice-preview[data-bubble-preview="celadon-koi"] i { border-radius: 11px 3px 11px 11px; }
+.bubble-choice-preview[data-bubble-preview="holographic-jelly"] i { border-radius: 17px 10px 18px 4px; }
+.bubble-choice-preview[data-bubble-preview="snow-globe"] i { border-radius: 17px 17px 13px 4px; }
+.bubble-choice-preview[data-bubble-preview="moss-specimen"] i { border-radius: 5px 5px 12px 3px; }
+.bubble-choice-preview[data-bubble-preview="rose-window"] i { border-radius: 5px; }
+
+/* Every numbered skin shares one rendering contract; the blocks below supply its material. */
+.phone-stage.bubble-style-lunar-halo { --bubble-screen: #f3f0f8; --bubble-model: #f6f1e6; --bubble-user: linear-gradient(135deg, #27204d, #6b5b95); --bubble-ink: #514a78; --bubble-user-ink: #fff8e8; --bubble-accent: #9d91ca; --bubble-border: #a392cf; --bubble-mark: "☾"; --bubble-radius: 18px; --bubble-shadow: 0 7px 16px rgba(68, 54, 105, .18); }
+.phone-stage.bubble-style-constellation-aurora { --bubble-screen: #071b32; --bubble-model: linear-gradient(145deg, #d9efff, #c8e2fa); --bubble-user: linear-gradient(135deg, #247b83, #45708b 60%, #ef948d); --bubble-ink: #174371; --bubble-user-ink: #fff7de; --bubble-accent: #f6ae9d; --bubble-border: #9fcdf2; --bubble-mark: "✦"; --bubble-radius: 18px; --bubble-shadow: 0 0 16px rgba(138, 211, 255, .28); }
+.phone-stage.bubble-style-rainbow-raincloud { --bubble-screen: #edf6ff; --bubble-model: #f9fcff; --bubble-user: linear-gradient(180deg, #b8d9f4 0 42%, #f7dcaa 42% 62%, #f3b6c2 62%); --bubble-ink: #31506f; --bubble-user-ink: #30465d; --bubble-accent: #7bb5e9; --bubble-border: #b9d7ef; --bubble-mark: "☁"; --bubble-radius: 24px; --bubble-shadow: 0 7px 17px rgba(81, 131, 174, .15); }
+.phone-stage.bubble-style-butterfly-flower-letter { --bubble-screen: #f7f0e3; --bubble-model: linear-gradient(135deg, #fbf6e8, #efe3ce); --bubble-user: linear-gradient(135deg, #9fa88b, #e3b28f); --bubble-ink: #4c4931; --bubble-user-ink: #443b2b; --bubble-accent: #d49d83; --bubble-border: #b6a88e; --bubble-mark: "❀"; --bubble-radius: 16px; --bubble-shadow: 0 6px 12px rgba(89, 73, 45, .14); }
+.phone-stage.bubble-style-feather-wax-seal { --bubble-screen: #ece2cf; --bubble-model: #f6eedc; --bubble-user: #7c2d2f; --bubble-ink: #324130; --bubble-user-ink: #fff4df; --bubble-accent: #7c2d2f; --bubble-border: #6d7652; --bubble-mark: "❧"; --bubble-radius: 12px; --bubble-shadow: 0 5px 10px rgba(68, 49, 35, .22); }
+.phone-stage.bubble-style-signal-terminal { --bubble-screen: #edf3ff; --bubble-model: linear-gradient(180deg, #f2f6fc, #e4ebf7); --bubble-user: linear-gradient(135deg, #0732c7, #075cff); --bubble-ink: #1e2a36; --bubble-user-ink: #fff; --bubble-accent: #00d9ef; --bubble-border: #6d8dc5; --bubble-mark: "⌁"; --bubble-radius: 7px; --bubble-shadow: 0 5px 14px rgba(0, 61, 220, .18); }
+.phone-stage.bubble-style-floating-web-window { --bubble-screen: #f5f1ea; --bubble-model: #f8f6ef; --bubble-user: #4e8c8d; --bubble-ink: #343147; --bubble-user-ink: #fff8e9; --bubble-accent: #ef927e; --bubble-border: #79758a; --bubble-mark: "☆"; --bubble-radius: 12px; --bubble-shadow: 0 6px 13px rgba(58, 55, 66, .18); }
+.phone-stage.bubble-style-puzzle-alert { --bubble-screen: #f1f5fb; --bubble-model: #fff; --bubble-user: linear-gradient(135deg, #0636b7, #005be8); --bubble-ink: #0b2f69; --bubble-user-ink: #fff; --bubble-accent: #ffd200; --bubble-border: #074ec5; --bubble-mark: "➜"; --bubble-radius: 8px; --bubble-shadow: 0 5px 12px rgba(0, 57, 178, .18); }
+.phone-stage.bubble-style-black-wing-gaze { --bubble-screen: #101116; --bubble-model: #f2efe9; --bubble-user: linear-gradient(135deg, #171719, #2d1820); --bubble-ink: #29242d; --bubble-user-ink: #eee9e3; --bubble-accent: #8f82b4; --bubble-border: #8c7780; --bubble-mark: "◉"; --bubble-radius: 18px; --bubble-shadow: 0 0 18px rgba(126, 102, 152, .19); }
+.phone-stage.bubble-style-sprinkle-bow { --bubble-screen: #fff8f2; --bubble-model: #fffaf0; --bubble-user: linear-gradient(135deg, #ffdbe5, #f6a9c0); --bubble-ink: #7f2944; --bubble-user-ink: #7f2944; --bubble-accent: #f27a9d; --bubble-border: #f0a1b6; --bubble-mark: "୨୧"; --bubble-radius: 22px; --bubble-shadow: 0 6px 12px rgba(194, 80, 117, .13); }
+.phone-stage.bubble-style-chocolate-waffle { --bubble-screen: #fff5df; --bubble-model: repeating-linear-gradient(45deg, #fff0d4 0 8px, #f7dfbb 8px 9px); --bubble-user: repeating-linear-gradient(45deg, #4a1f12 0 8px, #5b2818 8px 9px); --bubble-ink: #5a2e1c; --bubble-user-ink: #fff2d4; --bubble-accent: #c87d3a; --bubble-border: #8b4f25; --bubble-mark: "▧"; --bubble-radius: 10px; --bubble-shadow: inset 0 3px 0 #6d2d18, 0 5px 11px rgba(74, 31, 18, .18); }
+.phone-stage.bubble-style-celadon-koi { --bubble-screen: #f5f2e8; --bubble-model: #f7f5ec; --bubble-user: #8cb7ae; --bubble-ink: #345e59; --bubble-user-ink: #234946; --bubble-accent: #c4432f; --bubble-border: #7fa49e; --bubble-mark: "〰"; --bubble-radius: 14px; --bubble-shadow: inset 0 0 0 1px rgba(255,255,255,.5), 0 5px 12px rgba(66, 102, 96, .15); }
+.phone-stage.bubble-style-library-card { --bubble-screen: #e9dfca; --bubble-model: repeating-linear-gradient(180deg, #f4ead7 0 15px, #c6b49a 15px 16px); --bubble-user: #3f5738; --bubble-ink: #3d392d; --bubble-user-ink: #f9f0dc; --bubble-accent: #8c3d35; --bubble-border: #8b7657; --bubble-mark: "⌑"; --bubble-radius: 5px; --bubble-shadow: 0 5px 10px rgba(64, 54, 39, .18); }
+.phone-stage.bubble-style-holographic-jelly { --bubble-screen: linear-gradient(145deg, #f7f3ff, #fff6fb); --bubble-model: linear-gradient(135deg, rgba(227,236,255,.78), rgba(255,231,247,.7)); --bubble-user: linear-gradient(135deg, rgba(190,237,255,.78), rgba(255,194,226,.72)); --bubble-ink: #544c83; --bubble-user-ink: #544c83; --bubble-accent: #a998e6; --bubble-border: rgba(255,255,255,.92); --bubble-mark: "✧"; --bubble-radius: 22px; --bubble-shadow: inset 0 1px 0 #fff, 0 8px 20px rgba(131, 114, 188, .18); }
+.phone-stage.bubble-style-neon-cassette { --bubble-screen: #08051a; --bubble-model: linear-gradient(135deg, #071229, #102542); --bubble-user: linear-gradient(135deg, #29102e, #4d1043); --bubble-ink: #68ecff; --bubble-user-ink: #ff82dc; --bubble-accent: #ff36ac; --bubble-border: #39dff8; --bubble-mark: "▶"; --bubble-radius: 6px; --bubble-shadow: 0 0 13px rgba(57, 223, 248, .38), inset 0 0 12px rgba(57, 223, 248, .12); }
+.phone-stage.bubble-style-snow-globe { --bubble-screen: linear-gradient(180deg, #dce7f4, #b7cce2); --bubble-model: rgba(248,247,240,.91); --bubble-user: rgba(23,52,89,.92); --bubble-ink: #455f80; --bubble-user-ink: #fff8e7; --bubble-accent: #ffc261; --bubble-border: rgba(255,255,255,.82); --bubble-mark: "❄"; --bubble-radius: 20px; --bubble-shadow: inset 0 1px 0 #fff, 0 7px 16px rgba(39, 67, 99, .22); }
+.phone-stage.bubble-style-moss-specimen { --bubble-screen: #eee8d8; --bubble-model: #f4edda; --bubble-user: #455630; --bubble-ink: #40552e; --bubble-user-ink: #f8f0d9; --bubble-accent: #9a4937; --bubble-border: #7c8061; --bubble-mark: "♧"; --bubble-radius: 9px; --bubble-shadow: 0 5px 11px rgba(66, 75, 45, .18); }
+.phone-stage.bubble-style-rose-window { --bubble-screen: #eee8df; --bubble-model: linear-gradient(135deg, #faf3e8, #ece3d8); --bubble-user: linear-gradient(135deg, #172853 0 45%, #6d2130 45% 68%, #152e5f 68%); --bubble-ink: #182850; --bubble-user-ink: #fff4dc; --bubble-accent: #b28a31; --bubble-border: #9b7831; --bubble-mark: "✥"; --bubble-radius: 9px; --bubble-shadow: inset 0 0 0 1px #e3c166, 0 6px 13px rgba(34, 39, 68, .2); }
+.phone-stage.bubble-style-tidal-stamp { --bubble-screen: linear-gradient(180deg, #e6f2f3, #cde8eb); --bubble-model: #f7f1e5; --bubble-user: #0d4772; --bubble-ink: #154d70; --bubble-user-ink: #fff9ea; --bubble-accent: #f27a55; --bubble-border: #4a91a5; --bubble-mark: "⚓"; --bubble-radius: 8px; --bubble-shadow: 0 6px 12px rgba(21, 77, 112, .16); }
+
+.phone-stage:not(.bubble-style-theme) :is(.wechat-chat-screen, .qq-chat-screen) {
+  --wechat-model-bubble: var(--bubble-model);
+  --wechat-user-bubble: var(--bubble-user);
+  --wechat-active-text: var(--bubble-user-ink);
+  background: var(--bubble-screen) !important;
+}
+
+.phone-stage:not(.bubble-style-theme) :is(.wechat-chat-screen, .qq-chat-screen) :is(.wechat-text-wrap, .wechat-voice-bubble) {
+  position: relative;
+  overflow: visible;
+  border: 1px solid var(--bubble-border);
+  border-radius: var(--bubble-radius);
+  box-shadow: var(--bubble-shadow);
+  transition: transform .16s ease, filter .16s ease, box-shadow .16s ease;
+}
+
+.phone-stage:not(.bubble-style-theme) :is(.wechat-chat-screen, .qq-chat-screen) :is(.wechat-text-model, .wechat-voice-model) {
+  background: var(--bubble-model);
+  color: var(--bubble-ink);
+}
+
+.phone-stage:not(.bubble-style-theme) :is(.wechat-chat-screen, .qq-chat-screen) :is(.wechat-text-user, .wechat-voice-user) {
+  background: var(--bubble-user);
+  color: var(--bubble-user-ink);
+}
+
+.phone-stage:not(.bubble-style-theme) :is(.wechat-chat-screen, .qq-chat-screen) .wechat-text-wrap {
+  min-width: 54px;
+  isolation: isolate;
+  padding: 12px 28px 11px 13px;
+}
+
+.phone-stage:not(.bubble-style-theme) :is(.wechat-chat-screen, .qq-chat-screen) .bubble-ornaments {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: visible;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.phone-stage:not(.bubble-style-theme) :is(.wechat-chat-screen, .qq-chat-screen) .bubble-ornament {
+  position: absolute;
+  display: block;
+}
+
+.phone-stage:not(.bubble-style-theme) :is(.wechat-chat-screen, .qq-chat-screen) :is(.bubble-content, .wechat-reply-line),
+.phone-stage:not(.bubble-style-theme) :is(.wechat-chat-screen, .qq-chat-screen) .wechat-voice-bubble > :not(.bubble-ornaments),
+.phone-stage:not(.bubble-style-theme) :is(.wechat-chat-screen, .qq-chat-screen) .wechat-typing > :not(.bubble-ornaments) {
+  position: relative;
+  z-index: 1;
+}
+
+.phone-stage:not(.bubble-style-theme) :is(.wechat-chat-screen, .qq-chat-screen) :is(.wechat-text-model, .wechat-voice-model)::before,
+.phone-stage:not(.bubble-style-theme) :is(.wechat-chat-screen, .qq-chat-screen) :is(.wechat-text-user, .wechat-voice-user)::before {
+  content: "";
+  position: absolute;
+  top: 13px;
+  display: block;
+  width: 8px;
+  height: 10px;
+  background: inherit;
+}
+
+.phone-stage:not(.bubble-style-theme) :is(.wechat-chat-screen, .qq-chat-screen) :is(.wechat-text-model, .wechat-voice-model)::before {
+  left: -6px;
+  clip-path: polygon(100% 0, 100% 100%, 0 45%);
+}
+
+.phone-stage:not(.bubble-style-theme) :is(.wechat-chat-screen, .qq-chat-screen) :is(.wechat-text-user, .wechat-voice-user)::before {
+  right: -6px;
+  clip-path: polygon(0 0, 100% 45%, 0 100%);
+}
+
+.phone-stage:not(.bubble-style-theme) :is(.wechat-chat-screen, .qq-chat-screen) :is(.wechat-reply-line, .wechat-recalled-text, .wechat-call-note) {
+  border: 1px dashed var(--bubble-border);
+  border-radius: calc(var(--bubble-radius) * .72);
+  background: var(--bubble-model);
+  color: var(--bubble-ink);
+  box-shadow: 0 3px 8px color-mix(in srgb, var(--bubble-ink) 12%, transparent);
+}
+
+.phone-stage:not(.bubble-style-theme) :is(.wechat-chat-screen, .qq-chat-screen) :is(.wechat-recalled-text, .wechat-call-note) {
+  padding: 6px 10px;
+}
+
+.phone-stage:not(.bubble-style-theme) :is(.wechat-chat-screen, .qq-chat-screen) .wechat-reply-line {
+  position: relative;
+  display: grid;
+  width: 100%;
+  margin: 0 0 7px;
+  padding: 6px 9px 6px 11px;
+  border-left: 3px solid var(--bubble-accent);
+  font-size: 10px;
+  line-height: 1.35;
+  opacity: .88;
+}
+
+.phone-stage:not(.bubble-style-theme) :is(.wechat-chat-screen, .qq-chat-screen) .wechat-reply-line > :is(span, b) {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--bubble-accent);
+  font-size: 8px;
+  font-weight: 950;
+  letter-spacing: .12em;
+}
+
+.phone-stage:not(.bubble-style-theme) :is(.wechat-chat-screen, .qq-chat-screen) .wechat-message-time {
+  color: color-mix(in srgb, var(--bubble-ink) 68%, transparent);
+  font-weight: 750;
+}
+
+.phone-stage:not(.bubble-style-theme) :is(.wechat-chat-screen, .qq-chat-screen) .wechat-typing {
+  position: relative;
+  isolation: isolate;
+  width: fit-content;
+  border: 1px solid var(--bubble-border);
+  border-radius: var(--bubble-radius);
+  background: var(--bubble-model);
+  padding: 7px 10px;
+  color: var(--bubble-ink);
+  box-shadow: var(--bubble-shadow);
+}
+
+.phone-stage:not(.bubble-style-theme) :is(.wechat-chat-screen, .qq-chat-screen) .wechat-voice-bubble {
+  isolation: isolate;
+  min-height: 48px;
+  padding: 10px 28px 10px 12px;
+}
+
+.phone-stage:not(.bubble-style-theme) :is(.wechat-chat-screen, .qq-chat-screen) .wechat-voice-bubble:has(.wechat-reply-line) {
+  height: auto;
+  min-height: 76px;
+  flex-wrap: wrap;
+}
+
+.phone-stage:not(.bubble-style-theme) :is(.wechat-chat-screen, .qq-chat-screen) .wechat-voice-bubble > .wechat-reply-line {
+  flex: 0 0 100%;
+}
+
+.phone-stage:not(.bubble-style-theme) :is(.wechat-chat-screen, .qq-chat-screen) :is(.wechat-voice-icon, .wechat-voice-waves, .wechat-voice-duration) { color: currentColor; }
+.phone-stage:not(.bubble-style-theme) :is(.wechat-chat-screen, .qq-chat-screen) :is(.wechat-transcript-toggle, .wechat-transcript) { color: var(--bubble-ink); }
+.phone-stage:not(.bubble-style-theme) :is(.wechat-chat-screen, .qq-chat-screen) .wechat-text-wrap:active { filter: brightness(.97); transform: translateY(1px); }
+
+.phone-stage.bubble-style-signal-terminal :is(.wechat-text-wrap, .wechat-voice-bubble),
+.phone-stage.bubble-style-neon-cassette :is(.wechat-text-wrap, .wechat-voice-bubble) { font-family: Consolas, "Courier New", monospace; letter-spacing: .01em; }
+.phone-stage.bubble-style-holographic-jelly :is(.wechat-text-wrap, .wechat-voice-bubble) { backdrop-filter: blur(12px) saturate(1.2); }
+.phone-stage.bubble-style-tidal-stamp :is(.wechat-text-wrap, .wechat-voice-bubble) { border-style: dashed; }
+
+/* 01 月相光环：轨道直接环抱右端，月牙悬在气泡外。 */
+.phone-stage.bubble-style-lunar-halo :is(.wechat-text-wrap, .wechat-voice-bubble) { border-radius: 20px 20px 20px 7px; }
+.phone-stage.bubble-style-lunar-halo :is(.wechat-text-user, .wechat-voice-user) { border-radius: 20px 20px 7px 20px; }
+.phone-stage.bubble-style-lunar-halo .bubble-ornament-a { inset: 5px 8px 5px auto; width: 34px; border: 1px solid currentColor; border-left: 0; border-radius: 0 50% 50% 0; opacity: .35; }
+.phone-stage.bubble-style-lunar-halo .bubble-ornament-b { right: 14px; bottom: 7px; width: 5px; height: 5px; border-radius: 50%; background: var(--bubble-accent); box-shadow: -9px -13px 0 -1px currentColor, 3px -22px 0 -1px currentColor; }
+.phone-stage.bubble-style-lunar-halo .bubble-ornament-c::before { content: "☾"; position: absolute; right: -13px; bottom: -8px; color: #fff5ce; font-size: 25px; text-shadow: 0 1px 0 #756aa3; }
+
+/* 02 星座流光：星角尾巴、星座连线与发光节点。 */
+.phone-stage.bubble-style-constellation-aurora :is(.wechat-text-wrap, .wechat-voice-bubble) { border-radius: 18px 18px 18px 3px; }
+.phone-stage.bubble-style-constellation-aurora :is(.wechat-text-user, .wechat-voice-user) { border-radius: 18px 18px 3px 18px; }
+.phone-stage.bubble-style-constellation-aurora .bubble-ornament-a { right: 14px; bottom: 11px; width: 58px; height: 25px; background: linear-gradient(22deg, transparent 47%, currentColor 48% 50%, transparent 51%), linear-gradient(145deg, transparent 47%, currentColor 48% 50%, transparent 51%); opacity: .23; }
+.phone-stage.bubble-style-constellation-aurora .bubble-ornament-b { right: 19px; bottom: 14px; width: 4px; height: 4px; border-radius: 50%; background: currentColor; box-shadow: -18px -10px currentColor, -38px 4px currentColor; }
+.phone-stage.bubble-style-constellation-aurora .bubble-ornament-c::before { content: "✦"; position: absolute; right: -12px; top: 11px; color: var(--bubble-accent); font-size: 21px; filter: drop-shadow(0 0 5px currentColor); }
+
+/* 03 彩虹雨云：真正的云团轮廓和悬挂雨滴。 */
+.phone-stage.bubble-style-rainbow-raincloud :is(.wechat-text-wrap, .wechat-voice-bubble) { margin-top: 7px; border-radius: 22px 24px 20px 20px; }
+.phone-stage.bubble-style-rainbow-raincloud .bubble-ornament-a { top: -9px; left: 18px; width: 34px; height: 20px; border-radius: 50% 50% 15% 15%; background: inherit; box-shadow: 27px 2px 0 -2px var(--bubble-model), 56px 3px 0 -4px var(--bubble-model); }
+.phone-stage.bubble-style-rainbow-raincloud :is(.wechat-text-user, .wechat-voice-user) .bubble-ornament-a { box-shadow: 27px 2px 0 -2px #c9dff1, 56px 3px 0 -4px #c9dff1; }
+.phone-stage.bubble-style-rainbow-raincloud .bubble-ornament-b { left: 24px; bottom: -9px; width: 6px; height: 10px; border-radius: 60% 40% 60% 40%; background: #75afe3; transform: rotate(40deg); box-shadow: 42px -3px #f2ad62, 82px 1px #ef8797; }
+
+/* 04 蝶翼花信：信纸缺角、花枝与蝶翼。 */
+.phone-stage.bubble-style-butterfly-flower-letter :is(.wechat-text-wrap, .wechat-voice-bubble) { border-radius: 18px 6px 18px 18px; }
+.phone-stage.bubble-style-butterfly-flower-letter .bubble-ornament-a { right: -6px; top: -8px; width: 27px; height: 33px; border: 1px solid var(--bubble-border); border-radius: 75% 10% 70% 15%; background: rgba(247,240,224,.78); transform: rotate(25deg); }
+.phone-stage.bubble-style-butterfly-flower-letter .bubble-ornament-b { left: 8px; bottom: 5px; width: 38px; height: 18px; background: radial-gradient(circle at 25% 65%, #fff8df 0 3px, #c9956c 4px, transparent 5px), linear-gradient(150deg, transparent 46%, #7d8964 48% 51%, transparent 53%); opacity: .78; }
+.phone-stage.bubble-style-butterfly-flower-letter .wechat-reply-line { border-style: solid; background: rgba(255,250,238,.62); }
+
+/* 05 羽书火漆：邮票齿边、折叠信尾与立体火漆。 */
+.phone-stage.bubble-style-feather-wax-seal :is(.wechat-text-wrap, .wechat-voice-bubble) { border-radius: 14px 3px 14px 14px; clip-path: polygon(0 0, calc(100% - 8px) 0, calc(100% - 8px) 8px, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) calc(100% - 8px), calc(100% - 8px) 100%, 0 100%); }
+.phone-stage.bubble-style-feather-wax-seal .bubble-ornament-a { right: -2px; bottom: -6px; width: 25px; height: 25px; border: 3px double #5d1b1b; border-radius: 50%; background: radial-gradient(circle, #b44b3e, #6f1e22); box-shadow: 0 2px 4px rgba(45,20,10,.35); }
+.phone-stage.bubble-style-feather-wax-seal .bubble-ornament-a::after { content: "❧"; display: grid; height: 100%; place-items: center; color: #e0aa82; font-size: 12px; }
+.phone-stage.bubble-style-feather-wax-seal .bubble-ornament-b { left: -9px; top: 16px; width: 12px; height: 16px; background: inherit; clip-path: polygon(100% 0, 100% 100%, 0 50%); }
+
+/* 06 信号终端：窗口标题栏、状态灯、信号进度底线。 */
+.phone-stage.bubble-style-signal-terminal :is(.wechat-text-wrap, .wechat-voice-bubble) { padding-top: 24px; border-radius: 8px 8px 8px 2px; }
+.phone-stage.bubble-style-signal-terminal .bubble-ornament-a { top: 0; right: 0; left: 0; height: 16px; border-bottom: 1px solid currentColor; opacity: .55; }
+.phone-stage.bubble-style-signal-terminal .bubble-ornament-a::before { content: "▮ RX ·•• 100%"; position: absolute; left: 7px; top: 2px; font: 7px/1 Consolas, monospace; }
+.phone-stage.bubble-style-signal-terminal .bubble-ornament-b { right: 7px; top: 5px; width: 4px; height: 4px; border: 1px solid currentColor; box-shadow: -9px 0 0 -1px currentColor, -18px 0 0 -1px currentColor; }
+.phone-stage.bubble-style-signal-terminal .bubble-ornament-c { right: 7px; bottom: 5px; left: 7px; height: 2px; background: repeating-linear-gradient(90deg, var(--bubble-accent) 0 3px, transparent 3px 5px); }
+
+/* 07 网页浮窗：浏览器页签、三色灯、书签和底角点阵。 */
+.phone-stage.bubble-style-floating-web-window :is(.wechat-text-wrap, .wechat-voice-bubble) { padding-top: 27px; border-radius: 12px 12px 3px 12px; }
+.phone-stage.bubble-style-floating-web-window .bubble-ornament-a { top: -1px; right: -1px; left: -1px; height: 19px; border-bottom: 1px solid var(--bubble-border); border-radius: 12px 12px 0 0; background: color-mix(in srgb, var(--bubble-model) 76%, #d9d3e8); }
+.phone-stage.bubble-style-floating-web-window :is(.wechat-text-user, .wechat-voice-user) .bubble-ornament-a { background: linear-gradient(110deg, #f1a08c 0 34%, rgba(255,255,255,.18) 34%); }
+.phone-stage.bubble-style-floating-web-window .bubble-ornament-b { left: 8px; top: 6px; width: 6px; height: 6px; border-radius: 50%; background: #f16b5b; box-shadow: 9px 0 #efb550, 18px 0 #63a98d; }
+.phone-stage.bubble-style-floating-web-window .bubble-ornament-c { right: 7px; top: 16px; width: 11px; height: 20px; background: #f7efd8; clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 72%, 0 100%); box-shadow: inset 0 0 0 1px var(--bubble-border); }
+.phone-stage.bubble-style-floating-web-window .bubble-ornament-c::after { content: "★"; position: absolute; inset: 2px; color: var(--bubble-accent); font-size: 7px; }
+
+/* 08 拼图警戒：凸榫、凹槽、警戒条与黄色行动键。 */
+.phone-stage.bubble-style-puzzle-alert :is(.wechat-text-wrap, .wechat-voice-bubble) { border-width: 2px; border-radius: 10px; clip-path: polygon(0 0, 92% 0, 92% 36%, 100% 36%, 100% 70%, 92% 70%, 92% 100%, 56% 100%, 56% 91%, 44% 91%, 44% 100%, 0 100%); }
+.phone-stage.bubble-style-puzzle-alert .bubble-ornament-a { left: -1px; top: 9px; bottom: 9px; width: 9px; background: repeating-linear-gradient(135deg, #ffd200 0 4px, #17222f 4px 8px); }
+.phone-stage.bubble-style-puzzle-alert .bubble-ornament-b { right: 1px; top: 50%; width: 28px; height: 32px; border: 2px solid #074ec5; border-radius: 6px; background: #ffd200; transform: translate(42%, -50%); }
+.phone-stage.bubble-style-puzzle-alert .bubble-ornament-b::after { content: "→"; display: grid; height: 100%; place-items: center; color: #073a9e; font-size: 20px; font-weight: 1000; }
+
+/* 09 黑翼凝视：左右羽翼和紫瞳珠宝。 */
+.phone-stage.bubble-style-black-wing-gaze :is(.wechat-text-wrap, .wechat-voice-bubble) { border-radius: 28px 18px 18px 7px; }
+.phone-stage.bubble-style-black-wing-gaze .bubble-ornament-a::before { content: "◖◖◖"; position: absolute; left: -24px; top: -10px; color: currentColor; font-size: 23px; letter-spacing: -12px; transform: rotate(-28deg); text-shadow: 1px 1px 0 #8c7780; }
+.phone-stage.bubble-style-black-wing-gaze :is(.wechat-text-user, .wechat-voice-user) .bubble-ornament-a::before { left: auto; right: -18px; transform: rotate(28deg) scaleX(-1); }
+.phone-stage.bubble-style-black-wing-gaze .bubble-ornament-b { left: -8px; top: 50%; width: 20px; height: 20px; border: 4px double #a48872; border-radius: 50%; background: radial-gradient(ellipse, #13131c 0 20%, #8c73d0 22% 48%, #1c1424 50%); transform: translateY(-50%); box-shadow: 0 0 7px #77639e; }
+.phone-stage.bubble-style-black-wing-gaze :is(.wechat-text-user, .wechat-voice-user) .bubble-ornament-b { right: -8px; left: auto; }
+
+/* 11 糖粒蝴蝶结：糖纸两端、糖粒边线和丝带结。 */
+.phone-stage.bubble-style-sprinkle-bow :is(.wechat-text-wrap, .wechat-voice-bubble) { margin-inline: 10px; border-radius: 999px; }
+.phone-stage.bubble-style-sprinkle-bow .bubble-ornament-a, .phone-stage.bubble-style-sprinkle-bow .bubble-ornament-b { top: 50%; width: 20px; height: 28px; background: inherit; transform: translateY(-50%); clip-path: polygon(0 0, 100% 28%, 78% 50%, 100% 72%, 0 100%, 22% 50%); }
+.phone-stage.bubble-style-sprinkle-bow .bubble-ornament-a { left: -15px; }
+.phone-stage.bubble-style-sprinkle-bow .bubble-ornament-b { right: -15px; transform: translateY(-50%) scaleX(-1); }
+.phone-stage.bubble-style-sprinkle-bow .bubble-ornament-c { inset: 5px; border: 3px dotted var(--bubble-accent); border-radius: inherit; opacity: .45; }
+.phone-stage.bubble-style-sprinkle-bow :is(.wechat-text-user, .wechat-voice-user) .bubble-ornament-d::after { content: "୨୧"; position: absolute; right: -20px; top: -13px; color: #ed6f9a; font-size: 25px; font-weight: 950; }
+
+/* 12 巧克力华夫：顶部淋面、滴落和方巧尾巴。 */
+.phone-stage.bubble-style-chocolate-waffle :is(.wechat-text-wrap, .wechat-voice-bubble) { padding-top: 18px; border-width: 2px; border-radius: 8px; }
+.phone-stage.bubble-style-chocolate-waffle .bubble-ornament-a { top: -2px; right: -2px; left: -2px; height: 13px; border-radius: 8px 8px 55% 35%; background: #6b2b17; }
+.phone-stage.bubble-style-chocolate-waffle .bubble-ornament-a::after { content: ""; position: absolute; left: 28%; top: 8px; width: 7px; height: 11px; border-radius: 0 0 7px 7px; background: #6b2b17; box-shadow: 44px -2px 0 -1px #6b2b17; }
+.phone-stage.bubble-style-chocolate-waffle .bubble-ornament-b { right: -8px; bottom: 4px; width: 17px; height: 17px; border: 2px solid #6b2b17; background: repeating-linear-gradient(45deg,#7c351c 0 3px,#4b1c11 3px 5px); }
+
+/* 13 青瓷游鲤：瓷片切角、开片纹、水波和朱砂印。 */
+.phone-stage.bubble-style-celadon-koi :is(.wechat-text-wrap, .wechat-voice-bubble) { border-radius: 16px 6px 16px 16px; background-image: linear-gradient(32deg, transparent 48%, rgba(52,94,89,.13) 49% 50%, transparent 51%), linear-gradient(135deg, transparent 62%, rgba(52,94,89,.12) 63% 64%, transparent 65%); }
+.phone-stage.bubble-style-celadon-koi .bubble-ornament-a { right: 8px; bottom: 4px; width: 49px; height: 13px; background: repeating-radial-gradient(ellipse at bottom, transparent 0 5px, #4d8681 6px 7px, transparent 8px 13px); opacity: .55; }
+.phone-stage.bubble-style-celadon-koi .bubble-ornament-b { right: 9px; top: 7px; width: 6px; height: 6px; border-radius: 50%; background: #c4432f; box-shadow: 0 0 0 2px rgba(255,255,255,.65); }
+.phone-stage.bubble-style-celadon-koi .bubble-ornament-c::after { content: "◜◞"; position: absolute; right: 20px; bottom: 2px; color: #f4eee0; font-size: 16px; letter-spacing: -4px; transform: rotate(-8deg); }
+
+/* 14 复古借阅卡：横线卡纸、撕口、回形针和日期章。 */
+.phone-stage.bubble-style-library-card :is(.wechat-text-wrap, .wechat-voice-bubble) { padding-top: 21px; border-radius: 4px; clip-path: polygon(0 0, 100% 0, 100% 78%, 94% 78%, 94% 100%, 0 100%); }
+.phone-stage.bubble-style-library-card .bubble-ornament-a { left: 15px; top: -7px; width: 9px; height: 24px; border: 2px solid #a6843d; border-radius: 8px; transform: rotate(5deg); }
+.phone-stage.bubble-style-library-card .bubble-ornament-b::after { content: "MAY 23 2024"; position: absolute; right: 8px; top: 5px; color: var(--bubble-accent); font: 7px/1 Georgia, serif; }
+.phone-stage.bubble-style-library-card .bubble-ornament-c::after { content: "823.3"; position: absolute; left: 9px; bottom: 4px; color: currentColor; font: 7px/1 monospace; opacity: .6; }
+
+/* 15 全息果冻：不规则软胶边、折射光带与真实气泡。 */
+.phone-stage.bubble-style-holographic-jelly :is(.wechat-text-wrap, .wechat-voice-bubble) { border-width: 2px; border-radius: 24px 16px 26px 8px; overflow: hidden; }
+.phone-stage.bubble-style-holographic-jelly .bubble-ornament-a { inset: 0; background: linear-gradient(115deg, transparent 12%, rgba(255,255,255,.7) 27%, transparent 39% 64%, rgba(163,242,255,.42) 78%, transparent 89%); }
+.phone-stage.bubble-style-holographic-jelly .bubble-ornament-b { right: 8px; bottom: 7px; width: 12px; height: 12px; border: 1px solid rgba(255,255,255,.9); border-radius: 50%; box-shadow: -17px -13px 0 -4px rgba(255,255,255,.9), 3px -22px 0 -3px rgba(199,170,255,.7); }
+.phone-stage.bubble-style-holographic-jelly .bubble-ornament-c::after { content: "✦"; position: absolute; right: 7px; top: 5px; color: #a97ed5; }
+
+/* 16 磁带霓虹：卡带外壳、双卷轴、磁带轨和播放角。 */
+.phone-stage.bubble-style-neon-cassette :is(.wechat-text-wrap, .wechat-voice-bubble) { padding-top: 18px; border-width: 2px; border-radius: 6px; clip-path: polygon(4% 0, 96% 0, 100% 18%, 100% 82%, 96% 100%, 4% 100%, 0 82%, 0 18%); }
+.phone-stage.bubble-style-neon-cassette .bubble-ornament-a { top: 5px; right: 9px; left: 9px; height: 6px; border-top: 1px solid currentColor; border-bottom: 1px dotted currentColor; opacity: .5; }
+.phone-stage.bubble-style-neon-cassette .bubble-ornament-b { right: 8px; bottom: 6px; width: 13px; height: 13px; border: 3px double currentColor; border-radius: 50%; box-shadow: -22px 0 0 -3px transparent, -22px 0 0 0 currentColor; opacity: .75; }
+.phone-stage.bubble-style-neon-cassette .bubble-ornament-c { right: 37px; bottom: 6px; width: 15px; height: 8px; border-right: 1px solid currentColor; border-bottom: 1px solid currentColor; border-left: 1px solid currentColor; transform: skewX(-18deg); }
+
+/* 17 雪夜玻璃球：磨砂玻璃、雪堆、松枝和暖窗。 */
+.phone-stage.bubble-style-snow-globe :is(.wechat-text-wrap, .wechat-voice-bubble) { border-width: 2px; border-radius: 24px 24px 20px 7px; overflow: hidden; }
+.phone-stage.bubble-style-snow-globe .bubble-ornament-a { inset: 0; background: radial-gradient(circle at 17% 24%, white 0 1px, transparent 2px), radial-gradient(circle at 74% 38%, white 0 1px, transparent 2px), radial-gradient(circle at 53% 75%, white 0 1px, transparent 2px); background-size: 19px 23px, 27px 31px, 23px 29px; opacity: .72; }
+.phone-stage.bubble-style-snow-globe .bubble-ornament-b { right: 8px; top: 6px; width: 12px; height: 15px; border: 2px solid #f0b157; background: #ffdc88; box-shadow: 0 0 8px #ffc261; }
+.phone-stage.bubble-style-snow-globe .bubble-ornament-c::after { content: "❯❯"; position: absolute; left: 2px; bottom: 0; color: #56708d; font-size: 20px; letter-spacing: -10px; transform: rotate(-35deg); }
+
+/* 18 苔藓标本：标本卡缺角、压制植物、标签和胶带。 */
+.phone-stage.bubble-style-moss-specimen :is(.wechat-text-wrap, .wechat-voice-bubble) { border-radius: 8px 8px 18px 4px; }
+.phone-stage.bubble-style-moss-specimen .wechat-text-wrap { padding-bottom: 14px; }
+.phone-stage.bubble-style-moss-specimen .bubble-ornament-a { right: 7px; top: 3px; min-width: 31px; height: 15px; border: 1px solid #b46e55; background: #ead4ba; transform: rotate(4deg); }
+.phone-stage.bubble-style-moss-specimen .bubble-ornament-a::after { content: "No.18"; display: grid; height: 100%; place-items: center; color: #8c4231; font: 8px/1 Georgia,serif; }
+.phone-stage.bubble-style-moss-specimen .bubble-ornament-b { left: 4px; bottom: 1px; width: 39px; height: 28px; background: repeating-radial-gradient(ellipse at bottom left, transparent 0 5px, #66784e 6px 7px, transparent 8px 12px); opacity: .35; }
+.phone-stage.bubble-style-moss-specimen .bubble-ornament-c { right: 10px; bottom: -2px; width: 18px; height: 7px; background: rgba(222,204,169,.75); transform: rotate(-19deg); }
+
+/* 19 玫瑰花窗：铅线切面、圆花徽与金属角件。 */
+.phone-stage.bubble-style-rose-window :is(.wechat-text-wrap, .wechat-voice-bubble) { border-width: 2px; border-radius: 9px; overflow: hidden; }
+.phone-stage.bubble-style-rose-window .bubble-ornament-a { inset: 0; background: linear-gradient(35deg, transparent 20%, rgba(178,138,49,.72) 21% 22%, transparent 23% 63%, rgba(178,138,49,.72) 64% 65%, transparent 66%), linear-gradient(145deg, transparent 34%, rgba(178,138,49,.65) 35% 36%, transparent 37% 72%, rgba(178,138,49,.65) 73% 74%, transparent 75%); opacity: .2; }
+.phone-stage.bubble-style-rose-window .bubble-ornament-b { right: 5px; left: auto; top: 50%; width: 22px; height: 22px; border: 3px double #b28a31; border-radius: 50%; background: conic-gradient(#152e5f, #6d2130, #d2a834, #152e5f); transform: translateY(-50%); }
+.phone-stage.bubble-style-rose-window .bubble-ornament-c { inset: 4px; border: 1px solid rgba(210,178,103,.7); border-radius: 5px; }
+
+/* 20 潮汐邮票：齿孔轮廓、航海邮戳、贝壳与海星。 */
+.phone-stage.bubble-style-tidal-stamp :is(.wechat-text-wrap, .wechat-voice-bubble) { border: 0; border-radius: 2px; clip-path: polygon(0 6px, 3px 6px, 3px 0, calc(100% - 3px) 0, calc(100% - 3px) 6px, 100% 6px, 100% calc(100% - 6px), calc(100% - 3px) calc(100% - 6px), calc(100% - 3px) 100%, 3px 100%, 3px calc(100% - 6px), 0 calc(100% - 6px)); box-shadow: inset 0 0 0 1px var(--bubble-border), var(--bubble-shadow); }
+.phone-stage.bubble-style-tidal-stamp .bubble-ornament-a { right: 7px; top: 5px; width: 25px; height: 25px; border: 2px dashed var(--bubble-accent); border-radius: 50%; opacity: .75; }
+.phone-stage.bubble-style-tidal-stamp .bubble-ornament-a::after { content: "⚓"; display: grid; height: 100%; place-items: center; color: var(--bubble-accent); font-size: 12px; }
+.phone-stage.bubble-style-tidal-stamp .bubble-ornament-b::after { content: "★"; position: absolute; right: -5px; bottom: -5px; color: #f27a55; font-size: 21px; text-shadow: 0 1px 0 #bd4e33; }
+.phone-stage.bubble-style-tidal-stamp .bubble-ornament-c { left: 5px; bottom: 4px; width: 15px; height: 9px; border-radius: 100% 0; background: #e3ccb0; transform: rotate(-25deg); }
+
+/* Each skin's quote is its own component treatment, not a generic line above the bubble. */
+.phone-stage.bubble-style-lunar-halo .wechat-reply-line { border-style: dotted; border-radius: 12px; background: rgba(142,130,195,.12); }
+.phone-stage.bubble-style-constellation-aurora .wechat-reply-line { border: 1px solid currentColor; background: rgba(255,255,255,.12); box-shadow: inset 0 0 11px rgba(255,255,255,.13); }
+.phone-stage.bubble-style-rainbow-raincloud .wechat-reply-line { border: 0; border-top: 2px dotted #85b8e6; border-radius: 0; background: transparent; }
+.phone-stage.bubble-style-butterfly-flower-letter .wechat-reply-line { border: 1px solid rgba(125,137,100,.45); border-left: 4px solid #d49d83; background: rgba(255,250,238,.62); }
+.phone-stage.bubble-style-feather-wax-seal .wechat-reply-line { border-style: double; border-width: 3px; background: rgba(246,238,220,.18); }
+.phone-stage.bubble-style-signal-terminal .wechat-reply-line { border: 1px solid currentColor; border-bottom: 2px dotted var(--bubble-accent); border-radius: 3px; font-family: Consolas,monospace; }
+.phone-stage.bubble-style-floating-web-window .wechat-reply-line { border: 1px dashed currentColor; border-radius: 8px; background: rgba(255,255,255,.12); }
+.phone-stage.bubble-style-puzzle-alert .wechat-reply-line { border: 2px solid currentColor; border-radius: 2px; clip-path: polygon(0 0, 94% 0, 94% 30%, 100% 30%, 100% 70%, 94% 70%, 94% 100%, 0 100%); }
+.phone-stage.bubble-style-black-wing-gaze .wechat-reply-line { border-style: solid; border-color: #8f82b4; border-radius: 999px; background: rgba(143,130,180,.12); }
+.phone-stage.bubble-style-sprinkle-bow .wechat-reply-line { border: 0; border-left: 3px solid #f27a9d; border-radius: 0; background: rgba(255,255,255,.35); }
+.phone-stage.bubble-style-chocolate-waffle .wechat-reply-line { border: 2px solid #8b4f25; border-radius: 4px; background-image: repeating-linear-gradient(45deg,transparent 0 5px,rgba(90,46,28,.08) 5px 6px); }
+.phone-stage.bubble-style-celadon-koi .wechat-reply-line { border: 1px solid #7fa49e; border-radius: 10px; background: rgba(255,255,255,.18); }
+.phone-stage.bubble-style-library-card .wechat-reply-line { border: 0; border-left: 3px solid #8c3d35; border-radius: 0; background: repeating-linear-gradient(180deg,transparent 0 13px,rgba(139,118,87,.22) 13px 14px); }
+.phone-stage.bubble-style-holographic-jelly .wechat-reply-line { border: 1px solid rgba(255,255,255,.9); border-radius: 14px; backdrop-filter: blur(8px); }
+.phone-stage.bubble-style-neon-cassette .wechat-reply-line { border: 1px solid currentColor; border-radius: 2px; box-shadow: inset 0 0 8px currentColor; }
+.phone-stage.bubble-style-snow-globe .wechat-reply-line { border: 1px solid rgba(255,255,255,.82); border-radius: 14px; background: rgba(255,255,255,.14); }
+.phone-stage.bubble-style-moss-specimen .wechat-reply-line { border: 1px dashed #7c8061; border-left: 4px solid #9a4937; border-radius: 2px; background: rgba(244,237,218,.2); }
+.phone-stage.bubble-style-rose-window .wechat-reply-line { border: 2px double #b28a31; border-radius: 3px; background: rgba(255,244,220,.1); }
+.phone-stage.bubble-style-tidal-stamp .wechat-reply-line { border: 1px dashed #4a91a5; border-radius: 1px; background: rgba(255,255,255,.16); }
+
+/* Time, system and typing states inherit the motif instead of reverting to generic pills. */
+.phone-stage:not(.bubble-style-theme) :is(.wechat-message-time, .wechat-recalled-text, .wechat-call-note) { position: relative; z-index: 1; }
+.phone-stage.bubble-style-lunar-halo :is(.wechat-message-time,.wechat-recalled-text,.wechat-call-note,.wechat-typing) { border-radius: 999px; box-shadow: 0 0 0 1px rgba(157,145,202,.26); }
+.phone-stage.bubble-style-constellation-aurora :is(.wechat-recalled-text,.wechat-call-note,.wechat-typing) { border-style: dotted; box-shadow: 0 0 10px rgba(138,211,255,.34); }
+.phone-stage.bubble-style-rainbow-raincloud :is(.wechat-recalled-text,.wechat-call-note,.wechat-typing) { border-radius: 999px 999px 18px; border-bottom: 3px dotted #7bb5e9; }
+.phone-stage.bubble-style-butterfly-flower-letter :is(.wechat-recalled-text,.wechat-call-note,.wechat-typing) { border-radius: 14px 3px 14px 14px; border-left: 3px solid #d49d83; }
+.phone-stage.bubble-style-feather-wax-seal :is(.wechat-recalled-text,.wechat-call-note,.wechat-typing) { border-style: double; border-width: 3px; border-radius: 7px 1px 7px 7px; }
+.phone-stage.bubble-style-signal-terminal :is(.wechat-message-time,.wechat-recalled-text,.wechat-call-note,.wechat-typing) { border-radius: 2px; font-family: Consolas,monospace; letter-spacing: .08em; }
+.phone-stage.bubble-style-floating-web-window :is(.wechat-recalled-text,.wechat-call-note,.wechat-typing) { border-radius: 8px 8px 2px 8px; border-top: 4px solid #ef927e; }
+.phone-stage.bubble-style-puzzle-alert :is(.wechat-recalled-text,.wechat-call-note,.wechat-typing) { border-width: 2px; border-radius: 2px; clip-path: polygon(0 0,92% 0,92% 32%,100% 32%,100% 70%,92% 70%,92% 100%,0 100%); }
+.phone-stage.bubble-style-black-wing-gaze :is(.wechat-recalled-text,.wechat-call-note,.wechat-typing) { border: 2px double #8f82b4; border-radius: 999px; }
+.phone-stage.bubble-style-sprinkle-bow :is(.wechat-recalled-text,.wechat-call-note,.wechat-typing) { border: 3px dotted #f27a9d; border-radius: 999px; }
+.phone-stage.bubble-style-chocolate-waffle :is(.wechat-recalled-text,.wechat-call-note,.wechat-typing) { border: 2px solid #8b4f25; border-radius: 4px; background-image: repeating-linear-gradient(45deg,transparent 0 6px,rgba(90,46,28,.08) 6px 7px); }
+.phone-stage.bubble-style-celadon-koi :is(.wechat-recalled-text,.wechat-call-note,.wechat-typing) { border-radius: 12px 3px 12px 12px; box-shadow: inset 0 0 0 1px rgba(255,255,255,.55); }
+.phone-stage.bubble-style-library-card :is(.wechat-recalled-text,.wechat-call-note,.wechat-typing) { border-radius: 1px; background-image: repeating-linear-gradient(180deg,transparent 0 13px,rgba(139,118,87,.22) 13px 14px); }
+.phone-stage.bubble-style-holographic-jelly :is(.wechat-recalled-text,.wechat-call-note,.wechat-typing) { border: 2px solid white; border-radius: 18px 12px 20px 5px; backdrop-filter: blur(8px); }
+.phone-stage.bubble-style-neon-cassette :is(.wechat-recalled-text,.wechat-call-note,.wechat-typing) { border-width: 2px; border-radius: 2px; box-shadow: 0 0 12px var(--bubble-accent),inset 0 0 8px rgba(57,223,248,.16); font-family: Consolas,monospace; }
+.phone-stage.bubble-style-snow-globe :is(.wechat-recalled-text,.wechat-call-note,.wechat-typing) { border: 2px solid white; border-radius: 18px 18px 14px 4px; backdrop-filter: blur(6px); }
+.phone-stage.bubble-style-moss-specimen :is(.wechat-recalled-text,.wechat-call-note,.wechat-typing) { border-left: 4px solid #9a4937; border-radius: 3px 3px 10px 2px; }
+.phone-stage.bubble-style-rose-window :is(.wechat-recalled-text,.wechat-call-note,.wechat-typing) { border: 3px double #b28a31; border-radius: 3px; box-shadow: inset 0 0 0 1px rgba(210,178,103,.45); }
+.phone-stage.bubble-style-tidal-stamp :is(.wechat-recalled-text,.wechat-call-note,.wechat-typing) { border: 2px dashed #4a91a5; border-radius: 1px; }
+
+.phone-stage.bubble-style-lunar-halo .wechat-message-time::before { content: "☾ "; }
+.phone-stage.bubble-style-constellation-aurora .wechat-message-time::before { content: "✦ "; }
+.phone-stage.bubble-style-rainbow-raincloud .wechat-message-time::before { content: "☂ "; }
+.phone-stage.bubble-style-butterfly-flower-letter .wechat-message-time::before { content: "❀ "; }
+.phone-stage.bubble-style-feather-wax-seal .wechat-message-time::before { content: "✒ "; }
+.phone-stage.bubble-style-signal-terminal .wechat-message-time::before { content: "RX "; }
+.phone-stage.bubble-style-floating-web-window .wechat-message-time::before { content: "● "; color: #ef927e; }
+.phone-stage.bubble-style-puzzle-alert .wechat-message-time::before { content: "▣ "; color: #ffd200; }
+.phone-stage.bubble-style-black-wing-gaze .wechat-message-time::before { content: "◉ "; }
+.phone-stage.bubble-style-sprinkle-bow .wechat-message-time::before { content: "୨୧ "; }
+.phone-stage.bubble-style-chocolate-waffle .wechat-message-time::before { content: "▧ "; }
+.phone-stage.bubble-style-celadon-koi .wechat-message-time::before { content: "〰 "; }
+.phone-stage.bubble-style-library-card .wechat-message-time::before { content: "DUE "; font-family: Georgia,serif; }
+.phone-stage.bubble-style-holographic-jelly .wechat-message-time::before { content: "✧ "; }
+.phone-stage.bubble-style-neon-cassette .wechat-message-time::before { content: "▶ "; }
+.phone-stage.bubble-style-snow-globe .wechat-message-time::before { content: "❄ "; }
+.phone-stage.bubble-style-moss-specimen .wechat-message-time::before { content: "No.18 "; }
+.phone-stage.bubble-style-rose-window .wechat-message-time::before { content: "✥ "; }
+.phone-stage.bubble-style-tidal-stamp .wechat-message-time::before { content: "⚓ "; }
+
+@media (max-width: 370px) {
+  .theme-choice-card,
+  .bubble-choice-card {
+    grid-template-columns: 1fr;
+  }
+
+  .theme-choice-visual,
+  .bubble-choice-preview {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .phone-stage :is(.wechat-text-wrap, .wechat-voice-bubble) {
+    transition: none !important;
+  }
+}

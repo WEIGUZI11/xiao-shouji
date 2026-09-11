@@ -56,7 +56,10 @@ async function startProxy(app) {
     delete process.env.NAI_API_URL;
     delete process.env.NAI_HTTPS_PROXY;
 
-    const { createNaiProxyApp } = require('./nai-proxy.cjs');
+    const { createNaiProxyApp, isTrustedImageProxyUrl } = require('./nai-proxy.cjs');
+    assert.equal(isTrustedImageProxyUrl('https://api.openai.com/v1/images/generations'), true);
+    assert.equal(isTrustedImageProxyUrl('https://api.openai.com.evil.example/v1/images/generations'), false);
+    assert.equal(isTrustedImageProxyUrl('http://api.openai.com/v1/images/generations'), false);
     proxy = await startProxy(createNaiProxyApp({
       nowProvider: () => fixedNow,
       pushSender: async (messages) => {
@@ -79,6 +82,42 @@ async function startProxy(app) {
     const seenRequest = relay.getSeenRequest();
     assert.equal(seenRequest.headers.authorization, 'Bearer server-token');
     assert.equal(JSON.parse(seenRequest.body).input, 'domestic proxy test');
+
+    const ttsProxyResponse = await fetch(`${proxy.url}/api/tts/proxy`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        url: relay.url,
+        init: {
+          method: 'POST',
+          headers: { Authorization: 'Bearer tts-token', 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: 'doubao proxy smoke' }),
+        },
+      }),
+    });
+    const ttsProxyBytes = new Uint8Array(await ttsProxyResponse.arrayBuffer());
+    assert.equal(ttsProxyResponse.status, 200);
+    assert.equal(ttsProxyResponse.headers.get('content-type'), 'image/png');
+    assert.deepEqual([...ttsProxyBytes], [0x89, 0x50, 0x4e, 0x47]);
+    const seenTtsRequest = relay.getSeenRequest();
+    assert.equal(seenTtsRequest.headers.authorization, 'Bearer tts-token');
+    assert.equal(JSON.parse(seenTtsRequest.body).text, 'doubao proxy smoke');
+
+    const invalidTtsProxyResponse = await fetch(`${proxy.url}/api/tts/proxy`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: '/relative/tts' }),
+    });
+    assert.equal(invalidTtsProxyResponse.status, 400);
+    assert.deepEqual(await invalidTtsProxyResponse.json(), { error: 'Invalid TTS proxy URL' });
+
+    const untrustedImageProxyResponse = await fetch(`${proxy.url}/api/image/proxy`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: relay.url, init: { method: 'POST', body: '{}' } }),
+    });
+    assert.equal(untrustedImageProxyResponse.status, 403);
+    assert.deepEqual(await untrustedImageProxyResponse.json(), { error: 'Image proxy host is not trusted' });
 
     const deviceResponse = await fetch(`${proxy.url}/api/proactive-reminders/devices`, {
       method: 'POST',
@@ -127,6 +166,15 @@ async function startProxy(app) {
     assert.equal(healthJson.ok, true);
     assert.equal(healthJson.reminders, 1);
     assert.equal(healthJson.devices, 1);
+
+    const invalidJsonResponse = await fetch(`${proxy.url}/api/proactive-reminders/devices`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{',
+    });
+    assert.equal(invalidJsonResponse.status, 400);
+    assert.equal(invalidJsonResponse.headers.get('access-control-allow-origin'), 'https://phone.example.com');
+    assert.deepEqual(await invalidJsonResponse.json(), { ok: false, message: 'invalid json' });
   } finally {
     if (proxy) await proxy.close();
     await relay.close();

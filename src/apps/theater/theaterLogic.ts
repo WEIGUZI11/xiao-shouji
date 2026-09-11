@@ -86,16 +86,44 @@ export function buildTheaterLengthInstruction(length: TheaterLengthKey, customLe
   if (length === 'short') return '请生成约 200 到 600 字左右的小剧场。';
   if (length === 'medium') return '请生成约 400 到 800 字左右的小剧场。';
   if (length === 'long') return '请生成约 800 到 1500 字左右的小剧场。';
-  const customWords = customLengthText.match(/\d+/)?.[0];
-  return customWords ? `请生成约 ${customWords} 字左右的小剧场。` : '请按玩家设置的自由字数生成小剧场。';
+  return `请生成约 ${parseTheaterWordCount(customLengthText)} 字左右的小剧场。`;
+}
+
+export function parseTheaterWordCount(text: string) {
+  const normalized = text.trim().replace(/[０-９]/g, (digit) => String(digit.charCodeAt(0) - 0xff10)).replace(/，/g, ',');
+  const match = normalized.match(/^(?:约\s*)?([1-9]\d*|[1-9]\d{0,2}(?:,\d{3})+)\s*字?$/);
+  const words = match ? Number(match[1].replace(/,/g, '')) : NaN;
+  if (!Number.isSafeInteger(words) || words <= 0 || !Number.isSafeInteger(Math.ceil(words * 2.5) + 1024)) {
+    throw new Error('请输入有效的正整数字数，例如 1200 或 4,000；不会用默认字数替代。');
+  }
+  return words;
 }
 
 export function getTheaterMaxTokens(length: TheaterLengthKey, customLengthText = '') {
-  if (length === 'long') return 2200;
-  if (length === 'medium') return 1400;
-  if (length === 'short') return 900;
-  const customWords = Number(customLengthText.match(/\d+/)?.[0] || 1200);
-  return Math.min(Math.max(Math.ceil(customWords * 1.8), 700), 5000);
+  const words = length === 'custom' ? parseTheaterWordCount(customLengthText) : { short: 600, medium: 800, long: 1500 }[length];
+  // Tokens are not Chinese characters. Leave headroom without silently capping long requests.
+  return Math.ceil(words * 2.5) + 1024;
+}
+
+export function buildTheaterOutputRule(length: TheaterLengthKey, customLengthText: string) {
+  return `${buildTheaterLengthInstruction(length, customLengthText)}\n以本次玩家选择的字数为准，不沿用预设中的固定字数；续写时此字数只计算新增正文。接到被截断的句子时先补完，不重复已有正文。`;
+}
+
+export function appendTheaterContinuation(previous: string, next: string) {
+  // Remove only the legacy client-generated limit notice, never the saved story itself.
+  const body = previous.trim().replace(/\n\n（本次回复(?:已用到当前最大输出长度|达到长度上限)[^]*?）\s*$/, '');
+  return body + (/[。！？.!?…”」』]$/.test(body) ? '\n\n' : '') + next.trim();
+}
+
+export function buildTheaterChatMessage(theme: string, content: string) {
+  return `【小剧场】${theme || '剧情片段'}\n${content.trim()}`;
+}
+
+export function buildTheaterResultStatus(content: string, length: TheaterLengthKey, customLengthText: string, truncated: boolean) {
+  const count = Array.from(content.replace(/\s/g, '')).length;
+  const minimum = length === 'custom' ? parseTheaterWordCount(customLengthText) : { short: 200, medium: 400, long: 800 }[length];
+  const detail = truncated ? '模型输出达到上限' : count < minimum ? `尚未达到目标 ${minimum} 字` : '已收到正文';
+  return `本次 ${count} 字符（不含空白），${detail}，已保存。可点击“继续写”追加，不会覆盖原文。`;
 }
 
 export function buildTheaterUserPrompt(input: {
@@ -111,6 +139,25 @@ export function buildTheaterUserPrompt(input: {
     buildTheaterLengthInstruction(input.length, input.customLengthText),
     `角色：${input.actorNames.join('、') || '未指定'}`,
     input.rollResult.trim() && `本次世界书随机结果：\n${input.rollResult.trim()}`,
+  ].filter(Boolean).join('\n\n');
+}
+
+export function buildTheaterContinuationPrompt(input: {
+  previousContent: string;
+  theme: string;
+  length: TheaterLengthKey;
+  customLengthText: string;
+  actorNames: string[];
+  rollResult: string;
+}) {
+  return [
+    '请从已有小剧场的最后一句自然续写后续。不要重写、复述或总结已有正文，也不要突然重置人物关系和时间线。',
+    '续写部分本身要有新的推进、转折和阶段性收束，只输出新增正文，不要附加解释。',
+    input.theme.trim() && `原主题：${input.theme.trim()}`,
+    buildTheaterLengthInstruction(input.length, input.customLengthText).replace('小剧场', '后续'),
+    `角色：${input.actorNames.join('、') || '未指定'}`,
+    input.rollResult.trim() && `沿用的世界书结果：\n${input.rollResult.trim()}`,
+    `已有正文：\n${input.previousContent.trim().slice(-12000)}`,
   ].filter(Boolean).join('\n\n');
 }
 

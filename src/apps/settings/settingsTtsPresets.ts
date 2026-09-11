@@ -17,6 +17,7 @@ export type ModelPreset = {
 };
 
 export const voicePresetStorageKey = 'xiaophone.tts.voicePresets';
+export const defaultDoubaoVoiceId = 'zh_female_vv_uranus_bigtts';
 
 export const builtInModelPresets: ModelPreset[] = [
   { id: 'openai-gpt-4o-mini-tts', label: 'OpenAI gpt-4o-mini-tts', provider: 'openai', model: 'gpt-4o-mini-tts' },
@@ -26,8 +27,9 @@ export const builtInModelPresets: ModelPreset[] = [
   { id: 'minimax-speech-28-turbo', label: 'MiniMax speech-2.8-turbo', provider: 'minimax', model: 'speech-2.8-turbo', baseUrl: 'https://api.minimax.io/v1/t2a_v2' },
   { id: 'minimax-speech-26-hd', label: 'MiniMax speech-2.6-hd', provider: 'minimax', model: 'speech-2.6-hd', baseUrl: 'https://api.minimax.io/v1/t2a_v2' },
   { id: 'minimax-speech-26-turbo', label: 'MiniMax speech-2.6-turbo', provider: 'minimax', model: 'speech-2.6-turbo', baseUrl: 'https://api.minimax.io/v1/t2a_v2' },
-  { id: 'doubao-seed-tts-20', label: 'Doubao seed-tts-2.0', provider: 'doubao', model: 'seed-tts-2.0', baseUrl: 'https://openspeech.bytedance.com/api/v3/tts/unidirectional' },
-  { id: 'doubao-volcano-tts', label: 'Doubao volcano_tts legacy', provider: 'doubao', model: 'volcano_tts', baseUrl: 'https://openspeech.bytedance.com/api/v1/tts' },
+  { id: 'doubao-seed-tts-20', label: 'TTS 2.0 公版服务', provider: 'doubao', model: 'seed-tts-2.0', baseUrl: 'https://openspeech.bytedance.com/api/v3/tts/unidirectional' },
+  { id: 'doubao-seed-tts-10', label: 'TTS 1.0 公版服务', provider: 'doubao', model: 'seed-tts-1.0', baseUrl: 'https://openspeech.bytedance.com/api/v3/tts/unidirectional' },
+  { id: 'doubao-seed-icl-20', label: 'ICL 2.0 复刻服务', provider: 'doubao', model: 'seed-icl-2.0', baseUrl: 'https://openspeech.bytedance.com/api/v3/tts/unidirectional' },
 ];
 
 export const builtInVoicePresets: VoicePreset[] = [
@@ -37,8 +39,11 @@ export const builtInVoicePresets: VoicePreset[] = [
   { id: 'gemini-puck', label: 'Gemini Puck', provider: 'gemini', voiceId: 'Puck', model: 'gemini-2.5-flash-preview-tts' },
   { id: 'minimax-girl', label: 'MiniMax girl', provider: 'minimax', voiceId: 'female-shaonv', model: 'speech-2.8-hd' },
   { id: 'minimax-clear', label: 'MiniMax clear male', provider: 'minimax', voiceId: 'male-qn-qingse', model: 'speech-2.8-hd' },
-  { id: 'doubao-cancan-example', label: 'Doubao sample Cancan', provider: 'doubao', voiceId: 'zh_female_cancan_uranus_bigtts', model: 'seed-tts-2.0' },
-  { id: 'doubao-bv001', label: 'Doubao BV001 legacy', provider: 'doubao', voiceId: 'BV001_streaming', model: 'volcano_tts' },
+  { id: 'doubao-cancan-example', label: '豆包 灿灿 2.0', provider: 'doubao', voiceId: 'zh_female_cancan_uranus_bigtts', model: 'seed-tts-2.0' },
+  { id: 'doubao-vivi', label: '豆包 Vivi 2.0', provider: 'doubao', voiceId: 'zh_female_vv_uranus_bigtts', model: 'seed-tts-2.0' },
+  { id: 'doubao-wanwan', label: '豆包 湾湾小何 1.0', provider: 'doubao', voiceId: 'zh_female_wanwanxiaohe_moon_bigtts', model: 'seed-tts-1.0' },
+  { id: 'doubao-xiaoye', label: '豆包 北京小爷 1.0', provider: 'doubao', voiceId: 'zh_male_beijingxiaoye_emo_v2_mars_bigtts', model: 'seed-tts-1.0' },
+  { id: 'doubao-shuangkuaisisi', label: '豆包 双快思思 1.0', provider: 'doubao', voiceId: 'zh_female_shuangkuaisisi_emo_v2_mars_bigtts', model: 'seed-tts-1.0' },
 ];
 
 export const providerDefaults: Record<TtsProvider, Partial<VoicePreset> & { baseUrl?: string }> = {
@@ -47,7 +52,7 @@ export const providerDefaults: Record<TtsProvider, Partial<VoicePreset> & { base
   openai: { baseUrl: '', model: 'gpt-4o-mini-tts', voiceId: 'alloy' },
   gemini: { baseUrl: '', model: 'gemini-2.5-flash-preview-tts', voiceId: 'Kore' },
   minimax: { baseUrl: 'https://api.minimax.io/v1/t2a_v2', model: 'speech-2.8-hd', voiceId: 'female-shaonv' },
-  doubao: { baseUrl: 'https://openspeech.bytedance.com/api/v3/tts/unidirectional', model: 'seed-tts-2.0', voiceId: '' },
+  doubao: { baseUrl: 'https://openspeech.bytedance.com/api/v3/tts/unidirectional', model: 'seed-tts-2.0', voiceId: defaultDoubaoVoiceId },
 };
 
 const defaultProviderBaseUrls = new Set(
@@ -82,7 +87,55 @@ export function getVoicePlaceholder(provider: TtsProvider) {
 }
 
 export function shouldShowTtsVoiceControls() {
+  return true;
+}
+
+export function getProviderModelPresets(provider: TtsProvider) {
+  return builtInModelPresets.filter((preset) => preset.provider === provider);
+}
+
+export function getVoicePresetsForProvider(provider: TtsProvider, customPresets: VoicePreset[], model = '') {
+  return [...builtInVoicePresets, ...customPresets].filter((preset) => {
+    if (preset.provider !== provider) return false;
+    if (provider !== 'doubao' || !model || model === 'volcano_tts') return true;
+    return !preset.model || preset.model === model;
+  });
+}
+
+export function getVoiceIdForModelPreset(currentVoiceId: string, preset: ModelPreset) {
+  if (preset.provider !== 'doubao') return currentVoiceId;
+  const currentBuiltIn = builtInVoicePresets.find(
+    (voice) => voice.provider === 'doubao' && voice.voiceId === currentVoiceId,
+  );
+  if (preset.model === 'seed-icl-2.0') {
+    return currentBuiltIn ? '' : currentVoiceId;
+  }
+  if (currentBuiltIn?.model === preset.model) return currentVoiceId;
+  if (preset.model === 'seed-tts-2.0') return defaultDoubaoVoiceId;
+  return builtInVoicePresets.find(
+    (voice) => voice.provider === 'doubao' && voice.model === preset.model,
+  )?.voiceId || '';
+}
+
+export function canPullTtsModelsFromProvider(provider: TtsProvider) {
+  return provider !== 'browser' && provider !== 'doubao';
+}
+
+export function shouldUseTtsModelPresets(_provider: TtsProvider) {
   return false;
+}
+
+export function getTtsModelListBaseUrl(provider: TtsProvider, baseUrl: string) {
+  const configured = baseUrl.trim() || (provider === 'openai' ? 'https://api.openai.com/v1' : providerDefaults[provider].baseUrl || '');
+  if (!configured) return '';
+  return configured
+    .replace(/\/+$/, '')
+    .replace(/\/models$/i, '')
+    .replace(/\/chat\/completions$/i, '')
+    .replace(/\/audio\/speech$/i, '')
+    .replace(/\/t2a_v2$/i, '')
+    .replace(/\/tts\/unidirectional$/i, '')
+    .replace(/\/api\/v1\/tts$/i, '/api/v1');
 }
 
 export function canCarryBaseUrl(provider: TtsProvider, baseUrl: string) {

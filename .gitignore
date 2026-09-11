@@ -4,6 +4,7 @@ dist/
 char-phone-export/
 char-phone-export.zip
 coverage/
+.verification-build*/
 data/proactive-reminders.json
 work/
 .DS_Store

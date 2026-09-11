@@ -58,4 +58,28 @@ assert.deepEqual(colonThinking, [
   { kind: 'text', content: '先别急，我听着' },
 ]);
 
+assert.deepEqual(parseWeChatAiReply('["第一条","第二条"]'), [
+  { kind: 'text', content: '第一条' },
+  { kind: 'text', content: '第二条' },
+]);
+
+assert.deepEqual(parseWeChatAiReply('```json\n["围巾带上", "外面冷"]\n```'), [
+  { kind: 'text', content: '围巾带上' },
+  { kind: 'text', content: '外面冷' },
+]);
+
+assert.deepEqual(parseWeChatAiReply('{"messages":[{"content":"到了说一声"},{"text":"别走太快"}]}'), [
+  { kind: 'text', content: '到了说一声' },
+  { kind: 'text', content: '别走太快' },
+]);
+
+assert.deepEqual(parseWeChatAiReply('[\n"没有配平的第一条",\n"没有配平的第二条",\n'), [
+  { kind: 'text', content: '没有配平的第一条' },
+  { kind: 'text', content: '没有配平的第二条' },
+]);
+
+assert.deepEqual(parseWeChatAiReply('<think>这段原生思维没有闭合\n不能显示'), [
+  { kind: 'text', content: '嗯，我看到了。' },
+]);
+
 console.log('wechatAiMessages tests passed');

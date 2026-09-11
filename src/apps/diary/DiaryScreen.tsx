@@ -51,6 +51,7 @@ import { buildMemoWorldContext, delay, describeChatMessage, getCharacterPrompt, 
 import type { Character, DiaryEntry } from '../../store';
 import { useAppStore } from '../../store';
 import { buildXiaohongshuContext } from '../xiaohongshu/xiaohongshuLogic';
+import { buildDiaryReviewUserMessage, getDiaryReviewMaxTokens } from './diaryReview';
 
 type DiaryTab = 'user' | 'char' | 'favorite';
 type DiaryDraft = Pick<DiaryEntry, 'owner' | 'title' | 'content'>;
@@ -85,6 +86,7 @@ export function DiaryScreen() {
     apiKey,
     selectedModel,
     chatTemperature,
+    chatMaxTokens,
     appPresets,
   } = useAppStore();
   const [tab, setTab] = useState<DiaryTab>('user');
@@ -156,7 +158,7 @@ export function DiaryScreen() {
         apiKey,
         model: selectedModel,
         temperature: chatTemperature,
-        maxTokens: 600,
+        maxTokens: getDiaryReviewMaxTokens(chatMaxTokens),
         messages: [
           {
             role: 'system',
@@ -168,7 +170,7 @@ export function DiaryScreen() {
           },
           {
             role: 'user',
-            content: `标题：${entry.title}\n正文：${entry.content}`,
+            content: buildDiaryReviewUserMessage(entry),
           },
         ],
       });

@@ -7,7 +7,7 @@
  * CalendarScreen, ContactsScreen, SettingsScreen, ThemesScreen, VideoCallScreen.
  * State dependencies: useAppStore from src/store.ts; Character/Screen/CalendarEvent/GalleryPhoto types.
  * Utility dependencies: Desktop/FeatureRouter/LockScreen/NotificationCenter from src/shell/, speakWithConfiguredTts from src/tts.ts, parseCharacterCard from src/lib/charaParser.ts, cn/createId from src/lib/utils.ts.
- * Styling dependencies: src/index.css owns base shell styles; full new theme visuals live in src/themes/.
+ * Styling dependencies: src/index.css owns base shell styles; full themes and selectable chat-bubble skins live in src/themes/.
  * Maintenance note: this file is still the active shell entry; feature screens live under src/apps/ and are routed by FeatureRouter.
  */
 import {
@@ -29,6 +29,7 @@ import {
   Users,
 } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { parseCharacterCard } from './lib/charaParser';
 import { buildHttpErrorMessage, readHttpErrorDetail } from './lib/httpErrors';
 import { speakWithConfiguredTts } from './tts';
@@ -43,6 +44,7 @@ import { FeatureRouter } from './shell/FeatureRouter';
 import { GlobalMusicAudio } from './shell/GlobalMusicAudio';
 import { LockScreen } from './shell/LockScreen';
 import { NotificationCenter } from './shell/NotificationCenter';
+import { TtsQueueBar } from './shell/TtsQueueBar';
 import { buildShellNotifications, getShellNotificationBadges, type ShellNotification } from './shell/notifications';
 import { buildWeChatSystemPrompt, parseWeChatReplyParts } from './apps/wechat/ai/wechatAi';
 import type { WeChatAiParsedPart } from './apps/wechat/ai/wechatAiMessages';
@@ -59,6 +61,10 @@ import { WeChatContacts } from './apps/wechat/contacts/WeChatContacts';
 import { WeChatDiscover } from './apps/wechat/discover/WeChatDiscover';
 import { WeChatMe } from './apps/wechat/me/WeChatMe';
 import { WeChatAvatar } from './apps/wechat/shared/WeChatShared';
+import { getPhoneBottomLayoutClass } from './apps/wechat/chat/chatLayout';
+import { requestChatCompletion, requestChatCompletionStream } from './apps/shared/aiText';
+import { getModelListEndpoint } from './apps/shared/aiText';
+import { normalizeTheme } from './themes/themeOptions';
 
 const presetCards = [
   ['手机沉浸破限预设', '允许模拟微信、QQ、电话、日记、查手机等手机行为。'],
@@ -66,6 +72,18 @@ const presetCards = [
   ['剧情推进', '适合小剧场、偷窥 char、隐藏相册、搜索记录。'],
   ['强沉浸通话', '电话/视频通话时强调画面、停顿、环境声。'],
 ];
+
+type ProactiveContactPopupDraft = {
+  characterId: string;
+  characterName: string;
+  body: string;
+  timestamp?: number;
+};
+
+type ProactiveContactPopupState = ProactiveContactPopupDraft & {
+  id: string;
+  timestamp: number;
+};
 
 const viteEnv = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env || {};
 const defaultDiscordClientId = viteEnv.VITE_DISCORD_CLIENT_ID || '1502353063975981227';
@@ -88,14 +106,8 @@ function speak(text: string) {
   });
 }
 
-function normalizeApiBaseUrl(url: string) {
-  const trimmed = url.trim().replace(/\/+$/, '');
-  if (!trimmed) return '';
-  return trimmed.endsWith('/v1') ? trimmed : `${trimmed}/v1`;
-}
-
 async function fetchModelList(baseUrl: string, apiKey: string) {
-  const endpoint = `${normalizeApiBaseUrl(baseUrl)}/models`;
+  const endpoint = getModelListEndpoint(baseUrl);
   const response = await fetch(endpoint, {
     headers: apiKey ? { Authorization: `Bearer ${apiKey}` } : undefined,
   });
@@ -111,134 +123,6 @@ async function fetchModelList(baseUrl: string, apiKey: string) {
     ? data.data.map((item: { id?: string }) => item.id).filter(Boolean)
     : [];
   return models as string[];
-}
-
-async function requestChatCompletion({
-  baseUrl,
-  apiKey,
-  model,
-  messages,
-  temperature,
-  maxTokens,
-}: {
-  baseUrl: string;
-  apiKey: string;
-  model: string;
-  messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>;
-  temperature: number;
-  maxTokens: number;
-}) {
-  const endpoint = `${normalizeApiBaseUrl(baseUrl)}/chat/completions`;
-  useAppStore.getState().addAppLog?.({
-    type: 'ai',
-    title: '发送给 AI 的消息',
-    detail: JSON.stringify({ endpoint, model, messages, temperature, maxTokens }, null, 2),
-  });
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
-    },
-    body: JSON.stringify({
-      model,
-      messages,
-      temperature,
-      max_tokens: maxTokens,
-    }),
-  });
-  if (!response.ok) {
-    const message = buildHttpErrorMessage('聊天接口失败', {
-      status: response.status,
-      statusText: response.statusText,
-      detail: await readHttpErrorDetail(response),
-    });
-    useAppStore.getState().addAppLog?.({ type: 'error', title: 'AI 接口失败', detail: `${endpoint}\n${message}` });
-    throw new Error(message);
-  }
-  const data = await response.json();
-  const content = data?.choices?.[0]?.message?.content || '';
-  useAppStore.getState().addAppLog?.({ type: 'ai', title: 'AI 返回内容', detail: content });
-  return content;
-}
-
-async function requestChatCompletionStream({
-  baseUrl,
-  apiKey,
-  model,
-  messages,
-  temperature,
-  onToken,
-}: {
-  baseUrl: string;
-  apiKey: string;
-  model: string;
-  messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>;
-  temperature: number;
-  onToken: (token: string) => void;
-}) {
-  const endpoint = `${normalizeApiBaseUrl(baseUrl)}/chat/completions`;
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
-    },
-    body: JSON.stringify({
-      model,
-      messages,
-      temperature,
-      stream: true,
-    }),
-  });
-  if (!response.ok) {
-    throw new Error(buildHttpErrorMessage('聊天接口失败', {
-      status: response.status,
-      statusText: response.statusText,
-      detail: await readHttpErrorDetail(response),
-    }));
-  }
-  if ((response.headers.get('content-type') || '').includes('application/json')) {
-    const data = await response.json();
-    const content = data?.choices?.[0]?.message?.content || '';
-    onToken(content);
-    return content;
-  }
-  if (!response.body) {
-    const data = await response.json();
-    const content = data?.choices?.[0]?.message?.content || '';
-    onToken(content);
-    return content;
-  }
-
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder('utf-8');
-  let buffer = '';
-  let fullText = '';
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split('\n');
-    buffer = lines.pop() || '';
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (!trimmed.startsWith('data:')) continue;
-      const dataText = trimmed.replace(/^data:\s*/, '');
-      if (!dataText || dataText === '[DONE]') continue;
-      try {
-        const data = JSON.parse(dataText);
-        const token = data?.choices?.[0]?.delta?.content || data?.choices?.[0]?.text || '';
-        if (token) {
-          fullText += token;
-          onToken(token);
-        }
-      } catch {
-        // Ignore non-JSON keepalive chunks from OpenAI-compatible gateways.
-      }
-    }
-  }
-  return fullText;
 }
 
 function delay(ms: number) {
@@ -362,7 +246,25 @@ function useMemoCharWriterAutomation() {
     appPresets,
     addMemoEntry,
     setMemoCharWriter,
-  } = useAppStore();
+  } = useAppStore(useShallow((state) => ({
+    memoCharWriter: state.memoCharWriter,
+    characters: state.characters,
+    chatSessions: state.chatSessions,
+    wechatMoments: state.wechatMoments,
+    purchaseRecords: state.purchaseRecords,
+    diaries: state.diaries,
+    calendarEvents: state.calendarEvents,
+    galleryPhotos: state.galleryPhotos,
+    memos: state.memos,
+    xiaohongshuNotes: state.xiaohongshuNotes,
+    apiBaseUrl: state.apiBaseUrl,
+    apiKey: state.apiKey,
+    selectedModel: state.selectedModel,
+    chatTemperature: state.chatTemperature,
+    appPresets: state.appPresets,
+    addMemoEntry: state.addMemoEntry,
+    setMemoCharWriter: state.setMemoCharWriter,
+  })));
 
   useEffect(() => {
     if (!memoCharWriter.enabled || !memoCharWriter.scheduledAt) return;
@@ -435,7 +337,7 @@ function useMemoCharWriterAutomation() {
   }, [memoCharWriter, characters, chatSessions, wechatMoments, purchaseRecords, diaries, calendarEvents, galleryPhotos, memos, apiBaseUrl, apiKey, selectedModel, chatTemperature, appPresets.memo.prompt, addMemoEntry, setMemoCharWriter]);
 }
 
-function useProactiveReminderAutomation() {
+function useProactiveReminderAutomation(onContactPopup?: (popup: ProactiveContactPopupDraft) => void) {
   useEffect(() => {
     let syncing = false;
     const tick = async () => {
@@ -450,6 +352,13 @@ function useProactiveReminderAutomation() {
       writes.forEach((write) => {
         state.addMessage(write.chatTarget.characterId, write.chatTarget.channel, write.chatMessage);
         state.addLifeEvent(write.lifeEvent);
+        const characterName = state.characters.find((character) => character.id === write.chatTarget.characterId)?.name || '微信';
+        onContactPopup?.({
+          characterId: write.chatTarget.characterId,
+          characterName,
+          body: write.chatMessage.content,
+          timestamp: write.chatMessage.timestamp,
+        });
         state.addAppLog?.({
           type: 'info',
           title: '微信主动提醒已发送',
@@ -478,6 +387,12 @@ function useProactiveReminderAutomation() {
             continue;
           }
           latestState.addMessage(item.characterId, item.channel, buildReminderMessageFromOutbox(item));
+          onContactPopup?.({
+            characterId: item.characterId,
+            characterName: item.characterName || latestState.characters.find((character) => character.id === item.characterId)?.name || '微信',
+            body: item.content,
+            timestamp: item.createdAt,
+          });
           latestState.addLifeEvent({
             id: `life-${item.id}`,
             type: 'calendar',
@@ -526,7 +441,7 @@ function useNativePushTokenRegistration() {
   }), []);
 }
 
-function useRandomProactiveMessagesAutomation() {
+function useRandomProactiveMessagesAutomation(onContactPopup?: (popup: ProactiveContactPopupDraft) => void) {
   useEffect(() => {
     const tick = () => {
       const state = useAppStore.getState();
@@ -549,6 +464,13 @@ function useRandomProactiveMessagesAutomation() {
       writes.forEach((write) => {
         state.addMessage(write.chatTarget.characterId, write.chatTarget.channel, write.chatMessage);
         state.addLifeEvent(write.lifeEvent);
+        const characterName = state.characters.find((character) => character.id === write.chatTarget.characterId)?.name || '微信';
+        onContactPopup?.({
+          characterId: write.chatTarget.characterId,
+          characterName,
+          body: write.chatMessage.content,
+          timestamp: write.chatMessage.timestamp,
+        });
         state.addAppLog?.(write.appLog);
       });
     };
@@ -561,10 +483,39 @@ function useRandomProactiveMessagesAutomation() {
   }, []);
 }
 
+function WeChatFloatingPopup({
+  popup,
+  onOpen,
+  onClose,
+}: {
+  popup: ProactiveContactPopupState;
+  onOpen: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <div className="wechat-floating-popup-wrap">
+      <button type="button" className="wechat-floating-popup" onClick={onOpen}>
+        <span className="wechat-floating-popup-icon">
+          <MessageCircle className="h-4 w-4" />
+        </span>
+        <span className="min-w-0 flex-1 text-left">
+          <span className="wechat-floating-popup-title">微信 · {popup.characterName}</span>
+          <span className="wechat-floating-popup-body">{popup.body}</span>
+        </span>
+      </button>
+      <button type="button" className="wechat-floating-popup-close" onClick={onClose} aria-label="关闭主动弹窗">
+        ×
+      </button>
+    </div>
+  );
+}
+
 export default function App() {
   const {
     theme,
+    bubbleStyle,
     fontStyle,
+    chatBottomLayout,
     activeScreen,
     characters,
     chatSessions,
@@ -574,22 +525,63 @@ export default function App() {
     wallpaper,
     setScreen,
     goBack,
-  } = useAppStore();
+    openChat,
+  } = useAppStore(useShallow((state) => ({
+    theme: state.theme,
+    bubbleStyle: state.bubbleStyle,
+    fontStyle: state.fontStyle,
+    chatBottomLayout: state.chatBottomLayout,
+    activeScreen: state.activeScreen,
+    characters: state.characters,
+    chatSessions: state.chatSessions,
+    phoneCallRecords: state.phoneCallRecords,
+    calendarEvents: state.calendarEvents,
+    memos: state.memos,
+    wallpaper: state.wallpaper,
+    setScreen: state.setScreen,
+    goBack: state.goBack,
+    openChat: state.openChat,
+  })));
   const [locked, setLocked] = useState(true);
   const [showNotificationCenter, setShowNotificationCenter] = useState(false);
+  const [contactPopup, setContactPopup] = useState<ProactiveContactPopupState | null>(null);
+  const contactPopupTimerRef = useRef<number | null>(null);
   const notifications = buildShellNotifications({ characters, chatSessions, phoneCallRecords, calendarEvents, memos });
   const notificationBadges = getShellNotificationBadges(notifications);
   const notificationCount = notifications.reduce((count, notification) => count + (notification.count || 1), 0);
-  const themeClass = theme === 'pastel' || theme === 'gothic' || theme === 'guofeng' || theme === 'celtic-paladin' || theme === 'status-terminal' || theme === 'alcheris-pixel' ? theme : 'pastel';
-  const fontClass = fontStyle === 'system' || fontStyle === 'serif' || fontStyle === 'pixel' ? `font-${fontStyle}` : 'font-rounded';
+  const themeClass = normalizeTheme(theme);
+  const fontClass = `font-${fontStyle}`;
   const openNotification = (notification: ShellNotification) => {
     setLocked(false);
     setShowNotificationCenter(false);
     setScreen(notification.screen);
   };
+  const showContactPopup = (draft: ProactiveContactPopupDraft) => {
+    if (contactPopupTimerRef.current) window.clearTimeout(contactPopupTimerRef.current);
+    setContactPopup({
+      ...draft,
+      id: createId('wechat-popup'),
+      timestamp: draft.timestamp || Date.now(),
+    });
+    contactPopupTimerRef.current = window.setTimeout(() => {
+      setContactPopup(null);
+      contactPopupTimerRef.current = null;
+    }, 9000);
+  };
+  const closeContactPopup = () => {
+    if (contactPopupTimerRef.current) window.clearTimeout(contactPopupTimerRef.current);
+    contactPopupTimerRef.current = null;
+    setContactPopup(null);
+  };
+  const openContactPopup = () => {
+    if (!contactPopup) return;
+    closeContactPopup();
+    setLocked(false);
+    openChat(contactPopup.characterId, 'wechat');
+  };
   useMemoCharWriterAutomation();
-  useProactiveReminderAutomation();
-  useRandomProactiveMessagesAutomation();
+  useProactiveReminderAutomation(showContactPopup);
+  useRandomProactiveMessagesAutomation(showContactPopup);
   useNativePushTokenRegistration();
 
   useEffect(() => {
@@ -640,9 +632,15 @@ export default function App() {
 
   return (
     <AppErrorBoundary>
-      <div className={cn('min-h-screen phone-stage flex items-center justify-center bg-[#101010] p-2 sm:p-4', `theme-${themeClass}`, fontClass)}>
-        <main className={cn('phone-shell relative h-[844px] max-h-[calc(100dvh-16px)] w-[390px] max-w-full overflow-hidden bg-[var(--phone-bg)] text-[var(--phone-text)] rounded-[34px] border-[8px] border-[#111]', `screen-${activeScreen}`)}>
+      <div className={cn(
+        'min-h-screen phone-stage flex items-center justify-center bg-[#101010] p-2 sm:p-4',
+        `theme-${themeClass}`,
+        `bubble-style-${bubbleStyle}`,
+        fontClass,
+      )}>
+        <main className={cn('phone-shell relative h-[844px] max-h-[calc(100dvh-16px)] w-[390px] max-w-full overflow-hidden bg-[var(--phone-bg)] text-[var(--phone-text)] rounded-[34px] border-[8px] border-[#111]', `screen-${activeScreen}`, getPhoneBottomLayoutClass(chatBottomLayout))}>
           <GlobalMusicAudio />
+          <TtsQueueBar />
           {locked ? (
             <LockScreen
               notifications={notifications}
@@ -665,7 +663,7 @@ export default function App() {
                 </button>
               )}
               {activeScreen === 'desktop' && <Desktop badges={notificationBadges} />}
-              {['wechat', 'xiaohongshu', 'bilibili'].includes(activeScreen) && (
+              {activeScreen === 'wechat' && (
                 <button type="button" onClick={goBack} className="shell-app-back-button" aria-label="返回桌面">
                   <ChevronLeft className="h-7 w-7" />
                 </button>
@@ -682,6 +680,13 @@ export default function App() {
             </>
           )}
         </main>
+        {contactPopup && (
+          <WeChatFloatingPopup
+            popup={contactPopup}
+            onOpen={openContactPopup}
+            onClose={closeContactPopup}
+          />
+        )}
       </div>
     </AppErrorBoundary>
   );

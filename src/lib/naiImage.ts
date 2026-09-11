@@ -1,8 +1,11 @@
 ﻿import { buildHttpErrorMessage } from './httpErrors';
 
+import { fetchImageResource } from './nativeImageBridge';
+
 export type ImageGenerationConfig = {
   provider: 'novelai' | 'comfyui' | 'custom';
   customFormat?: 'auto' | 'nai' | 'openai-images' | 'mj-task' | 'generic-json';
+  customModelListUrl?: string;
   customPayloadTemplate?: string;
   customResultPath?: string;
   customTaskIdPath?: string;
@@ -14,6 +17,7 @@ export type ImageGenerationConfig = {
   availableModels?: string[];
   width: number;
   height: number;
+  quality?: 'auto' | 'low' | 'medium' | 'high';
   steps: number;
   scale: number;
   sampler: string;
@@ -92,6 +96,43 @@ export const defaultImageGenerationGatePolicy: ImageGenerationGatePolicy = {
   similarPromptThreshold: 0.82,
 };
 
+export function buildImageGenerationGatePolicy(triggerType: ImageTriggerType): Partial<ImageGenerationGatePolicy> {
+  if (triggerType === 'proactive') {
+    return {
+      characterCooldownMs: 5 * 60 * 1000,
+      channelCooldownMs: 2 * 60 * 1000,
+      userCooldownMs: 0,
+      duplicatePromptWindowMs: 30 * 60 * 1000,
+      similarPromptWindowMs: 3 * 60 * 1000,
+    };
+  }
+  if (triggerType !== 'manual') return {};
+  return {
+    characterCooldownMs: 0,
+    channelCooldownMs: 0,
+    userCooldownMs: 0,
+    failedRetryLimit: Number.POSITIVE_INFINITY,
+    duplicatePromptWindowMs: 0,
+    similarPromptWindowMs: 0,
+  };
+}
+
+export class ImageGenerationGateError extends Error {
+  reason: ImageGenerationGateReason;
+  retryAfterMs?: number;
+
+  constructor(reason: ImageGenerationGateReason, message: string, retryAfterMs?: number) {
+    super(message);
+    this.name = 'ImageGenerationGateError';
+    this.reason = reason;
+    this.retryAfterMs = retryAfterMs;
+  }
+}
+
+export function isImageGenerationGateError(error: unknown): error is ImageGenerationGateError {
+  return error instanceof ImageGenerationGateError;
+}
+
 export function getDefaultNaiProxyUrl(value?: string) {
   return value?.trim() || '/api/nai/generate-image';
 }
@@ -105,6 +146,7 @@ export const defaultImageGenerationConfig: ImageGenerationConfig = {
   model: 'nai-diffusion-4-5-full',
   width: 512,
   height: 512,
+  quality: 'auto',
   steps: 18,
   scale: 5,
   sampler: 'k_euler_ancestral',
@@ -112,6 +154,48 @@ export const defaultImageGenerationConfig: ImageGenerationConfig = {
   promptExtra: '',
   negativePrompt: 'lowres, blurry, text, watermark, logo, worst quality',
 };
+
+export function normalizeOpenAiImageEndpoint(value: string) {
+  const input = value.trim();
+  if (!input) return '';
+  try {
+    const url = new URL(/^https?:\/\//i.test(input) ? input : `https://${input}`);
+    const path = url.pathname.replace(/\/+$/, '');
+    if (/\/images\/generations$/i.test(path)) return url.toString().replace(/\/$/, '');
+    url.pathname = !path || path === '/'
+      ? '/v1/images/generations'
+      : `${path}/images/generations`;
+    return url.toString().replace(/\/$/, '');
+  } catch {
+    return input;
+  }
+}
+
+function fallbackGptImageSize(width: number, height: number) {
+  if (width > height * 1.15) return '1536x1024';
+  if (height > width * 1.15) return '1024x1536';
+  return '1024x1024';
+}
+
+export function resolveOpenAiImageSize(model: string, width: number, height: number) {
+  const cleanModel = model.trim().toLowerCase();
+  const safeWidth = Math.max(1, Math.round(width || 512));
+  const safeHeight = Math.max(1, Math.round(height || 512));
+  if (!cleanModel.startsWith('gpt-image-')) return `${safeWidth}x${safeHeight}`;
+  if (cleanModel.startsWith('gpt-image-2')) {
+    const pixels = safeWidth * safeHeight;
+    const ratio = Math.max(safeWidth / safeHeight, safeHeight / safeWidth);
+    const valid = safeWidth <= 3840
+      && safeHeight <= 3840
+      && safeWidth % 16 === 0
+      && safeHeight % 16 === 0
+      && pixels >= 655360
+      && pixels <= 8294400
+      && ratio <= 3;
+    if (valid) return `${safeWidth}x${safeHeight}`;
+  }
+  return fallbackGptImageSize(safeWidth, safeHeight);
+}
 
 export function getDefaultImageBaseUrlForProvider(provider: ImageGenerationConfig['provider']) {
   if (provider === 'comfyui') return 'http://127.0.0.1:8188';
@@ -282,12 +366,51 @@ function trimTrailingSlash(value: string) {
   return value.trim().replace(/\/+$/, '');
 }
 
-function normalizeCustomModelBaseUrl(baseUrl: string) {
-  const trimmed = trimTrailingSlash(baseUrl);
-  if (!trimmed) return '';
-  if (trimmed.endsWith('/v1/images/generations')) return trimmed.slice(0, -'/images/generations'.length);
-  if (trimmed.endsWith('/images/generations')) return trimmed.slice(0, -'/images/generations'.length);
-  return trimmed.endsWith('/v1') ? trimmed : `${trimmed}/v1`;
+export function resolveImageModelListEndpoint(config: ImageGenerationConfig) {
+  const explicit = config.customModelListUrl?.trim();
+  if (explicit) return explicit;
+
+  const input = config.baseUrl.trim();
+  if (!input) return '';
+  try {
+    const url = new URL(input);
+    const path = url.pathname.replace(/\/+$/, '');
+    const modelBasePath = /\/images\/generations$/i.test(path)
+      ? path.slice(0, -'/images/generations'.length)
+      : path.endsWith('/v1') ? path : `${path}/v1`;
+    url.pathname = `${modelBasePath || '/v1'}/models`.replace(/\/{2,}/g, '/');
+    url.hash = '';
+    return url.toString();
+  } catch {
+    const [withoutHash] = input.split('#', 1);
+    const queryIndex = withoutHash.indexOf('?');
+    const path = queryIndex >= 0 ? withoutHash.slice(0, queryIndex) : withoutHash;
+    const query = queryIndex >= 0 ? withoutHash.slice(queryIndex) : '';
+    const trimmedPath = trimTrailingSlash(path);
+    const modelBase = /\/images\/generations$/i.test(trimmedPath)
+      ? trimmedPath.slice(0, -'/images/generations'.length)
+      : trimmedPath.endsWith('/v1') ? trimmedPath : `${trimmedPath}/v1`;
+    return `${modelBase}/models${query}`;
+  }
+}
+
+function parseImageModelIds(data: unknown) {
+  const root = data as { data?: unknown; models?: unknown } | undefined;
+  const nestedData = root?.data as { models?: unknown } | undefined;
+  const candidates = Array.isArray(data)
+    ? data
+    : Array.isArray(root?.data)
+      ? root.data
+      : Array.isArray(root?.models)
+        ? root.models
+        : Array.isArray(nestedData?.models) ? nestedData.models : [];
+  return Array.from(new Set(candidates.flatMap((item) => {
+    if (typeof item === 'string') return item.trim() ? [item.trim()] : [];
+    if (!item || typeof item !== 'object') return [];
+    const record = item as { id?: unknown; name?: unknown; model?: unknown };
+    const value = [record.id, record.name, record.model].find((entry) => typeof entry === 'string' && entry.trim());
+    return typeof value === 'string' ? [value.trim()] : [];
+  })));
 }
 
 function parseComfyCheckpointModels(data: unknown) {
@@ -304,7 +427,7 @@ function parseComfyCheckpointModels(data: unknown) {
 
 export async function fetchImageGenerationModels({
   config,
-  fetchImpl = fetch,
+  fetchImpl = fetchImageResource,
 }: {
   config: ImageGenerationConfig;
   fetchImpl?: FetchLike;
@@ -331,9 +454,9 @@ export async function fetchImageGenerationModels({
     return parseComfyCheckpointModels(await response.json());
   }
 
-  const modelBaseUrl = normalizeCustomModelBaseUrl(config.baseUrl);
-  if (!modelBaseUrl) throw new Error('请先填写自定义生图接口地址。');
-  const response = await fetchImpl(`${modelBaseUrl}/models`, {
+  const modelEndpoint = resolveImageModelListEndpoint(config);
+  if (!modelEndpoint) throw new Error('请先填写自定义生图接口地址或模型列表地址。');
+  const response = await fetchImpl(modelEndpoint, {
     headers: config.apiKey.trim() ? { Authorization: `Bearer ${config.apiKey.trim()}` } : undefined,
   });
   if (!response.ok) {
@@ -344,9 +467,16 @@ export async function fetchImageGenerationModels({
     }));
   }
   const data = await response.json();
-  return Array.isArray(data?.data)
-    ? data.data.map((item: { id?: string }) => item.id).filter(Boolean) as string[]
-    : [];
+  const models = parseImageModelIds(data);
+  if (config.provider === 'custom' && getCustomImageRequestFormat(config) === 'openai-images') {
+    const imageModels = models.filter(isLikelyImageModel);
+    return imageModels.length > 0 ? imageModels : models;
+  }
+  return models;
+}
+
+export function isLikelyImageModel(model: string) {
+  return /gpt-image|dall-e|image|flux|stable[-_ ]?diffusion|\bsd[-_]?\d|recraft|ideogram|kolors|midjourney/i.test(model);
 }
 
 export function isNaiV4ImageModel(model: string) {
@@ -363,13 +493,107 @@ function getOfficialQualitySuffix(model: string) {
   return '';
 }
 
+type PromptRule = {
+  pattern: RegExp;
+  tags: string[];
+};
+
+const naturalPromptRules: PromptRule[] = [
+  { pattern: /少女|女孩|女生|女性|女人|女孩子|girl/i, tags: ['1girl', 'solo'] },
+  { pattern: /少年|男孩|男生|男性|男人|男孩子|boy/i, tags: ['1boy', 'solo'] },
+  { pattern: /人像|肖像|半身|portrait/i, tags: ['portrait'] },
+  { pattern: /自拍|selfie/i, tags: ['selfie'] },
+  { pattern: /全身|full body/i, tags: ['full body'] },
+  { pattern: /黑发|黑色头发|black hair/i, tags: ['black hair'] },
+  { pattern: /白发|银发|white hair|silver hair/i, tags: ['silver hair'] },
+  { pattern: /金发|金色头发|blonde/i, tags: ['blonde hair'] },
+  { pattern: /蓝发|blue hair/i, tags: ['blue hair'] },
+  { pattern: /红发|red hair/i, tags: ['red hair'] },
+  { pattern: /长发|long hair/i, tags: ['long hair'] },
+  { pattern: /短发|short hair/i, tags: ['short hair'] },
+  { pattern: /蓝眼|蓝色眼睛|blue eyes/i, tags: ['blue eyes'] },
+  { pattern: /红眼|红色眼睛|red eyes/i, tags: ['red eyes'] },
+  { pattern: /金眼|金色眼睛|golden eyes|yellow eyes/i, tags: ['golden eyes'] },
+  { pattern: /白衬衫|白色衬衫|white shirt/i, tags: ['white shirt'] },
+  { pattern: /衬衫|shirt/i, tags: ['shirt'] },
+  { pattern: /校服|school uniform/i, tags: ['school uniform'] },
+  { pattern: /连衣裙|裙子|dress/i, tags: ['dress'] },
+  { pattern: /外套|夹克|jacket/i, tags: ['jacket'] },
+  { pattern: /雨伞|伞|umbrella/i, tags: ['umbrella'] },
+  { pattern: /红伞|红色雨伞/i, tags: ['red umbrella'] },
+  { pattern: /窗边|窗前|靠窗|window/i, tags: ['by window'] },
+  { pattern: /喝茶|茶杯|热茶|tea/i, tags: ['drinking tea', 'teacup'] },
+  { pattern: /咖啡|咖啡馆|咖啡厅|cafe|coffee/i, tags: ['cafe'] },
+  { pattern: /房间|卧室|室内|interior|room/i, tags: ['indoors'] },
+  { pattern: /街道|街边|street/i, tags: ['street'] },
+  { pattern: /城市|city/i, tags: ['cityscape'] },
+  { pattern: /山|山间|mountain/i, tags: ['mountain'] },
+  { pattern: /森林|forest/i, tags: ['forest'] },
+  { pattern: /海|海边|ocean|sea/i, tags: ['ocean'] },
+  { pattern: /天空|sky/i, tags: ['sky'] },
+  { pattern: /风景|景色|landscape|scenery/i, tags: ['landscape'] },
+  { pattern: /花|flower/i, tags: ['flowers'] },
+  { pattern: /雪|下雪|snow/i, tags: ['snow'] },
+  { pattern: /雨|下雨|rain/i, tags: ['rain'] },
+  { pattern: /夜晚|夜景|晚上|night/i, tags: ['night'] },
+  { pattern: /傍晚|黄昏|夕阳|日落|sunset|evening/i, tags: ['sunset', 'evening'] },
+  { pattern: /清晨|早晨|sunrise|morning/i, tags: ['morning light'] },
+  { pattern: /暖光|暖色|warm light/i, tags: ['warm light'] },
+  { pattern: /自然光|natural light/i, tags: ['natural light'] },
+  { pattern: /柔和|soft/i, tags: ['soft lighting'] },
+  { pattern: /微笑|笑|smile/i, tags: ['smile'] },
+  { pattern: /看镜头|looking at viewer/i, tags: ['looking at viewer'] },
+  { pattern: /背影|from behind/i, tags: ['from behind'] },
+  { pattern: /侧脸|profile/i, tags: ['profile'] },
+  { pattern: /可爱|cute/i, tags: ['cute'] },
+  { pattern: /优雅|elegant/i, tags: ['elegant'] },
+  { pattern: /电影感|cinematic/i, tags: ['cinematic lighting'] },
+  { pattern: /特写|close-up|closeup/i, tags: ['close-up'] },
+  { pattern: /俯视|from above/i, tags: ['from above'] },
+];
+
+function uniqueTags(tags: string[]) {
+  const seen = new Set<string>();
+  return tags
+    .map((tag) => tag.trim())
+    .filter((tag) => {
+      const key = tag.toLowerCase();
+      if (!tag || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+
+function extractAsciiPromptFragments(prompt: string) {
+  return prompt
+    .replace(/[，。！？；：、]/g, ',')
+    .split(',')
+    .map((part) => part.trim())
+    .filter((part) => part && /^[\x00-\x7F]+$/.test(part));
+}
+
+export function translateNaturalImagePromptToNaiTags(prompt: string) {
+  const cleanPrompt = prompt.replace(/\s+/g, ' ').trim();
+  if (!cleanPrompt) return '';
+  const tags = naturalPromptRules.flatMap((rule) => (rule.pattern.test(cleanPrompt) ? rule.tags : []));
+  const asciiFragments = extractAsciiPromptFragments(cleanPrompt)
+    .map((fragment) => fragment
+      .replace(/\b(draw|generate|create|please|image|picture|photo|a|an|the)\b/gi, ' ')
+      .replace(/\s+/g, ' ')
+      .trim())
+    .filter(Boolean);
+  const translated = uniqueTags([...tags, ...asciiFragments]);
+  if (translated.length > 0) return translated.join(', ');
+  return /[^\x00-\x7F]/.test(cleanPrompt) ? 'detailed scene, clean composition' : cleanPrompt;
+}
+
 function buildImagePositivePrompt(config: Pick<ImageGenerationConfig, 'promptPreset' | 'promptExtra'>, prompt: string) {
   return [config.promptPreset, config.promptExtra, prompt].map((item) => item.trim()).filter(Boolean).join(', ');
 }
 
 function buildNaiPositiveInput(model: string, config: Pick<ImageGenerationConfig, 'promptPreset' | 'promptExtra'>, prompt: string) {
   const suffix = getOfficialQualitySuffix(model);
-  return [buildImagePositivePrompt(config, prompt), suffix].map((item) => item.trim()).filter(Boolean).join(', ');
+  return [buildImagePositivePrompt(config, translateNaturalImagePromptToNaiTags(prompt)), suffix].map((item) => item.trim()).filter(Boolean).join(', ');
 }
 
 export function buildNaiGenerateImagePayload({
@@ -554,8 +778,7 @@ async function inflateRaw(bytes: Uint8Array) {
 
 async function extractImageBytes(buffer: ArrayBuffer) {
   const bytes = new Uint8Array(buffer);
-  const isPng = bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47;
-  if (isPng) return bytes;
+  if (detectImageMimeType(bytes)) return bytes;
 
   let eocd = -1;
   for (let index = bytes.length - 22; index >= 0; index -= 1) {
@@ -592,6 +815,15 @@ async function extractImageBytes(buffer: ArrayBuffer) {
   throw new Error('NAI 图片包里没有 PNG 文件。');
 }
 
+function detectImageMimeType(bytes: Uint8Array) {
+  if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) return 'image/png';
+  if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return 'image/jpeg';
+  if (bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46
+    && bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50) return 'image/webp';
+  if (bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x38) return 'image/gif';
+  return '';
+}
+
 async function bytesToDataUrl(bytes: Uint8Array, mimeType = 'image/png') {
   const blob = new Blob([bytes], { type: mimeType });
   return new Promise<string>((resolve, reject) => {
@@ -602,8 +834,37 @@ async function bytesToDataUrl(bytes: Uint8Array, mimeType = 'image/png') {
   });
 }
 
+export function classifyImageHttpError(status: number, detail = '') {
+  const normalized = detail.toLowerCase();
+  if (status === 401 || status === 403) return '鉴权失败：请检查 API Key 和接口权限。';
+  if (status === 402 || /quota|credit|billing|insufficient[_ -]?fund|余额|额度/.test(normalized)) return '额度不足：请检查余额、配额或计费状态。';
+  if (/size|width|height|dimension|aspect|像素|尺寸/.test(normalized)) return '尺寸非法：请使用该模型支持的宽高。';
+  if (/model|deployment|not found|does not exist|unsupported/.test(normalized)) return '模型不兼容：请确认模型名称以及该接口是否支持生图。';
+  if (status === 429) return '请求过于频繁：请稍后再试；系统不会自动重复计费。';
+  return '';
+}
+
+async function parseNaiImageResponse(buffer: ArrayBuffer, contentType = '') {
+  const bytes = new Uint8Array(buffer);
+  const firstNonWhitespace = new TextDecoder().decode(bytes.slice(0, 32)).trimStart()[0];
+  if (contentType.toLowerCase().includes('json') || firstNonWhitespace === '{' || firstNonWhitespace === '[') {
+    let data: unknown;
+    try {
+      data = JSON.parse(new TextDecoder().decode(bytes));
+    } catch {
+      throw new Error('NAI 返回了 JSON 类型的数据，但内容无法解析。');
+    }
+    const image = findImageResult(data);
+    if (image) return image;
+    throw new Error('NAI 返回成功，但 JSON 中没有可识别的图片字段。');
+  }
+  const imageBytes = await extractImageBytes(buffer);
+  return bytesToDataUrl(imageBytes, detectImageMimeType(imageBytes) || 'image/png');
+}
+
 function buildImageError(scope: string, response: Response, detail: string) {
-  return buildHttpErrorMessage(scope, {
+  const category = classifyImageHttpError(response.status, detail);
+  return buildHttpErrorMessage(category ? `${scope}；${category}` : scope, {
     status: response.status,
     statusText: response.statusText,
     detail,
@@ -612,6 +873,11 @@ function buildImageError(scope: string, response: Response, detail: string) {
 
 async function sleep(ms: number) {
   await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function getCallerAbortError(signal?: AbortSignal) {
+  if (!signal?.aborted) return null;
+  return signal.reason instanceof Error ? signal.reason : new DOMException('生图请求已取消。', 'AbortError');
 }
 
 function buildCustomPositivePrompt(config: ImageGenerationConfig, prompt: string) {
@@ -659,13 +925,25 @@ function normalizeImageResult(value: string, treatAsBase64 = false) {
   return '';
 }
 
-function findImageResult(data: unknown, explicitPath?: string) {
+export function findImageResult(data: unknown, explicitPath?: string) {
   if (explicitPath) {
     const value = firstStringAtPath(data, [explicitPath]);
-    const normalized = normalizeImageResult(value);
+    const normalized = normalizeImageResult(value, true);
     if (normalized) return normalized;
   }
-  const base64Value = firstStringAtPath(data, ['data[0].b64_json', 'data.b64_json', 'b64_json', 'imageBase64', 'image_base64', 'base64']);
+  const base64Value = firstStringAtPath(data, [
+    'images[0].image',
+    'images[0].base64',
+    'data[0].b64_json',
+    'data.b64_json',
+    'output[0].result',
+    'output[0].content[0].image_base64',
+    'result.b64_json',
+    'b64_json',
+    'imageBase64',
+    'image_base64',
+    'base64',
+  ]);
   const base64Result = normalizeImageResult(base64Value, true);
   if (base64Result) return base64Result;
   const urlValue = firstStringAtPath(data, [
@@ -759,18 +1037,21 @@ async function requestComfyImage({
   config,
   prompt,
   timeoutMs,
+  signal,
 }: {
   config: ImageGenerationConfig;
   prompt: string;
   timeoutMs: number;
+  signal?: AbortSignal;
 }) {
   const baseUrl = trimTrailingSlash(config.baseUrl || getDefaultImageBaseUrlForProvider('comfyui'));
   if (!baseUrl) throw new Error('请先填写 ComfyUI 地址。');
   if (!config.model.trim()) throw new Error('请先拉取并选择 ComfyUI checkpoint 模型。');
 
   const clientId = `small-phone-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-  const promptResponse = await fetch(`${baseUrl}/prompt`, {
+  const promptResponse = await fetchImageResource(`${baseUrl}/prompt`, {
     method: 'POST',
+    signal,
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       client_id: clientId,
@@ -793,7 +1074,7 @@ async function requestComfyImage({
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     await sleep(1000);
-    const historyResponse = await fetch(`${baseUrl}/history/${encodeURIComponent(promptId)}`);
+    const historyResponse = await fetchImageResource(`${baseUrl}/history/${encodeURIComponent(promptId)}`, { signal });
     const historyText = await historyResponse.text();
     if (!historyResponse.ok) {
       throw new Error(buildImageError('ComfyUI 查询结果失败', historyResponse, historyText));
@@ -808,7 +1089,7 @@ async function requestComfyImage({
         subfolder: image.subfolder || '',
         type: image.type || 'output',
       });
-      const imageResponse = await fetch(`${baseUrl}/view?${params.toString()}`);
+      const imageResponse = await fetchImageResource(`${baseUrl}/view?${params.toString()}`, { signal });
       const imageBytes = new Uint8Array(await imageResponse.arrayBuffer());
       if (!imageResponse.ok) {
         throw new Error(buildImageError('ComfyUI 图片下载失败', imageResponse, new TextDecoder().decode(imageBytes.slice(0, 500))));
@@ -824,30 +1105,36 @@ async function requestCustomImage({
   config,
   prompt,
   timeoutMs,
+  signal,
 }: {
   config: ImageGenerationConfig;
   prompt: string;
   timeoutMs: number;
+  signal?: AbortSignal;
 }) {
   const baseUrl = trimTrailingSlash(config.baseUrl);
   if (!baseUrl) throw new Error('请先填写自定义生图接口地址。');
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
+  const abortFromCaller = () => controller.abort(signal?.reason);
+  signal?.addEventListener('abort', abortFromCaller, { once: true });
   const request = buildCustomImageRequest({ config, prompt });
   try {
-    const response = await fetch(baseUrl, {
+    const response = await fetchImageResource(
+      request.responseKind === 'openai-json' ? normalizeOpenAiImageEndpoint(baseUrl) : baseUrl,
+      {
       method: 'POST',
       signal: controller.signal,
       headers: request.headers,
       body: JSON.stringify(request.body),
-    });
+      },
+    );
     const buffer = await response.arrayBuffer();
     if (!response.ok) {
       throw new Error(buildImageError('自定义生图接口请求失败', response, new TextDecoder().decode(buffer.slice(0, 500)).trim()));
     }
     if (request.responseKind === 'nai-binary') {
-      const imageBytes = await extractImageBytes(buffer);
-      return bytesToDataUrl(imageBytes, response.headers.get('content-type') || 'image/png');
+      return parseNaiImageResponse(buffer, response.headers.get('content-type') || '');
     }
     const text = new TextDecoder().decode(buffer);
     const data = JSON.parse(text || '{}');
@@ -861,7 +1148,7 @@ async function requestCustomImage({
       const deadline = Date.now() + timeoutMs;
       while (Date.now() < deadline) {
         await sleep(1500);
-        const pollResponse = await fetch(pollUrl, {
+        const pollResponse = await fetchImageResource(pollUrl, {
           signal: controller.signal,
           headers: buildCustomHeaders(config),
         });
@@ -882,14 +1169,17 @@ async function requestCustomImage({
 
     throw new Error(`自定义生图接口没有返回图片 URL、base64 或可轮询任务：${text.slice(0, 300)}`);
   } catch (error) {
+    const callerAbortError = getCallerAbortError(signal);
+    if (callerAbortError) throw callerAbortError;
     if (controller.signal.aborted) throw new Error('自定义生图接口请求超时或被取消。');
     throw error;
   } finally {
     window.clearTimeout(timeout);
+    signal?.removeEventListener('abort', abortFromCaller);
   }
 }
 
-type CustomImageRequestFormat = 'nai' | 'openai-images' | 'mj-task' | 'generic-json';
+export type CustomImageRequestFormat = 'nai' | 'openai-images' | 'mj-task' | 'generic-json' | 'unknown';
 
 export function getCustomImageRequestFormat(config: ImageGenerationConfig): CustomImageRequestFormat {
   if (config.customFormat && config.customFormat !== 'auto') return config.customFormat;
@@ -897,10 +1187,49 @@ export function getCustomImageRequestFormat(config: ImageGenerationConfig): Cust
   const endpoint = config.baseUrl.trim().toLowerCase();
   if (endpoint.includes('/mj/') || endpoint.includes('/submit/imagine') || endpoint.includes('midjourney') || model.includes('midjourney')) return 'mj-task';
   if (endpoint.includes('/images/generations')) return 'openai-images';
+  if (model.startsWith('gpt-image-') || model.startsWith('dall-e')) return 'openai-images';
   if (model.startsWith('nai-')) return 'nai';
   if (endpoint.includes('novelai') || endpoint.includes('/nai') || endpoint.includes('generate-image')) return 'nai';
   if (config.customPayloadTemplate?.trim()) return 'generic-json';
-  return 'generic-json';
+  return 'unknown';
+}
+
+export function resolveEffectiveImageRequestSize(config: ImageGenerationConfig) {
+  const requestedWidth = Math.max(1, Math.round(config.width || 512));
+  const requestedHeight = Math.max(1, Math.round(config.height || 512));
+  const format = config.provider === 'custom' ? getCustomImageRequestFormat(config) : config.provider;
+  if (format === 'openai-images') {
+    const size = resolveOpenAiImageSize(config.model, requestedWidth, requestedHeight);
+    const match = /^(\d+)x(\d+)$/.exec(size);
+    const width = Number(match?.[1] || requestedWidth);
+    const height = Number(match?.[2] || requestedHeight);
+    return { width, height, label: `${width}×${height}`, applied: true, adjusted: width !== requestedWidth || height !== requestedHeight };
+  }
+  if (format === 'novelai' || format === 'nai') {
+    const width = Math.max(256, Math.min(1024, requestedWidth));
+    const height = Math.max(256, Math.min(1024, requestedHeight));
+    return { width, height, label: `${width}×${height}`, applied: true, adjusted: width !== requestedWidth || height !== requestedHeight };
+  }
+  if (format === 'comfyui') {
+    const width = Math.max(256, Math.min(2048, requestedWidth));
+    const height = Math.max(256, Math.min(2048, requestedHeight));
+    return { width, height, label: `${width}×${height}`, applied: true, adjusted: width !== requestedWidth || height !== requestedHeight };
+  }
+  if (format === 'mj-task') {
+    return { width: requestedWidth, height: requestedHeight, label: '未传尺寸参数', applied: false, adjusted: false };
+  }
+  if (format === 'unknown') {
+    return { width: requestedWidth, height: requestedHeight, label: '协议未确定，未发送', applied: false, adjusted: false };
+  }
+  if (config.customPayloadTemplate?.trim()) {
+    return { width: requestedWidth, height: requestedHeight, label: '由自定义 JSON 模板决定', applied: false, adjusted: false };
+  }
+  return { width: requestedWidth, height: requestedHeight, label: `${requestedWidth}×${requestedHeight}`, applied: true, adjusted: false };
+}
+
+export function getImageRequestTimeoutMs(config: ImageGenerationConfig) {
+  const format = config.provider === 'custom' ? getCustomImageRequestFormat(config) : config.provider;
+  return format === 'openai-images' && config.model.trim().toLowerCase().startsWith('gpt-image-') ? 150000 : 90000;
 }
 
 export function buildCustomImageRequest({
@@ -913,6 +1242,9 @@ export function buildCustomImageRequest({
   seed?: number;
 }) {
   const format = getCustomImageRequestFormat(config);
+  if (format === 'unknown') {
+    throw new Error('无法自动判断这个公益站的生图协议。请在“Custom API preset”里明确选择 OpenAI、NAI、MJ 或 JSON，避免向错误地址发送请求。');
+  }
   if (format === 'nai') {
     return {
       responseKind: 'nai-binary' as const,
@@ -947,14 +1279,16 @@ export function buildCustomImageRequest({
       model: config.model,
       prompt: buildCustomPositivePrompt(config, prompt),
       n: 1,
-      size: `${Math.round(config.width || 512)}x${Math.round(config.height || 512)}`,
-      response_format: 'b64_json',
+      size: resolveOpenAiImageSize(config.model, config.width, config.height),
+      ...(config.model.trim().toLowerCase().startsWith('gpt-image-')
+        ? { quality: config.quality || 'auto' }
+        : {}),
     },
   };
 }
 
 export function buildNovelAiPrompt(prompt: string, context: 'wechat' | 'xiaohongshu' | 'gallery' = 'gallery') {
-  const base = prompt.trim();
+  const base = translateNaturalImagePromptToNaiTags(prompt);
   const style =
     context === 'xiaohongshu'
       ? 'mobile photo, natural lifestyle composition, clean cover image'
@@ -987,9 +1321,8 @@ export function buildChatImagePrompt({
   const cleanPrompt = prompt.trim();
   const nonHuman = isClearlyNonHumanImagePrompt(cleanPrompt);
   const tags = nonHuman ? '' : characterTags?.trim() || '';
-  const subject = speakerName?.trim() && !nonHuman
-    ? `${speakerName.trim()} wants to share this image, ${cleanPrompt}`
-    : cleanPrompt;
+  const translatedPrompt = translateNaturalImagePromptToNaiTags(cleanPrompt);
+  const subject = translatedPrompt || cleanPrompt;
   const taggedSubject = [tags, subject].filter(Boolean).join(', ');
   const guardedSubject = nonHuman
     ? `${subject}, scenery or object focused, no people, no person, no human, no character`
@@ -1001,18 +1334,19 @@ export async function requestNaiImage({
   config,
   prompt,
   signal,
-  timeoutMs = 45000,
+  timeoutMs,
 }: {
   config: ImageGenerationConfig;
   prompt: string;
   signal?: AbortSignal;
   timeoutMs?: number;
 }) {
+  const effectiveTimeoutMs = timeoutMs || getImageRequestTimeoutMs(config);
   if (config.provider === 'comfyui') {
-    return requestComfyImage({ config, prompt, timeoutMs });
+    return requestComfyImage({ config, prompt, timeoutMs: effectiveTimeoutMs, signal });
   }
   if (config.provider === 'custom') {
-    return requestCustomImage({ config, prompt, timeoutMs });
+    return requestCustomImage({ config, prompt, timeoutMs: effectiveTimeoutMs, signal });
   }
 
   const apiKey = config.apiKey.trim();
@@ -1022,18 +1356,20 @@ export async function requestNaiImage({
   if (!baseUrl) throw new Error('请先填写 NAI 生图接口地址。');
 
   const controller = new AbortController();
-  const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
+  const timeout = window.setTimeout(() => controller.abort(), effectiveTimeoutMs);
   const abortFromCaller = () => controller.abort();
   signal?.addEventListener('abort', abortFromCaller, { once: true });
   let response: Response;
   try {
-    response = await fetch(baseUrl, {
+    response = await fetchImageResource(baseUrl, {
       method: 'POST',
       signal: controller.signal,
       headers: buildNaiRequestHeaders(apiKey),
       body: JSON.stringify(buildNaiGenerateImagePayload({ config, prompt })),
     });
   } catch (error) {
+    const callerAbortError = getCallerAbortError(signal);
+    if (callerAbortError) throw callerAbortError;
     if (controller.signal.aborted) throw new Error('NAI 请求超时或被取消，请检查网络/代理。');
     const message = error instanceof Error ? error.message : String(error);
     throw new Error(`NAI 网络连接失败：${message}。接口：${baseUrl}。请优先使用 /api/nai/generate-image 服务端代理；如果服务器也连不上 NAI，请设置 NAI_HTTPS_PROXY/HTTPS_PROXY 或把 NAI_API_URL 指向可访问 NAI 的中转。`);
@@ -1045,13 +1381,8 @@ export async function requestNaiImage({
   const buffer = await response.arrayBuffer();
   if (!response.ok) {
     const detail = new TextDecoder().decode(buffer.slice(0, 500)).trim();
-    throw new Error(buildHttpErrorMessage('NAI 请求失败', {
-      status: response.status,
-      statusText: response.statusText,
-      detail,
-    }));
+    throw new Error(buildImageError('NAI 请求失败', response, detail));
   }
 
-  const imageBytes = await extractImageBytes(buffer);
-  return bytesToDataUrl(imageBytes);
+  return parseNaiImageResponse(buffer, response.headers.get('content-type') || '');
 }

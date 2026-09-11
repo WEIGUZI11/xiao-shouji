@@ -3,6 +3,14 @@ import React from 'react';
 import { cn } from '../../../lib/utils';
 import type { Character, ChatMessage } from '../../../store';
 import { useAppStore } from '../../../store';
+import { compileChatPresetEntries, parseSillyTavernPresetEntries, type ChatPresetEntry } from '../presets/chatPresetEntries';
+import {
+  smallPhoneLongPresetEntries,
+  smallPhonePresetEntries,
+  smallPhonePresetNames,
+  smallPhonePresetTuning,
+  normalizeChatContextDepth,
+} from '../presets/smallPhonePreset';
 
 export function WeChatTopBar({ title, right, onBack }: { title: string; right?: React.ReactNode; onBack?: () => void }) {
   const { goBack } = useAppStore();
@@ -69,64 +77,40 @@ export function describeChatMessage(message: Pick<ChatMessage, 'kind' | 'content
   return `${prefix}${message.content}`;
 }
 
-export const wechatChatPresets = [
+export type WeChatChatPreset = {
+  name: string;
+  temperature: number;
+  contextDepth: number;
+  maxTokens: number;
+  replyStyle: 'auto' | 'single' | 'burst';
+  prompt: string;
+  entries?: ChatPresetEntry[];
+};
+
+export const wechatChatPresets: WeChatChatPreset[] = [
   {
-    name: '自然微信',
-    temperature: 0.8,
-    contextDepth: 500,
-    maxTokens: 520,
-    replyStyle: 'auto' as const,
-    prompt: '像真实微信聊天一样回复。先读完用户连续发来的几条消息，再按角色性格自然回应；可以只发一条，也可以把不同语气或补充拆成多条短气泡。不要写旁白、编号或解释。',
+    name: smallPhonePresetNames.short,
+    ...smallPhonePresetTuning.short,
+    prompt: compileChatPresetEntries(smallPhonePresetEntries, { replyStyle: 'burst' }),
+    entries: smallPhonePresetEntries,
   },
   {
-    name: '活人感微信',
-    temperature: 0.88,
-    contextDepth: 600,
-    maxTokens: 680,
-    replyStyle: 'auto' as const,
-    prompt: '像真实微信里的活人一样聊天：短句、停顿、偶尔补一句，会接住对方情绪。可以低频主动发一个表情包、红包、转账或购物记录，但必须有生活动机，不能每轮都用，不能像客服或系统通知。',
-  },
-  {
-    name: 'AI助手',
-    temperature: 0.45,
-    contextDepth: 500,
-    maxTokens: 900,
-    replyStyle: 'single' as const,
-    prompt: '你是微信里的 AI 助手。先解决问题，再保持口吻自然简短；不抢戏，不写旁白，不冒充用户的现实行为。',
-  },
-  {
-    name: '黏人连发',
-    temperature: 0.92,
-    contextDepth: 500,
-    maxTokens: 620,
-    replyStyle: 'burst' as const,
-    prompt: '更主动、更黏人，容易连续补充两三条短消息。每条像微信气泡，短、具体、有情绪，但不要刷屏。',
-  },
-  {
-    name: '克制冷淡',
-    temperature: 0.62,
-    contextDepth: 300,
-    maxTokens: 260,
-    replyStyle: 'single' as const,
-    prompt: '克制、少说、像现实里不太主动的人。优先一条短回复，必要时才多发一条。',
+    name: smallPhonePresetNames.long,
+    ...smallPhonePresetTuning.long,
+    prompt: compileChatPresetEntries(smallPhoneLongPresetEntries, { replyStyle: 'single' }),
+    entries: smallPhoneLongPresetEntries,
   },
 ];
 
 export function parseSillyTavernPreset(data: Record<string, unknown>) {
-  const prompts = Array.isArray(data.prompts)
-    ? data.prompts
-        .filter((prompt): prompt is Record<string, unknown> => typeof prompt === 'object' && prompt !== null)
-        .filter((prompt) => prompt.enabled !== false && typeof prompt.content === 'string' && prompt.content.trim())
-        .sort((a, b) => Number(a.injection_order || 0) - Number(b.injection_order || 0))
-        .map((prompt) => `【${String(prompt.name || prompt.identifier || '提示词')}】\n${String(prompt.content)}`)
-    : [];
+  const entries = parseSillyTavernPresetEntries(data);
 
   return {
     name: String(data.name || data.preset_name || data.title || data.chat_completion_source || '导入预设'),
-    prompt: prompts.join('\n\n') || String(data.prompt || data.system_prompt || data.systemPrompt || data.jailbreak || data.main_prompt || ''),
+    prompt: compileChatPresetEntries(entries) || String(data.prompt || data.system_prompt || data.systemPrompt || data.jailbreak || data.main_prompt || ''),
     temperature: clampNumber(Number(data.temperature ?? data.temp ?? 0.8), 0.1, 1.6),
-    contextDepth: clampNumber(Math.round(Number(data.max_context_messages ?? data.depth ?? data.context_depth ?? data.openai_max_context ?? 500) / (data.openai_max_context ? 1000 : 1)) || 500, 20, 1000),
-    maxTokens: clampNumber(Number(data.max_tokens ?? data.maxTokens ?? data.openai_max_tokens ?? data.response_length ?? 520), 120, 4000),
+    contextDepth: normalizeChatContextDepth(Math.round(Number(data.max_context_messages ?? data.depth ?? data.context_depth ?? data.openai_max_context ?? 120) / (data.openai_max_context ? 1000 : 1)) || 120),
+    maxTokens: clampNumber(Number(data.max_tokens ?? data.maxTokens ?? data.openai_max_tokens ?? data.response_length ?? 1200), 120, 4000),
     model: String(data.deepseek_model || data.openai_model || data.custom_model || data.claude_model || data.model || ''),
   };
 }

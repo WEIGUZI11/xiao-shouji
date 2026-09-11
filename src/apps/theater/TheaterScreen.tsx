@@ -45,13 +45,18 @@
   Zap,
 } from 'lucide-react';
 import React, { useRef, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import type { Character, TheaterScene, TheaterWorldBookEntry } from '../../store';
 import { useAppStore } from '../../store';
 import { cn, createId } from '../../lib/utils';
 import { Header, Panel, Pill, Field, Empty, Avatar } from '../shared/AppPrimitives';
 import { getCharacterPrompt, requestChatCompletion } from '../shared/aiText';
 import {
-  buildTheaterLengthInstruction,
+  buildTheaterOutputRule,
+  buildTheaterResultStatus,
+  appendTheaterContinuation,
+  buildTheaterChatMessage,
+  buildTheaterContinuationPrompt,
   buildTheaterSystemPrompt,
   buildTheaterUserPrompt,
   getRandomBlocks,
@@ -86,29 +91,6 @@ const theaterLengthHints: Record<TheaterLength, string> = {
   custom: '自定义字数',
 };
 
-function buildFallbackTheaterScene(theme: string, actors: Character[], length: TheaterLength, rollResult = '') {
-  const names = actors.length > 0 ? actors.map((actor) => actor.name).join('、') : '你们';
-  const extra = length === 'long'
-    ? '\n\n【尾声】\n这段事被悄悄留在手机里，像一条没发出去的消息，等下一次被重新点开。'
-    : '';
-  return [
-    `《${theme || '无题小剧场'}》`,
-    '',
-    '【出场】',
-    names,
-    '',
-    '【剧情】',
-    `夜里屏幕亮了一下，${names}因为“${theme || rollResult.split('\n').find(Boolean) || '一次突然的误会'}”这件事被拉进同一个完整的故事。`,
-    actors[0] ? `${actors[0].name}先开口，语气像是忍了很久：“所以，你刚才其实都看见了？”` : '有人先开口：“所以，你刚才其实都看见了？”',
-    actors[1] ? `${actors[1].name}没有立刻回答，只把手机扣在掌心，像在藏住一个比答案更重的停顿。` : '对面没有立刻回答，只把手机扣在掌心，像在藏住一个比答案更重的停顿。',
-    '他们从误会开始，一句一句把事情摊开，又在最难承认的地方发现彼此真正害怕的不是答案，而是被丢下。',
-    '',
-    '【收束】',
-    `最后，${actors[0]?.name || '那个人'}把声音放轻：“这次先别跳过我。”`,
-    extra,
-  ].join('\n');
-}
-
 export function TheaterScreen() {
   const {
     characters,
@@ -134,18 +116,42 @@ export function TheaterScreen() {
     addMessage,
     openChat,
     appPresets,
-  } = useAppStore();
+  } = useAppStore(useShallow((state) => ({
+    characters: state.characters,
+    theaterScenes: state.theaterScenes,
+    theaterTopicEntries: state.theaterTopicEntries,
+    theaterWorldBookEntries: state.theaterWorldBookEntries,
+    apiBaseUrl: state.apiBaseUrl,
+    apiKey: state.apiKey,
+    selectedModel: state.selectedModel,
+    chatTemperature: state.chatTemperature,
+    addTheaterScene: state.addTheaterScene,
+    updateTheaterScene: state.updateTheaterScene,
+    deleteTheaterScene: state.deleteTheaterScene,
+    toggleTheaterSceneFavorite: state.toggleTheaterSceneFavorite,
+    addTheaterTopicEntry: state.addTheaterTopicEntry,
+    importTheaterTopicEntries: state.importTheaterTopicEntries,
+    deleteTheaterTopicEntry: state.deleteTheaterTopicEntry,
+    toggleTheaterTopicFavorite: state.toggleTheaterTopicFavorite,
+    importTheaterWorldBookEntries: state.importTheaterWorldBookEntries,
+    updateTheaterWorldBookEntry: state.updateTheaterWorldBookEntry,
+    deleteTheaterWorldBookEntry: state.deleteTheaterWorldBookEntry,
+    addDiary: state.addDiary,
+    addMessage: state.addMessage,
+    openChat: state.openChat,
+    appPresets: state.appPresets,
+  })));
   const worldBookInputRef = useRef<HTMLInputElement>(null);
   const topicInputRef = useRef<HTMLInputElement>(null);
-  const [theme, setTheme] = useState('');
-  const [length, setLength] = useState<TheaterLength>('medium');
-  const [customLengthText, setCustomLengthText] = useState('1200');
-  const [selectedIds, setSelectedIds] = useState<string[]>(() => characters[0]?.id ? [characters[0].id] : []);
+  const [theme, setTheme] = useState(theaterScenes[0]?.theme || '');
+  const [length, setLength] = useState<TheaterLength>(theaterScenes[0]?.length || 'medium');
+  const [customLengthText, setCustomLengthText] = useState(theaterScenes[0]?.customLengthText || '1200');
+  const [selectedIds, setSelectedIds] = useState<string[]>(() => theaterScenes[0]?.characterIds || (characters[0]?.id ? [characters[0].id] : []));
   const [actorsOpen, setActorsOpen] = useState(false);
   const [content, setContent] = useState('');
   const [activeId, setActiveId] = useState<string | null>(theaterScenes[0]?.id || null);
   const [status, setStatus] = useState('');
-  const [rollResult, setRollResult] = useState('');
+  const [rollResult, setRollResult] = useState(theaterScenes[0]?.rollResult || '');
   const [worldBookOpenId, setWorldBookOpenId] = useState<string | null>(null);
   const [topicDraft, setTopicDraft] = useState('');
   const [topicCategory, setTopicCategory] = useState('默认');
@@ -162,7 +168,7 @@ export function TheaterScreen() {
   const filteredTopicEntries = theaterTopicEntries.filter((entry) => topicFilter === '全部' || entry.category === topicFilter);
   const visibleScenes = historyFilter === 'favorite' ? theaterScenes.filter((scene) => scene.favorite) : theaterScenes;
   const actorSummary = actors.length > 0 ? actors.map((actor) => actor.name).join('、') : '未选择角色';
-  const activeLengthHint = length === 'custom' ? `约 ${customLengthText.match(/\d+/)?.[0] || '自定'} 字` : theaterLengthHints[length];
+  const activeLengthHint = length === 'custom' ? `目标 ${customLengthText || '自定'} 字` : theaterLengthHints[length];
 
   const toggleActor = (id: string) => {
     setSelectedIds((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
@@ -326,6 +332,11 @@ export function TheaterScreen() {
     setStatus('已删除小剧场。');
   };
   const generateScene = async () => {
+    if (isGenerating) return;
+    if (!apiBaseUrl || !selectedModel) {
+      setStatus('请先在设置中配置可用模型。不会用固定长度的本地示例替代生成，原文未改动。');
+      return;
+    }
     const cleanTheme = theme.trim();
     let effectiveRollResult = rollResult.trim();
     if (!cleanTheme && !effectiveRollResult) {
@@ -336,6 +347,8 @@ export function TheaterScreen() {
     setIsGenerating(true);
     setStatus('正在生成小剧场...');
     try {
+      const maxTokens = getTheaterMaxTokens(length, customLengthText);
+      let truncated = false;
       let nextContent = '';
       if (apiBaseUrl && selectedModel) {
         nextContent = await requestChatCompletion({
@@ -343,11 +356,13 @@ export function TheaterScreen() {
           apiKey,
           model: selectedModel,
           temperature: chatTemperature,
-          maxTokens: getTheaterMaxTokens(length, customLengthText),
+          maxTokens,
+          includeLengthNotice: false,
+          onFinish: (result) => { truncated = result.truncated; },
           messages: [
             {
               role: 'system',
-              content: [appPresets.theater.prompt, buildTheaterSystemPrompt(sceneActors.map(getCharacterPrompt).filter(Boolean).join('\n\n'))].join('\n\n'),
+              content: [appPresets.theater.prompt, buildTheaterSystemPrompt(sceneActors.map(getCharacterPrompt).filter(Boolean).join('\n\n')), buildTheaterOutputRule(length, customLengthText)].join('\n\n'),
             },
             {
               role: 'user',
@@ -362,7 +377,8 @@ export function TheaterScreen() {
           ],
         });
       }
-      const finalContent = nextContent.trim() || buildFallbackTheaterScene(cleanTheme, sceneActors, length, effectiveRollResult);
+      const finalContent = nextContent.trim();
+      if (!finalContent) throw new Error('模型没有返回正文，原文未改动。');
       setContent(finalContent);
       const id = addTheaterScene({
         title: (cleanTheme || effectiveRollResult.split('\n').find(Boolean) || '随机小剧场').slice(0, 24),
@@ -374,15 +390,66 @@ export function TheaterScreen() {
         rollResult: effectiveRollResult,
         content: finalContent,
         beats: finalContent.split('\n').map((line) => line.trim()).filter((line) => line.startsWith('【')).slice(0, 6),
-        source: apiBaseUrl && selectedModel ? 'ai' : 'manual',
+        source: 'ai',
       });
       setSelectedIds(sceneActors.map((actor) => actor.id));
       setActiveId(id);
-      setStatus(apiBaseUrl && selectedModel ? '已生成并保存。' : '没有配置模型，已生成本地示例。');
+      setStatus(buildTheaterResultStatus(finalContent, length, customLengthText, truncated));
     } catch (error) {
-      const fallback = buildFallbackTheaterScene(cleanTheme, sceneActors, length, effectiveRollResult);
-      setContent(fallback);
-      setStatus(error instanceof Error ? `生成失败，已给出本地草稿：${error.message}` : '生成失败，已给出本地草稿。');
+      setStatus(`生成失败，原文未改动：${error instanceof Error ? error.message : '请重试。'}`);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+  const continueScene = async () => {
+    if (isGenerating) return;
+    const previousContent = previewContent.trim();
+    if (!previousContent) {
+      setStatus('先生成或打开一段小剧场，再续写后续。');
+      return;
+    }
+    if (!apiBaseUrl || !selectedModel) {
+      setStatus('先在设置中配置可用模型，再续写后续。');
+      return;
+    }
+    const sceneActors = actors.length > 0 ? actors : characters.slice(0, 2);
+    setIsGenerating(true);
+    setStatus('正在续写后续…');
+    try {
+      let truncated = false;
+      const continuation = (await requestChatCompletion({
+        baseUrl: apiBaseUrl,
+        apiKey,
+        model: selectedModel,
+        temperature: chatTemperature,
+        maxTokens: getTheaterMaxTokens(length, customLengthText),
+        includeLengthNotice: false,
+        onFinish: (result) => { truncated = result.truncated; },
+        messages: [
+          {
+            role: 'system',
+            content: [appPresets.theater.prompt, buildTheaterSystemPrompt(sceneActors.map(getCharacterPrompt).filter(Boolean).join('\n\n')), buildTheaterOutputRule(length, customLengthText)].join('\n\n'),
+          },
+          {
+            role: 'user',
+            content: buildTheaterContinuationPrompt({
+              previousContent,
+              theme: theme || activeScene?.theme || '',
+              length,
+              customLengthText,
+              actorNames: sceneActors.map((actor) => actor.name),
+              rollResult,
+            }),
+          },
+        ],
+      })).trim();
+      if (!continuation) throw new Error('模型没有返回续写内容。');
+      const combinedContent = appendTheaterContinuation(previousContent, continuation);
+      setContent(combinedContent);
+      saveScene(combinedContent);
+      setStatus(`后续已接在原文末尾。${buildTheaterResultStatus(continuation, length, customLengthText, truncated)}`);
+    } catch (error) {
+      setStatus(error instanceof Error ? `续写失败：${error.message}` : '续写失败，请稍后重试。');
     } finally {
       setIsGenerating(false);
     }
@@ -414,9 +481,9 @@ export function TheaterScreen() {
     addMessage(characterId, 'wechat', {
       id: createId('msg'),
       role: 'model',
-      content: `【小剧场】${theme || activeScene?.theme || '剧情片段'}\n${cleanContent.slice(0, 700)}`,
+      content: buildTheaterChatMessage(theme || activeScene?.theme || '', cleanContent),
       timestamp: Date.now(),
-      kind: 'call-note',
+      kind: 'theater',
     });
     openChat(characterId, 'wechat');
   };
@@ -713,9 +780,10 @@ export function TheaterScreen() {
             ))}
           </div>
           {length === 'custom' && (
-            <input value={customLengthText} onChange={(event) => setCustomLengthText(event.target.value)} className="hand-input mt-2 w-full text-sm" placeholder="约 1200 字" />
+            <input aria-label="自定义字数" inputMode="numeric" value={customLengthText} onChange={(event) => setCustomLengthText(event.target.value)} className="hand-input mt-2 w-full text-sm" placeholder="例如 1200" />
           )}
           <p className="mt-2 text-xs font-black opacity-60">{activeLengthHint}</p>
+          <p className="mt-1 text-xs leading-5">按所选字数发送；续写按此字数新增。模型字数可能有偏差，接口单次上限不足时可分段继续。</p>
         </Field>
         <button onClick={() => void generateScene()} disabled={isGenerating} className="fetch-button w-full">{isGenerating ? '生成中' : '生成完整小剧场'}</button>
         {status && <p className="mt-3 rounded-2xl bg-white/55 px-3 py-2 text-xs font-black leading-5 opacity-70">{status}</p>}
@@ -737,13 +805,20 @@ export function TheaterScreen() {
           <div className="mb-3 grid gap-2 rounded-2xl bg-white/55 p-3 text-xs font-bold leading-5 opacity-75">
             <p>角色：{activeScene.characterIds.map((id) => characters.find((character) => character.id === id)?.name).filter(Boolean).join('、') || '未指定'}</p>
             <p>主题：{activeScene.theme || '随机小剧场'}</p>
-            <p>长度：{activeScene.length === 'custom' ? buildTheaterLengthInstruction('custom', activeScene.customLengthText || customLengthText) : theaterLengthHints[activeScene.length]}</p>
+            <p>长度：{activeScene.length === 'custom' ? `目标 ${activeScene.customLengthText || '未设置'} 字` : theaterLengthHints[activeScene.length]}</p>
             <p>创建：{formatDateLabel(activeScene.createdAt)}</p>
             {activeScene.rollResult && <p className="whitespace-pre-wrap">随机结果：{activeScene.rollResult}</p>}
           </div>
         )}
         {previewContent ? (
-          <div className="whitespace-pre-wrap rounded-2xl bg-white/55 p-4 text-sm font-bold leading-7">{previewContent}</div>
+          <>
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <span className="text-xs">正文 {Array.from(previewContent.replace(/\s/g, '')).length} 字符（不含空白）</span>
+              <button onClick={() => void continueScene()} disabled={isGenerating} className="fetch-button">{isGenerating ? '处理中…' : '继续写'}</button>
+            </div>
+            {status && <p role="status" className="mb-3 text-sm leading-6">{status}</p>}
+            <div className="whitespace-pre-wrap rounded-2xl bg-white/55 p-4 text-sm font-bold leading-7">{previewContent}</div>
+          </>
         ) : (
           <Empty text="写主题、选角色和长度后生成。" />
         )}
@@ -753,6 +828,7 @@ export function TheaterScreen() {
             <button onClick={sendToChat} className="fetch-button bg-[#edf7ed]">进聊天</button>
             {activeId && <button onClick={() => confirmDeleteScene(activeId)} className="fetch-button bg-[#ffd6d6]">删除</button>}
             <button onClick={() => void generateScene()} disabled={isGenerating} className="fetch-button bg-[#fff0bd]">{isGenerating ? '生成中' : '重新生成'}</button>
+            <button onClick={() => void continueScene()} disabled={isGenerating} className="fetch-button col-span-2 bg-[#edf7ed]">{isGenerating ? '处理中…' : '继续写'}</button>
           </div>
         )}
       </Panel>

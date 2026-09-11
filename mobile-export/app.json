@@ -3,7 +3,7 @@
     "name": "小手机",
     "slug": "small-phone",
     "scheme": "smallphone",
-    "version": "1.06",
+    "version": "1.16.4",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -22,7 +22,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#101010"
       },
-      "versionCode": 24
+      "versionCode": 38
     },
     "web": {
       "favicon": "./assets/favicon.png"

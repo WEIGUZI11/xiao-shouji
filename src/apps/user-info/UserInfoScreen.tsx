@@ -3,11 +3,15 @@ import React, { useRef, useState } from 'react';
 
 import { useAppStore } from '../../store';
 import { Field, Header, Panel } from '../shared/AppPrimitives';
+import { AvatarCropControls } from './AvatarCropControls';
 import {
   buildUserProfileDeleteMessage,
   buildUserProfileDeleteTitle,
+  cropAvatarDataUrl,
   getUserProfileDisplayName,
+  normalizeAvatarCrop,
   normalizeUserAvatarReaderResult,
+  type AvatarCrop,
 } from './userProfileUi';
 
 type DeleteCandidate = {
@@ -59,6 +63,8 @@ export function UserInfoScreen() {
   } = useAppStore();
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const [deleteCandidate, setDeleteCandidate] = useState<DeleteCandidate | null>(null);
+  const [avatarCrop, setAvatarCrop] = useState<AvatarCrop>({ scale: 1, x: 0, y: 0 });
+  const [avatarCropStatus, setAvatarCropStatus] = useState('');
 
   const addProfile = () => {
     const id = addUserProfilePreset();
@@ -83,8 +89,25 @@ export function UserInfoScreen() {
       const nextAvatar = normalizeUserAvatarReaderResult(reader.result);
       if (!nextAvatar) return;
       setUserAvatar(nextAvatar);
+      setAvatarCrop({ scale: 1, x: 0, y: 0 });
+      setAvatarCropStatus('');
     };
     reader.readAsDataURL(file);
+  };
+
+  const setCrop = (updates: Partial<AvatarCrop>) => {
+    setAvatarCrop((current) => normalizeAvatarCrop({ ...current, ...updates }));
+  };
+
+  const applyAvatarCrop = () => {
+    if (!userAvatar) return;
+    void cropAvatarDataUrl(userAvatar, avatarCrop)
+      .then((nextAvatar) => {
+        setUserAvatar(nextAvatar);
+        setAvatarCrop({ scale: 1, x: 0, y: 0 });
+        setAvatarCropStatus('已应用头像裁剪');
+      })
+      .catch((error) => setAvatarCropStatus(error instanceof Error ? error.message : '头像裁剪失败'));
   };
 
   return (
@@ -201,7 +224,15 @@ export function UserInfoScreen() {
             aria-label="更换玩家头像"
           >
             {userAvatar ? (
-              <img src={userAvatar} alt="玩家头像" className="h-full w-full object-cover" />
+              <img
+                src={userAvatar}
+                alt="玩家头像"
+                className="h-full w-full object-cover"
+                style={{
+                  transform: `translate(${avatarCrop.x}%, ${avatarCrop.y}%) scale(${avatarCrop.scale})`,
+                  transformOrigin: 'center',
+                }}
+              />
             ) : (
               <CircleUserRound className="h-10 w-10 opacity-60" />
             )}
@@ -220,6 +251,15 @@ export function UserInfoScreen() {
             </Field>
           </div>
         </div>
+        {userAvatar && (
+          <AvatarCropControls
+            crop={avatarCrop}
+            status={avatarCropStatus}
+            onCropChange={setCrop}
+            onReset={() => setAvatarCrop({ scale: 1, x: 0, y: 0 })}
+            onApply={applyAvatarCrop}
+          />
+        )}
       </Panel>
 
       <Panel>

@@ -10,6 +10,7 @@ const srcDir = dirname(dirname(fileURLToPath(import.meta.url)));
 const appsDir = join(srcDir, 'apps');
 const requiredApps = [
   'wechat',
+  'accounting',
   'bilibili',
   'xiaohongshu',
   'phone',
@@ -41,6 +42,7 @@ for (const appName of requiredApps) {
 }
 
 assert(existsSync(join(appsDir, 'wechat', 'ai', 'wechatAi.ts')), 'WeChat AI module must live under src/apps/wechat');
+assert(existsSync(join(appsDir, 'accounting', 'AccountingScreen.tsx')), 'Accounting screen must live under src/apps/accounting');
 assert(existsSync(join(appsDir, 'wechat', 'WeChatApp.tsx')), 'WeChat app shell must live under src/apps/wechat');
 assert(existsSync(join(appsDir, 'wechat', 'chat', 'ChatList.tsx')), 'Shared chat list must live under src/apps/wechat/chat');
 assert(existsSync(join(appsDir, 'wechat', 'chat', 'ChatScreen.tsx')), 'Shared chat screen must live under src/apps/wechat/chat');

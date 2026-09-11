@@ -16,6 +16,27 @@ $jsFile = Get-ChildItem -Path $assets -Filter "*.js" | Select-Object -First 1
 $css = Get-Content -Path $cssFile.FullName -Raw -Encoding utf8
 $js = Get-Content -Path $jsFile.FullName -Raw -Encoding utf8
 
+# Keep large WOFF2 files out of the React Native JavaScript bundle. Inlining all
+# fonts as base64 made index.android.bundle grow from about 9 MiB to 75 MiB and
+# caused low-memory devices to exit while parsing the startup script. Android's
+# WebView can read these files directly from file:///android_asset/fonts/.
+$androidFontAssets = Join-Path $mobileRoot "android-local-backup\app\src\main\assets\fonts"
+New-Item -ItemType Directory -Path $androidFontAssets -Force | Out-Null
+Get-ChildItem -LiteralPath $androidFontAssets -Filter "*.woff2" -File -ErrorAction SilentlyContinue |
+  Remove-Item -Force
+
+$css = [regex]::Replace($css, 'url\(([''"]?)\.\/([^''")]+\.woff2)\1\)', {
+  param($match)
+  $fontPath = Join-Path $assets $match.Groups[2].Value
+  if (-not (Test-Path -LiteralPath $fontPath -PathType Leaf)) {
+    return $match.Value
+  }
+
+  $fontName = [IO.Path]::GetFileName($fontPath)
+  Copy-Item -LiteralPath $fontPath -Destination (Join-Path $androidFontAssets $fontName) -Force
+  return "url(""file:///android_asset/fonts/$fontName"")"
+})
+
 function Resolve-PublicAssetPath([string]$assetRelative) {
   $assetClean = [Uri]::UnescapeDataString($assetRelative)
   if ($assetClean.Contains("?")) {
@@ -32,8 +53,10 @@ function Resolve-PublicAssetPath([string]$assetRelative) {
   return $assetPath
 }
 
-# The APK WebView loads this HTML offline, so public theme assets must be embedded.
-$css = [regex]::Replace($css, 'url\(([''"]?)(?:\.\./|\.\/|/)?(guofeng-[^''")]+)\1\)', {
+# The APK WebView loads this HTML offline, so every local image referenced by
+# compiled CSS must be embedded. Missing paths are left untouched so generated
+# external/data URLs are not corrupted.
+$css = [regex]::Replace($css, 'url\(([''"]?)(?:\.\./|\.\/|/)?([^''")]+\.(?:png|jpe?g|webp|svg|gif))\1\)', {
   param($match)
   $assetPath = Resolve-PublicAssetPath $match.Groups[2].Value
   if (-not (Test-Path -LiteralPath $assetPath -PathType Leaf)) {

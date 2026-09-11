@@ -1,7 +1,9 @@
 ﻿import { ChevronRight, CircleUserRound, Grid2X2, Settings, ShoppingBag, Sparkles, Star } from 'lucide-react';
 import React, { useRef, useState } from 'react';
 import { useAppStore } from '../../../store';
-import { clampNumber, describeChatMessage, parseSillyTavernPreset, WeChatAvatar, wechatChatPresets, WeChatTopBar } from '../shared/WeChatShared';
+import { compileChatPresetEntries } from '../presets/chatPresetEntries';
+import { createSmallPhonePresetEntries, getSmallPhoneRpMode } from '../presets/smallPhonePreset';
+import { clampNumber, describeChatMessage, WeChatAvatar, wechatChatPresets, WeChatTopBar } from '../shared/WeChatShared';
 
 export function WeChatMe() {
   const {
@@ -17,21 +19,19 @@ export function WeChatMe() {
     chatSessions,
     stickers,
     purchaseRecords,
-    addPurchaseRecord,
-    deletePurchaseRecord,
     chatPresetName,
     chatPresetPrompt,
+    chatPresetEntries,
     chatContextDepth,
     chatTemperature,
     chatMaxTokens,
     chatReplyStyle,
     setModelConfig,
+    setChatPresetEntries,
+    setScreen,
   } = useAppStore();
   const avatarInputRef = useRef<HTMLInputElement>(null);
-  const presetInputRef = useRef<HTMLInputElement>(null);
-  const [meView, setMeView] = useState<'home' | 'favorites' | 'orders' | 'settings'>('home');
-  const [orderDraft, setOrderDraft] = useState({ characterId: characters[0]?.id || '', itemName: '', amount: '', note: '' });
-  const [presetImportText, setPresetImportText] = useState('');
+  const [meView, setMeView] = useState<'home' | 'favorites' | 'settings'>('home');
   const favoriteMessages = Object.values(chatSessions).flatMap((session) =>
     session.messages
       .filter((message) => message.favorite && !message.recalled)
@@ -79,97 +79,16 @@ export function WeChatMe() {
     );
   }
 
-  if (meView === 'orders') {
-    const saveOrder = () => {
-      if (!orderDraft.itemName.trim()) return;
-      addPurchaseRecord({
-        characterId: orderDraft.characterId || characters[0]?.id || '',
-        itemName: orderDraft.itemName,
-        amount: orderDraft.amount,
-        note: orderDraft.note,
-      });
-      setOrderDraft((draft) => ({ ...draft, itemName: '', amount: '', note: '' }));
-    };
-    return (
-      <div className="wechat-page">
-        <WeChatTopBar title="订单与卡包" onBack={() => setMeView('home')} right={<button type="button" onClick={() => setMeView('home')} className="wechat-mini-button">返回</button>} />
-        <div className="wechat-list">
-          <section className="wechat-photo-wall">
-            <h2>char 给我买的东西</h2>
-            <p>记录谁买的、买了什么、金额和备注。</p>
-            <select value={orderDraft.characterId} onChange={(event) => setOrderDraft((draft) => ({ ...draft, characterId: event.target.value }))} className="wechat-inline-input mt-3">
-              {characters.map((character) => <option key={character.id} value={character.id}>{character.name}</option>)}
-            </select>
-            <input value={orderDraft.itemName} onChange={(event) => setOrderDraft((draft) => ({ ...draft, itemName: event.target.value }))} placeholder="买了什么" className="wechat-inline-input mt-2" />
-            <input value={orderDraft.amount} onChange={(event) => setOrderDraft((draft) => ({ ...draft, amount: event.target.value }))} placeholder="金额 / 价格" className="wechat-inline-input mt-2" />
-            <input value={orderDraft.note} onChange={(event) => setOrderDraft((draft) => ({ ...draft, note: event.target.value }))} placeholder="备注，例如：他说下次还会买" className="wechat-inline-input mt-2" />
-            <button type="button" onClick={saveOrder} className="wechat-mini-button mt-3">保存记录</button>
-          </section>
-          {purchaseRecords.map((record) => {
-            const character = characters.find((item) => item.id === record.characterId);
-            return (
-              <article key={record.id} className="wechat-favorite-card">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="font-semibold">{record.itemName}</p>
-                  <button type="button" onClick={() => deletePurchaseRecord(record.id)} className="wechat-mini-button">删除</button>
-                </div>
-                <p>{character?.name || 'char'} · {record.amount || '未填金额'}</p>
-                {record.note && <p>{record.note}</p>}
-              </article>
-            );
-          })}
-        </div>
-      </div>
-    );
-  }
-
   if (meView === 'settings') {
-    const applyPresetObject = (data: Record<string, unknown>) => {
-      const preset = parseSillyTavernPreset(data);
-      setModelConfig({
-        chatPresetName: preset.name,
-        chatPresetPrompt: preset.prompt || chatPresetPrompt,
-        chatContextDepth: preset.contextDepth,
-        chatTemperature: preset.temperature,
-        chatMaxTokens: preset.maxTokens,
-        ...(preset.model ? { selectedModel: preset.model } : {}),
-        chatReplyStyle: (data.reply_style === 'single' || data.reply_style === 'burst' || data.reply_style === 'auto'
-          ? data.reply_style
-          : chatReplyStyle) as 'auto' | 'single' | 'burst',
-      });
-    };
-
-    const importPresetFile = (event: React.ChangeEvent<HTMLInputElement>) => {
-      const file = event.target.files?.[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = () => {
-        try {
-          applyPresetObject(JSON.parse(String(reader.result)));
-        } catch {
-          setPresetImportText(String(reader.result || ''));
-        }
-      };
-      reader.readAsText(file);
-      event.target.value = '';
-    };
-
-    const importPresetText = () => {
-      if (!presetImportText.trim()) return;
-      try {
-        applyPresetObject(JSON.parse(presetImportText));
-        setPresetImportText('');
-      } catch {
-        setModelConfig({ chatPresetName: '导入文本预设', chatPresetPrompt: presetImportText });
-        setPresetImportText('');
-      }
-    };
-
     const applyPreset = (name: string) => {
       const preset = wechatChatPresets.find((item) => item.name === name) || wechatChatPresets[0];
+      const nextEntries = preset.entries
+        ? createSmallPhonePresetEntries(getSmallPhoneRpMode(preset.replyStyle), chatPresetEntries)
+        : [];
+      setChatPresetEntries(nextEntries, preset.name);
       setModelConfig({
         chatPresetName: preset.name,
-        chatPresetPrompt: preset.prompt,
+        chatPresetPrompt: nextEntries.length > 0 ? compileChatPresetEntries(nextEntries, { replyStyle: preset.replyStyle }) : preset.prompt,
         chatContextDepth: preset.contextDepth,
         chatTemperature: preset.temperature,
         chatMaxTokens: preset.maxTokens,
@@ -183,35 +102,25 @@ export function WeChatMe() {
         <div className="wechat-list">
           <section className="wechat-photo-wall">
             <h2>聊天预设</h2>
-            <p>这些参数会随每次微信聊天请求一起发送。</p>
+            <p>微信和 QQ 共用这里的当前预设；导入、增删、开关和排序请到桌面的“预设”App。</p>
             <select value={chatPresetName} onChange={(event) => applyPreset(event.target.value)} className="wechat-inline-input mt-3">
               {!wechatChatPresets.some((preset) => preset.name === chatPresetName) && <option value={chatPresetName}>{chatPresetName}</option>}
               {wechatChatPresets.map((preset) => <option key={preset.name} value={preset.name}>{preset.name}</option>)}
             </select>
-            <textarea
-              value={chatPresetPrompt}
-              onChange={(event) => setModelConfig({ chatPresetName: '自定义', chatPresetPrompt: event.target.value })}
-              className="wechat-inline-input mt-2 min-h-28"
-            />
-            <input ref={presetInputRef} type="file" accept=".json,.txt" onChange={importPresetFile} className="hidden" />
-            <div className="mt-3 flex gap-2">
-              <button type="button" onClick={() => presetInputRef.current?.click()} className="wechat-mini-button">导入预设文件</button>
-              <button type="button" onClick={importPresetText} className="wechat-mini-button">应用文本</button>
+            <div className="mt-3 rounded-2xl border border-black/10 bg-black/[0.03] p-3 text-sm font-bold dark:border-white/10 dark:bg-white/[0.04]">
+              {chatPresetEntries.length > 0
+                ? `当前：${chatPresetName} · 共 ${chatPresetEntries.length} 条 · 已开启 ${chatPresetEntries.filter((entry) => entry.enabled).length} 条`
+                : `当前：${chatPresetName} · 单段预设`}
             </div>
-            <textarea
-              value={presetImportText}
-              onChange={(event) => setPresetImportText(event.target.value)}
-              placeholder="粘贴酒馆/聊天预设 JSON 或纯文本提示词"
-              className="wechat-inline-input mt-2 min-h-24"
-            />
+            <button type="button" onClick={() => setScreen('presets')} className="wechat-mini-button mt-3 w-full">去预设 App 管理条目</button>
           </section>
           <section className="wechat-photo-wall">
             <h2>生成参数</h2>
             <label className="wechat-setting-row">
               <span>上下文消息数</span>
               <div className="wechat-setting-control">
-                <input type="range" min={20} max={1000} value={chatContextDepth} onChange={(event) => setModelConfig({ chatContextDepth: Number(event.target.value) })} />
-                <input type="number" min={20} max={1000} value={chatContextDepth} onChange={(event) => setModelConfig({ chatContextDepth: clampNumber(Number(event.target.value), 20, 1000) })} />
+                <input type="range" min={1} max={1000} value={chatContextDepth} onChange={(event) => setModelConfig({ chatContextDepth: Number(event.target.value) })} />
+                <input type="number" min={1} max={1000} value={chatContextDepth} onChange={(event) => setModelConfig({ chatContextDepth: clampNumber(Number(event.target.value), 1, 1000) })} />
               </div>
             </label>
             <label className="wechat-setting-row">
@@ -221,17 +130,10 @@ export function WeChatMe() {
               </div>
             </label>
             <label className="wechat-setting-row">
-              <span>最大长度</span>
+              <span>最大回复长度（Token 上限，实际回复可更短）</span>
               <input type="number" min={120} max={4000} step={20} value={chatMaxTokens} onChange={(event) => setModelConfig({ chatMaxTokens: clampNumber(Number(event.target.value), 120, 4000) })} />
             </label>
-            <label className="wechat-setting-row">
-              <span>气泡方式</span>
-              <select value={chatReplyStyle} onChange={(event) => setModelConfig({ chatReplyStyle: event.target.value as 'auto' | 'single' | 'burst' })}>
-                <option value="auto">看性格自动</option>
-                <option value="single">尽量一条</option>
-                <option value="burst">允许连发</option>
-              </select>
-            </label>
+            <p className="mt-2 text-xs font-bold leading-5 opacity-60">当前为{chatReplyStyle === 'single' ? '长 RP（完整单气泡）' : '短 RP（多条完整短气泡）'}。短 / 长只在上方“聊天预设”切换；括号是否出现由预设 App 里的“括号风格”条目决定。</p>
           </section>
         </div>
       </div>
@@ -277,9 +179,9 @@ export function WeChatMe() {
           <span>服务</span>
           <ChevronRight className="wechat-row-chevron ml-auto h-5 w-5" />
         </button>
-        <button type="button" onClick={() => setMeView('orders')} className="wechat-menu-row">
+        <button type="button" onClick={() => setScreen('accounting')} className="wechat-menu-row">
           <span className="wechat-color-icon red"><ShoppingBag className="h-5 w-5" /></span>
-          <span>订单与卡包</span>
+          <span>记账与订单</span>
           <span className="wechat-row-meta">{purchaseRecords.length}条</span>
           <ChevronRight className="wechat-row-chevron ml-auto h-5 w-5" />
         </button>

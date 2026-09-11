@@ -33,3 +33,13 @@ export function updateAppIconOverride(overrides: AppIconOverrides, screen: strin
 export function resolveAppIconImage(screen: string, overrides: AppIconOverrides) {
   return cleanIconUrl(overrides[screen]) || null;
 }
+
+export function hasPersistedAppIconOverride(rawStorage: string | null, screen: string, iconUrl: string) {
+  if (!rawStorage) return false;
+  try {
+    const parsed = JSON.parse(rawStorage) as { state?: { appIconOverrides?: unknown } };
+    return resolveAppIconImage(screen, normalizeAppIconOverrides(parsed.state?.appIconOverrides)) === cleanIconUrl(iconUrl);
+  } catch {
+    return false;
+  }
+}

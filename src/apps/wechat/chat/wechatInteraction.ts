@@ -1,38 +1,16 @@
 import type { ChatMessage } from '../../../store';
-
-export type PendingChatDraftKind =
-  | 'text'
-  | 'voice'
-  | 'image'
-  | 'sticker'
-  | 'call-note'
-  | 'transfer'
-  | 'red-packet'
-  | 'shopping';
-
-export type PendingChatDraftLike = {
-  kind: PendingChatDraftKind;
-};
-
-export interface AutoReplyActionOptions {
-  triggerType?: 'manual_upload' | 'manual_generated_image' | 'proactive_generated_image';
-}
-
-export function shouldAutoReplyAfterUserAction(kind: PendingChatDraftKind, options: AutoReplyActionOptions = {}) {
-  if (kind === 'image' && options.triggerType === 'manual_generated_image') return false;
-  if (kind === 'image' && options.triggerType === 'proactive_generated_image') return false;
-  return kind === 'text'
-    || kind === 'voice'
-    || kind === 'image'
-    || kind === 'sticker'
-    || kind === 'transfer'
-    || kind === 'red-packet'
-    || kind === 'shopping';
-}
-
-export function getPendingResponseMode(drafts: PendingChatDraftLike[]): 'text' | 'voice' {
-  return drafts.some((draft) => draft.kind === 'voice') ? 'voice' : 'text';
-}
+export type {
+  AutoReplyActionOptions,
+  PendingChatDraftKind,
+  PendingChatDraftLike,
+} from './manualReply';
+export {
+  getManualReplySendIntent,
+  getPendingResponseMode,
+  shouldSubmitChatComposerKey,
+  shouldAutoReplyAfterUserAction,
+} from './manualReply';
+export { parseOpenMojiEmotionText } from './openMojiEmotion';
 
 export function getCallScreenForType(type: 'voice' | 'video') {
   return type === 'voice' ? 'voice-call' : 'video';

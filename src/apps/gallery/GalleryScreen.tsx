@@ -11,11 +11,15 @@ import {
   LockKeyhole,
   MessageCircle,
   Plus,
+  Sparkles,
   Star,
   Tag,
   Trash2,
 } from 'lucide-react';
 import React, { useRef, useState } from 'react';
+import { PersistentImage } from '../../components/PersistentImage';
+import { requestAppImage } from '../../lib/appImageGeneration';
+import { buildNovelAiPrompt, hashPrompt } from '../../lib/naiImage';
 import type { GalleryPhoto } from '../../store';
 import { useAppStore } from '../../store';
 import { cn } from '../../lib/utils';
@@ -123,7 +127,7 @@ const EntryCard: React.FC<EntryCardProps> = ({
         <p className="truncate text-base font-black">{title}</p>
         <p className="mt-1 line-clamp-2 text-xs font-bold leading-5 opacity-60">{subtitle}</p>
       </div>
-      {preview ? <img src={preview} alt="" className="gallery-entry-preview" /> : <span className="text-sm font-black opacity-55">{count ?? 0}</span>}
+      {preview ? <PersistentImage src={preview} alt="" className="gallery-entry-preview" /> : <span className="text-sm font-black opacity-55">{count ?? 0}</span>}
       <ChevronRight className="h-5 w-5 shrink-0 opacity-55" />
     </button>
   );
@@ -153,6 +157,9 @@ export function GalleryScreen() {
     imageBed,
     wechatPhotos,
     wallpaper,
+    imageGenerationConfig,
+    imageGenerationEnabled,
+    proactiveImageGenerationEnabled,
     addGalleryPhoto,
     updateGalleryPhoto,
     addGalleryPhotoReview,
@@ -161,6 +168,8 @@ export function GalleryScreen() {
     setWallpaper,
     addGalleryTag,
     characters,
+    recordGeneratedImage,
+    addAppLog,
   } = useAppStore();
   const inputRef = useRef<HTMLInputElement>(null);
   const [view, setView] = useState<GalleryView>('home');
@@ -176,6 +185,8 @@ export function GalleryScreen() {
   const [uploadAlbum, setUploadAlbum] = useState<GalleryPhoto['album']>('生活');
   const [uploadTag, setUploadTag] = useState('日常');
   const [status, setStatus] = useState('');
+  const [imagePrompt, setImagePrompt] = useState('');
+  const [generatingImage, setGeneratingImage] = useState(false);
   const activePhoto = galleryPhotos.find((photo) => photo.id === activeId);
   const visiblePhotos = filterGalleryPhotos(galleryPhotos, { tab: collection.tab, albumFilter: collection.albumFilter })
     .filter((photo) => !collection.sourceFilter || photo.source === collection.sourceFilter);
@@ -266,6 +277,44 @@ export function GalleryScreen() {
     setNewTag('');
   };
 
+  const generateGalleryImage = async () => {
+    const cleanPrompt = imagePrompt.trim();
+    if (!cleanPrompt || generatingImage) return;
+    const fullPrompt = buildNovelAiPrompt(cleanPrompt, 'gallery');
+    const promptHash = hashPrompt(fullPrompt);
+    const startedAt = Date.now();
+    setGeneratingImage(true);
+    setStatus('正在生成小图…');
+    addAppLog({ type: 'image', title: '相册生图开始', detail: `provider=${imageGenerationConfig.provider}; model=${imageGenerationConfig.model}; prompt_hash=${promptHash}` });
+    try {
+      const image = await requestAppImage({
+        config: imageGenerationConfig,
+        prompt: fullPrompt,
+        triggerType: 'manual',
+        imageGenerationEnabled,
+        proactiveImageGenerationEnabled,
+        timeoutMs: 45000,
+        source: 'gallery',
+      });
+      const imageId = `gallery-${Date.now().toString(36)}`;
+      recordGeneratedImage({
+        imageId, botId: 'gallery', characterId: 'gallery', guildId: 'local', channelId: 'gallery', userId: 'local-user',
+        triggerType: 'manual', promptHash, promptText: fullPrompt, storageUrl: image, createdAt: Date.now(),
+        width: imageGenerationConfig.width, height: imageGenerationConfig.height, model: imageGenerationConfig.model, status: 'success',
+      });
+      addPhotoUrl(image, 'generated', cleanPrompt.slice(0, 30) || 'AI 配图', Date.now(), { openDetail: false, album: uploadAlbum });
+      addAppLog({ type: 'image', title: '相册生图成功', detail: `provider=${imageGenerationConfig.provider}; model=${imageGenerationConfig.model}; duration_ms=${Date.now() - startedAt}; image_id=${imageId}` });
+      setStatus('已生成并保存到相册。');
+      setImagePrompt('');
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : '生图失败。';
+      setStatus(detail);
+      addAppLog({ type: 'error', title: '相册生图失败', detail: `provider=${imageGenerationConfig.provider}; model=${imageGenerationConfig.model}; duration_ms=${Date.now() - startedAt}; error=${detail}` });
+    } finally {
+      setGeneratingImage(false);
+    }
+  };
+
   const photoGrid = visiblePhotos.length > 0 ? (
     <div className="grid gap-4">
       {groupedPhotos.map((group) => (
@@ -274,7 +323,7 @@ export function GalleryScreen() {
           <div className="grid grid-cols-3 gap-2">
             {group.photos.map((photo) => (
               <button key={photo.id} onClick={() => { setActiveId(photo.id); setView('detail'); }} className="relative aspect-square overflow-hidden rounded-[18px] border-[3px] border-[#111] bg-white">
-                <img src={photo.url} alt={photo.title} className="h-full w-full object-cover" />
+                <PersistentImage src={photo.url} alt={photo.title} className="h-full w-full object-cover" />
                 {photo.favorite && <Star className="absolute right-1 top-1 h-4 w-4 fill-[#fff0b8] text-[#111]" />}
                 {photo.hidden && <LockKeyhole className="absolute bottom-1 right-1 h-4 w-4 rounded-full bg-white p-0.5 text-[#111]" />}
                 {photo.readableByChar && <MessageCircle className="absolute bottom-1 left-1 h-4 w-4 rounded-full bg-white p-0.5 text-[#111]" />}
@@ -293,7 +342,7 @@ export function GalleryScreen() {
       <section className="gallery-screen h-full overflow-y-auto pb-8">
         <Header title="照片" subtitle={`${formatDateLabel(activePhoto.createdAt)} · ${activePhoto.album} · ${sourceLabel(activePhoto.source)}`} onBack={() => setView('collection')} />
         <Panel className="overflow-hidden p-0">
-          <img src={activePhoto.url} alt={activePhoto.title} className="max-h-[430px] w-full object-cover" />
+          <PersistentImage src={activePhoto.url} alt={activePhoto.title} className="max-h-[430px] w-full object-cover" />
         </Panel>
         <Panel>
           <Field icon={<ImageIcon />} label="标题">
@@ -400,7 +449,7 @@ export function GalleryScreen() {
         <Panel>
           {imageBed ? (
             <button onClick={() => addPhotoUrl(imageBed, 'image-bed', '图床照片')} className="gallery-import-row">
-              <img src={imageBed} alt="图床照片" className="h-16 w-16 rounded-2xl object-cover" />
+              <PersistentImage src={imageBed} alt="图床照片" className="h-16 w-16 rounded-2xl object-cover" />
               <span className="min-w-0 flex-1 text-sm font-black">导入图床照片，之后可设锁屏、给 char 看或给其它软件选用。</span>
               <ChevronRight className="h-5 w-5 opacity-55" />
             </button>
@@ -409,7 +458,7 @@ export function GalleryScreen() {
           )}
           {wechatPhotos.slice(0, 12).map((url) => (
             <button key={url} onClick={() => importWechatPhoto(url)} className="gallery-import-row mt-3">
-              <img src={url} alt="微信照片" className="h-16 w-16 rounded-2xl object-cover" />
+              <PersistentImage src={url} alt="微信照片" className="h-16 w-16 rounded-2xl object-cover" />
               <span className="min-w-0 flex-1 text-sm font-black">导入微信照片墙，导入后会进入“聊天/微信照片墙”来源。</span>
               <ChevronRight className="h-5 w-5 opacity-55" />
             </button>
@@ -424,6 +473,17 @@ export function GalleryScreen() {
     <section className="gallery-screen h-full overflow-y-auto pb-8">
       <Header title="相册" subtitle="每个入口都会打开独立页面" onSave={() => inputRef.current?.click()} saveLabel="上传" />
       <input ref={inputRef} type="file" accept="image/*" multiple onChange={uploadPhotos} className="hidden" />
+      {imageGenerationEnabled && (
+        <Panel>
+          <p className="mb-3 text-lg font-black">AI 配图</p>
+          <input value={imagePrompt} onChange={(event) => setImagePrompt(event.target.value)} className="hand-input w-full" placeholder="例如：夕阳下的海边和白色灯塔" />
+          <button onClick={generateGalleryImage} disabled={!imagePrompt.trim() || generatingImage} className="fetch-button mt-3">
+            <Sparkles className="h-5 w-5" />
+            {generatingImage ? '测试中…' : '生成一张小图'}
+          </button>
+          <p className="mt-2 text-xs font-bold opacity-60">使用设置中当前生图服务，关闭生图后这里不发起请求。</p>
+        </Panel>
+      )}
       <Panel>
         <p className="mb-3 text-lg font-black">导入到相册</p>
         <div className="grid grid-cols-2 gap-3">

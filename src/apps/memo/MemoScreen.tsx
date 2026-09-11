@@ -467,6 +467,7 @@ export function MemoScreen() {
         title="备忘录"
         subtitle={`${memos.length} 条备忘 · ${visibleCount} 条可给 char 看`}
         onSave={() => openNew()}
+        tabsClassName="compact-tab-grid"
         saveLabel="新增"
         tabs={
           <>

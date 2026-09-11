@@ -14,15 +14,15 @@ const baseInput: SettingsSelfCheckInput = {
   selectedModel: '',
   ttsEnabled: false,
   ttsConfig: defaultTtsConfig,
+  imageGenerationEnabled: true,
   imageGenerationConfig: defaultImageGenerationConfig,
-  communityBackdoorApiUrl: '',
 };
 
 const emptyReport = buildSettingsSelfCheckReport(baseInput);
 assert.equal(emptyReport.find((item) => item.id === 'model')?.status, 'error');
 assert.equal(emptyReport.find((item) => item.id === 'tts')?.status, 'warn');
 assert.equal(emptyReport.find((item) => item.id === 'image')?.status, 'ok');
-assert.equal(emptyReport.find((item) => item.id === 'community')?.status, 'warn');
+assert.equal(emptyReport.length, 3);
 
 const readyReport = buildSettingsSelfCheckReport({
   ...baseInput,
@@ -32,12 +32,11 @@ const readyReport = buildSettingsSelfCheckReport({
   ttsEnabled: true,
   ttsConfig: { ...defaultTtsConfig, provider: 'openai', apiKey: 'sk-test', model: 'gpt-4o-mini-tts', voiceId: 'alloy' },
   imageGenerationConfig: { ...defaultImageGenerationConfig, baseUrl: 'https://image.example.com/generate', apiKey: 'nai-key' },
-  communityBackdoorApiUrl: 'https://auth.example.com',
 });
 
 assert.deepEqual(
   readyReport.map((item) => item.status),
-  ['ok', 'ok', 'ok', 'ok'],
+  ['ok', 'ok', 'ok'],
 );
 assert.equal(summarizeSettingsSelfCheck(readyReport).status, 'ok');
 

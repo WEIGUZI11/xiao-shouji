@@ -1,7 +1,9 @@
-import { ImagePlus, Lock, Palette, Send, SmilePlus, Users } from 'lucide-react';
+import { ImagePlus, Lock, Palette, Send, SmilePlus, Sparkles, Users } from 'lucide-react';
 import type { ChangeEvent } from 'react';
 import { useRef, useState } from 'react';
 
+import { PersistentImage } from '../../../components/PersistentImage';
+import { saveImageAsset } from '../../../lib/imageAssetStore';
 import type { Character } from '../../../store';
 import {
   momentDecorationLabels,
@@ -24,9 +26,13 @@ const visibilityOptions: Array<{ value: MomentVisibility; label: string }> = [
 export function MomentComposer({
   characters,
   onPublish,
+  imageGenerationEnabled,
+  onGenerateImage,
 }: {
   characters: Character[];
   onPublish: (draft: MomentDraft) => void;
+  imageGenerationEnabled?: boolean;
+  onGenerateImage?: (prompt: string) => Promise<string>;
 }) {
   const imageInputRef = useRef<HTMLInputElement>(null);
   const [content, setContent] = useState('');
@@ -35,6 +41,8 @@ export function MomentComposer({
   const [decoration, setDecoration] = useState<MomentDecoration>('plain');
   const [visibleCharacterIds, setVisibleCharacterIds] = useState<string[]>([]);
   const [images, setImages] = useState<string[]>([]);
+  const [generatingImage, setGeneratingImage] = useState(false);
+  const [imageStatus, setImageStatus] = useState('');
 
   const publish = () => {
     if (!normalizeMomentContent(content)) return;
@@ -60,10 +68,29 @@ export function MomentComposer({
     if (files.length === 0) return;
     files.forEach((file) => {
       const reader = new FileReader();
-      reader.onload = () => setImages((current) => [...current, reader.result as string].slice(0, 3));
+      reader.onload = async () => {
+        const stored = await saveImageAsset(reader.result as string).catch(() => reader.result as string);
+        setImages((current) => [...current, stored].slice(0, 3));
+      };
       reader.readAsDataURL(file);
     });
     event.target.value = '';
+  };
+
+  const generateImage = async () => {
+    const prompt = normalizeMomentContent(content);
+    if (!prompt || !onGenerateImage || generatingImage || images.length >= 3) return;
+    setGeneratingImage(true);
+    setImageStatus('正在生成配图…');
+    try {
+      const image = await onGenerateImage(prompt);
+      setImages((current) => [...current, image].slice(0, 3));
+      setImageStatus('配图已生成。');
+    } catch (error) {
+      setImageStatus(error instanceof Error ? error.message : '生图失败。');
+    } finally {
+      setGeneratingImage(false);
+    }
   };
 
   const toggleVisibleCharacter = (id: string) => {
@@ -85,7 +112,7 @@ export function MomentComposer({
         <div className="mt-2 grid grid-cols-3 gap-2">
           {images.map((image, index) => (
             <button key={`${image}-${index}`} type="button" onClick={() => setImages((current) => current.filter((_, itemIndex) => itemIndex !== index))} className="aspect-square overflow-hidden rounded-[6px] border border-black/10">
-              <img src={image} alt="朋友圈图片" className="h-full w-full object-cover" />
+              <PersistentImage src={image} alt="朋友圈图片" className="h-full w-full object-cover" />
             </button>
           ))}
         </div>
@@ -97,6 +124,12 @@ export function MomentComposer({
           图片
         </button>
         <input ref={imageInputRef} type="file" accept="image/*" multiple onChange={uploadImages} className="hidden" />
+        {imageGenerationEnabled && (
+          <button type="button" onClick={generateImage} disabled={!normalizeMomentContent(content) || generatingImage || images.length >= 3} className="wechat-mini-button" title="AI 配图">
+            <Sparkles className="h-4 w-4" />
+            {generatingImage ? '生成中' : 'AI 配图'}
+          </button>
+        )}
 
         <div className="flex flex-wrap items-center gap-1">
           <SmilePlus className="h-4 w-4 opacity-60" />
@@ -116,6 +149,7 @@ export function MomentComposer({
           ))}
         </div>
       </div>
+      {imageStatus && <p className="mt-2 text-xs font-bold opacity-65">{imageStatus}</p>}
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
         {visibilityOptions.map((option) => (

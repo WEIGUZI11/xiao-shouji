@@ -1,14 +1,17 @@
-import { Copy, Gift, Mic, Phone, Quote, RefreshCw, ShoppingBag, Star, Trash2, Undo2, Video } from 'lucide-react';
-import React, { useRef } from 'react';
+import { Clapperboard, Copy, Gift, Mic, Phone, Quote, RefreshCw, ShoppingBag, Star, Trash2, Undo2, Video } from 'lucide-react';
+import React, { memo, useRef, useState } from 'react';
 
 import { cn } from '../../../../lib/utils';
 import type { Character, ChatMessage } from '../../../../store';
 import { useAppStore } from '../../../../store';
 import { speakWithConfiguredTts } from '../../../../tts';
 import { formatMessageTime, WeChatAvatar } from '../../shared/WeChatShared';
-import { canAcceptLifeCard } from '../wechatInteraction';
+import { canAcceptLifeCard, parseOpenMojiEmotionText } from '../wechatInteraction';
 import { isUnreadVoiceMessage } from '../voiceUnread';
 import { VoiceMessageBubble } from '../VoiceMessageBubble';
+import { ChatImageContent } from './ChatImageContent';
+import { BubbleOrnaments } from './BubbleOrnaments';
+import { OpenMojiEmotionCard } from './OpenMojiEmotionCard';
 
 function speak(text: string) {
   const { ttsConfig } = useAppStore.getState();
@@ -32,9 +35,13 @@ export type ChatBubbleProps = {
   voicePlayedAt?: number;
   timestamp?: number;
   showTools?: boolean;
+  selectionMode?: boolean;
+  selected?: boolean;
   channel?: 'wechat' | 'qq';
   character?: Character;
   onToggleTools?: () => void;
+  onToggleSelected?: () => void;
+  onStartSelection?: () => void;
   onDelete?: () => void;
   onToggleFavorite?: () => void;
   onCopy?: () => void;
@@ -44,7 +51,7 @@ export type ChatBubbleProps = {
   onAcceptLifeCard?: () => void;
 };
 
-export function ChatBubble({
+export const ChatBubble = memo(function ChatBubble({
   role,
   content,
   kind,
@@ -60,9 +67,13 @@ export function ChatBubble({
   voicePlayedAt,
   timestamp,
   showTools,
+  selectionMode,
+  selected,
   channel,
   character,
   onToggleTools,
+  onToggleSelected,
+  onStartSelection,
   onDelete,
   onToggleFavorite,
   onCopy,
@@ -75,8 +86,10 @@ export function ChatBubble({
   const isWechat = channel === 'wechat';
   const isQq = channel === 'qq';
   const isChatChannel = isWechat || isQq;
-  const { userAvatar, userName } = useAppStore();
+  const userAvatar = useAppStore((state) => state.userAvatar);
+  const userName = useAppStore((state) => state.userName);
   const longPressTimer = useRef<number | null>(null);
+  const [theaterExpanded, setTheaterExpanded] = useState(false);
   const runTool = (event: React.MouseEvent<HTMLButtonElement>, action?: () => void) => {
     event.stopPropagation();
     action?.();
@@ -125,14 +138,31 @@ export function ChatBubble({
 
   const armMessageTools = () => {
     clearLongPress();
-    longPressTimer.current = window.setTimeout(() => onToggleTools?.(), 360);
+    longPressTimer.current = window.setTimeout(() => {
+      if (selectionMode) {
+        onToggleSelected?.();
+        return;
+      }
+      (onStartSelection || onToggleTools)?.();
+    }, 360);
   };
 
   const messageEvents = {
-    onClick: onToggleTools,
+    onClick: (event: React.MouseEvent) => {
+      if (selectionMode) {
+        event.stopPropagation();
+        onToggleSelected?.();
+        return;
+      }
+      onToggleTools?.();
+    },
     onContextMenu: (event: React.MouseEvent) => {
       event.preventDefault();
-      onToggleTools?.();
+      if (selectionMode) {
+        onToggleSelected?.();
+        return;
+      }
+      (onStartSelection || onToggleTools)?.();
     },
     onPointerDown: armMessageTools,
     onPointerUp: clearLongPress,
@@ -150,12 +180,57 @@ export function ChatBubble({
   } : messageEvents;
 
   const meta = timestamp ? <span className="wechat-message-time">{formatMessageTime(timestamp)}</span> : null;
+  const selectionControl = isChatChannel && selectionMode ? (
+    <button
+      type="button"
+      className={cn('wechat-selection-dot', selected && 'active')}
+      aria-label={selected ? '取消选择消息' : '选择消息'}
+      aria-pressed={Boolean(selected)}
+      onClick={(event) => {
+        event.stopPropagation();
+        onToggleSelected?.();
+      }}
+    >
+      <span />
+    </button>
+  ) : null;
 
   if (content === '' && kind === 'text') {
     return <p className="wechat-recalled-text">{isUser ? '你撤回了一条消息' : '对方撤回了一条消息'}</p>;
   }
 
-  const replyLine = replyTo ? <p className="wechat-reply-line">引用：{replyTo}</p> : null;
+  const replyLine = replyTo ? <p className={cn('wechat-reply-line', isUser ? 'wechat-reply-user' : 'wechat-reply-model')}><span>引用</span>{replyTo}</p> : null;
+
+  const isTheaterMessage = kind === 'theater' || (kind === 'call-note' && content.trimStart().startsWith('【小剧场】'));
+  if (isTheaterMessage) {
+    const theaterText = content.replace(/^【小剧场】\s*/, '');
+    return (
+      <div className={cn('wechat-message mb-3 flex gap-2', isUser ? 'justify-end' : 'justify-start')}>
+        {isChatChannel && !isUser && <WeChatAvatar src={character?.avatar} name={character?.name || 'char'} />}
+        {!isUser && selectionControl}
+        <div className={cn('flex max-w-[84%] flex-col', isUser ? 'items-end' : 'items-start')}>
+          <article className={cn('wechat-theater-card', theaterExpanded && 'is-expanded')} {...messageEvents}>
+            <header><Clapperboard className="h-4 w-4" /><strong>小剧场</strong></header>
+            <p>{theaterText}</p>
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                clearLongPress();
+                setTheaterExpanded((current) => !current);
+              }}
+            >
+              {theaterExpanded ? '收起' : '展开全文'}
+            </button>
+          </article>
+          {meta}
+          {isChatChannel && messageTools}
+        </div>
+        {isUser && selectionControl}
+        {isChatChannel && isUser && <WeChatAvatar src={userAvatar} name={userName} />}
+      </div>
+    );
+  }
 
   if (kind === 'call-note') {
     const isVideoCall = content.includes('视频');
@@ -181,6 +256,7 @@ export function ChatBubble({
     return (
       <div className={cn('wechat-message mb-3 flex gap-2', isUser ? 'justify-end' : 'justify-start')}>
         {isChatChannel && !isUser && <WeChatAvatar src={character?.avatar} name={character?.name || 'char'} />}
+        {!isUser && selectionControl}
         <div className={cn('flex max-w-[78%] flex-col', isUser ? 'items-end' : 'items-start')}>
           {replyLine}
           <button type="button" className={cn('wechat-life-card', kind, canReceiveLifeCard && 'receivable')} {...lifeCardEvents}>
@@ -196,6 +272,7 @@ export function ChatBubble({
           {meta}
           {isChatChannel && messageTools}
         </div>
+        {isUser && selectionControl}
         {isChatChannel && isUser && <WeChatAvatar src={userAvatar} name={userName} />}
       </div>
     );
@@ -206,12 +283,14 @@ export function ChatBubble({
       return (
         <div className={cn('wechat-message mb-3 flex gap-2', isUser ? 'justify-end' : 'justify-start')}>
           {!isUser && <WeChatAvatar src={character?.avatar} name={character?.name || 'char'} />}
+          {!isUser && selectionControl}
           <figure className="wechat-sticker-wrap" {...messageEvents}>
             {replyLine}
             <img src={content} className="wechat-sticker" alt={stickerLabel || '表情包'} />
             {meta}
             {messageTools}
           </figure>
+          {isUser && selectionControl}
           {isUser && <WeChatAvatar src={userAvatar} name={userName} />}
         </div>
       );
@@ -229,13 +308,15 @@ export function ChatBubble({
       return (
         <div className={cn('wechat-message mb-3 flex gap-2', isUser ? 'justify-end' : 'justify-start')}>
           {!isUser && <WeChatAvatar src={character?.avatar} name={character?.name || 'char'} />}
+          {!isUser && selectionControl}
           <figure className="wechat-image-wrap" {...messageEvents}>
             {replyLine}
-            <img src={content} className="wechat-image-message" alt={stickerLabel || '聊天图片'} />
+            <ChatImageContent content={content} alt={stickerLabel || '聊天图片'} />
             {stickerLabel && <figcaption>{stickerLabel}</figcaption>}
             {meta}
             {messageTools}
           </figure>
+          {isUser && selectionControl}
           {isUser && <WeChatAvatar src={userAvatar} name={userName} />}
         </div>
       );
@@ -253,23 +334,25 @@ export function ChatBubble({
       return (
         <div className={cn('wechat-message mb-3 flex gap-2', isUser ? 'justify-end' : 'justify-start')}>
           {!isUser && <WeChatAvatar src={character?.avatar} name={character?.name || 'char'} />}
+          {!isUser && selectionControl}
           <div className={cn('flex max-w-[78%] flex-col', isUser ? 'items-end' : 'items-start')}>
-            {replyLine}
             <VoiceMessageBubble
               content={content}
               duration={duration}
               transcript={transcript}
+              replyTo={replyTo}
               isUser={isUser}
               isUnread={isUnreadVoiceMessage({ role, kind, voicePlayedAt })}
               onPlay={() => {
                 speak(content);
                 onVoicePlayed?.();
               }}
-              onToggleTools={onToggleTools}
+              onToggleTools={selectionMode ? onToggleSelected : onStartSelection || onToggleTools}
             />
             {meta}
             {messageTools}
           </div>
+          {isUser && selectionControl}
           {isUser && <WeChatAvatar src={userAvatar} name={userName} />}
         </div>
       );
@@ -292,25 +375,35 @@ export function ChatBubble({
     );
   }
 
+  const emotion = parseOpenMojiEmotionText(content);
+
   return (
     <div className={cn(isChatChannel ? 'wechat-message' : '', 'mb-3 flex gap-2', isUser ? 'justify-end' : 'justify-start')}>
       {isChatChannel && !isUser && <WeChatAvatar src={character?.avatar} name={character?.name || 'char'} />}
-      <div className={cn('flex max-w-[78%] flex-col', isUser ? 'items-end' : 'items-start')}>
-        {replyLine}
-        <div
-          className={cn(
-            isChatChannel && 'wechat-text-wrap',
-            'hand-bubble whitespace-pre-wrap leading-relaxed',
-            isChatChannel ? (isUser ? 'wechat-text-user' : 'wechat-text-model') : (isUser ? 'bg-[#d7efc7]' : 'bg-white'),
-          )}
-          {...messageEvents}
-        >
-          {content}
-        </div>
+      {!isUser && selectionControl}
+      <div className={cn('flex flex-col', isQq ? 'qq-message-stack' : 'max-w-[78%]', isUser ? 'items-end' : 'items-start')}>
+        {emotion && replyLine}
+        {emotion ? (
+          <OpenMojiEmotionCard emotion={emotion} events={messageEvents} />
+        ) : (
+          <div
+            className={cn(
+              isChatChannel && 'wechat-text-wrap',
+              'hand-bubble whitespace-pre-wrap leading-relaxed',
+              isChatChannel ? (isUser ? 'wechat-text-user' : 'wechat-text-model') : (isUser ? 'bg-[#d7efc7]' : 'bg-white'),
+            )}
+            {...messageEvents}
+          >
+            <BubbleOrnaments />
+            {replyLine}
+            <span className="bubble-content">{content}</span>
+          </div>
+        )}
         {meta}
         {isChatChannel && messageTools}
       </div>
+      {isUser && selectionControl}
       {isChatChannel && isUser && <WeChatAvatar src={userAvatar} name={userName} />}
     </div>
   );
-}
+});

@@ -24,6 +24,7 @@ import {
   Shield,
   Sparkles,
   Wand2,
+  WalletCards,
 } from 'lucide-react';
 import React from 'react';
 import type { Screen } from '../store';
@@ -51,9 +52,10 @@ export const pageApps: DesktopCatalogApp[] = [
   { id: 'qq', page: 0, screen: 'qq', label: 'QQ', icon: <Mail />, color: 'bg-[#cfe5ef]', x: 106, y: 22 },
   { id: 'gallery', page: 0, screen: 'gallery', label: '相册', icon: <ImageIcon />, color: 'bg-[#f4edbd]', x: 22, y: 126 },
   { id: 'calendar', page: 0, screen: 'calendar', label: '日历', icon: <CalendarDays />, color: 'bg-white', x: 106, y: 126 },
-  { id: 'diary', page: 0, screen: 'diary', label: '日记', icon: <BookOpen />, color: 'bg-[#e9c4d5]', x: 44, y: 352 },
-  { id: 'memo', page: 0, screen: 'memo', label: '备忘录', icon: <FileText />, color: 'bg-[#efe7a9]', x: 134, y: 352 },
-  { id: 'peek', page: 0, screen: 'peek', label: '查手机', icon: <LockKeyhole />, color: 'bg-[#dceecd]', x: 224, y: 352 },
+  { id: 'accounting', page: 0, screen: 'accounting', label: '记账', icon: <WalletCards />, color: 'bg-[#dceecd]', x: 20, y: 352 },
+  { id: 'diary', page: 0, screen: 'diary', label: '日记', icon: <BookOpen />, color: 'bg-[#e9c4d5]', x: 108, y: 352 },
+  { id: 'memo', page: 0, screen: 'memo', label: '备忘录', icon: <FileText />, color: 'bg-[#efe7a9]', x: 196, y: 352 },
+  { id: 'peek', page: 0, screen: 'peek', label: '查手机', icon: <LockKeyhole />, color: 'bg-[#dceecd]', x: 284, y: 352 },
   { id: 'xiaohongshu', page: 1, screen: 'xiaohongshu', label: '小红书', icon: <Wand2 />, color: 'bg-[#e9c4d5]', x: 24, y: 24 },
   { id: 'bilibili', page: 1, screen: 'bilibili', label: 'B站', icon: <Play />, color: 'bg-[#cfe5ef]', x: 104, y: 24 },
   { id: 'theater', page: 1, screen: 'theater', label: '小剧场', icon: <Clapperboard />, color: 'bg-[#efe7a9]', x: 184, y: 24 },
@@ -65,6 +67,7 @@ export const pageApps: DesktopCatalogApp[] = [
   { id: 'char-active', page: 1, screen: 'char-active', label: 'char主动', icon: <Sparkles />, color: 'bg-[#efe7a9]', x: 24, y: 240 },
   { id: 'backup', page: 1, screen: 'backup', label: '数据备份', icon: <Import />, color: 'bg-[#dceecd]', x: 104, y: 240 },
   { id: 'user-info', page: 1, screen: 'user-info', label: 'User信息', icon: <CircleUserRound />, color: 'bg-[#f4edbd]', x: 184, y: 240 },
+  { id: 'image-tasks', page: 1, screen: 'image-tasks', label: '生图任务', icon: <ImageIcon />, color: 'bg-[#e9c4d5]', x: 264, y: 240 },
 ];
 
 export const dockApps: DockCatalogApp[] = [

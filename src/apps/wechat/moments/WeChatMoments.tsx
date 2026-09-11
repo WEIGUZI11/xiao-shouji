@@ -1,6 +1,9 @@
 import { ChevronLeft, Plus, RefreshCw } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
+import { requestAppImage } from '../../../lib/appImageGeneration';
+import { buildNovelAiPrompt, hashPrompt } from '../../../lib/naiImage';
+import { createId } from '../../../lib/utils';
 import { useAppStore } from '../../../store';
 import { WeChatAvatar } from '../shared/WeChatShared';
 import { MomentComposer } from './MomentComposer';
@@ -46,8 +49,13 @@ export function WeChatMoments() {
     userAvatar,
     userName,
     wechatMoments,
+    imageGenerationConfig,
+    imageGenerationEnabled,
+    proactiveImageGenerationEnabled,
     addWechatMoment,
     deleteWechatMoment,
+    recordGeneratedImage,
+    addAppLog,
   } = useAppStore();
   const [metas, setMetas] = useState<MomentMeta[]>(loadMomentMetas);
   const [activeCharacterId, setActiveCharacterId] = useState<string | null>(null);
@@ -86,6 +94,36 @@ export function WeChatMoments() {
     addWechatMoment(meta.content);
     updateMetas([meta, ...metas]);
     setShowComposer(false);
+  };
+
+  const generateMomentImage = async (content: string) => {
+    const fullPrompt = buildNovelAiPrompt(`WeChat moments photo, ${content}`, 'wechat');
+    const promptHash = hashPrompt(fullPrompt);
+    const startedAt = Date.now();
+    addAppLog({ type: 'image', title: '朋友圈生图开始', detail: `provider=${imageGenerationConfig.provider}; model=${imageGenerationConfig.model}; prompt_hash=${promptHash}` });
+    try {
+      const image = await requestAppImage({
+        config: imageGenerationConfig,
+        prompt: fullPrompt,
+        triggerType: 'manual',
+        imageGenerationEnabled,
+        proactiveImageGenerationEnabled,
+        timeoutMs: 45000,
+        source: 'wechat-moments',
+      });
+      recordGeneratedImage({
+        imageId: createId('moment-image'), botId: 'wechat-moments', characterId: 'user', guildId: 'local', channelId: 'wechat-moments',
+        userId: userName || 'local-user', triggerType: 'manual', promptHash, promptText: fullPrompt, storageUrl: image,
+        createdAt: Date.now(), width: imageGenerationConfig.width, height: imageGenerationConfig.height,
+        model: imageGenerationConfig.model, status: 'success',
+      });
+      addAppLog({ type: 'image', title: '朋友圈生图成功', detail: `provider=${imageGenerationConfig.provider}; model=${imageGenerationConfig.model}; duration_ms=${Date.now() - startedAt}; prompt_hash=${promptHash}` });
+      return image;
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : '未知错误';
+      addAppLog({ type: 'error', title: '朋友圈生图失败', detail: `provider=${imageGenerationConfig.provider}; model=${imageGenerationConfig.model}; duration_ms=${Date.now() - startedAt}; error=${detail}` });
+      throw error;
+    }
   };
 
   const deleteMoment = (index: number) => {
@@ -229,7 +267,14 @@ export function WeChatMoments() {
           </button>
         </div>
       </div>
-      {showComposer && <MomentComposer characters={characters} onPublish={publishMoment} />}
+      {showComposer && (
+        <MomentComposer
+          characters={characters}
+          onPublish={publishMoment}
+          imageGenerationEnabled={imageGenerationEnabled}
+          onGenerateImage={generateMomentImage}
+        />
+      )}
       <MomentFeed
         moments={decoratedMoments}
         userAvatar={userAvatar}

@@ -97,6 +97,8 @@ const doubaoArk = buildExternalTtsRequest(
     appId: '',
     model: 'seed-tts-2.0',
     voiceId: 'zh_female_cancan_uranus_bigtts',
+    speechRate: 8,
+    loudnessRate: -22,
   },
   '豆包新版语音试听。',
 );
@@ -107,23 +109,94 @@ assert.equal(doubaoArk?.init.headers['X-Api-Key'], 'ark-key');
 assert.equal(doubaoArk?.init.headers['X-Api-Resource-Id'], 'seed-tts-2.0');
 assert.equal(doubaoArkBody.req_params.text, '豆包新版语音试听。');
 assert.equal(doubaoArkBody.req_params.speaker, 'zh_female_cancan_uranus_bigtts');
+assert.equal(doubaoArkBody.req_params.model, 'seed-tts-2.0-standard');
 assert.equal(doubaoArkBody.req_params.audio_params.format, 'mp3');
+assert.equal(doubaoArkBody.req_params.audio_params.speech_rate, 8);
+assert.equal(doubaoArkBody.req_params.audio_params.loudness_rate, -22);
 assert.equal(doubaoArkBody.req_params.additions, undefined);
 
-const doubaoArkBlankVoice = buildExternalTtsRequest(
+assert.throws(
+  () => buildExternalTtsRequest(
+    {
+      ...defaultTtsConfig,
+      provider: 'doubao',
+      baseUrl: '',
+      apiKey: '',
+      appId: '',
+      model: 'seed-tts-2.0',
+      voiceId: 'zh_female_cancan_uranus_bigtts',
+    },
+    '豆包新版没有填写 API Key。',
+  ),
+  /先填写豆包 TTS API Key/,
+);
+
+assert.throws(
+  () => buildExternalTtsRequest(
+    {
+      ...defaultTtsConfig,
+      provider: 'doubao',
+      baseUrl: '',
+      apiKey: 'ark-key',
+      appId: '',
+      model: 'seed-tts-2.0',
+      voiceId: '',
+    },
+    '豆包新版没有填写音色。',
+  ),
+  /先填写豆包音色 ID/,
+);
+
+const doubaoOldConsoleV3 = buildExternalTtsRequest(
   {
     ...defaultTtsConfig,
     provider: 'doubao',
     baseUrl: '',
+    apiKey: 'access-token',
+    appId: 'old-app-id',
+    model: 'seed-icl-2.0',
+    voiceId: 'S_TEST_CLONE',
+    doubaoModel: 'seed-tts-2.0-expressive',
+  },
+  '旧控制台复刻音色试听。',
+);
+const doubaoOldConsoleV3Body = JSON.parse(String(doubaoOldConsoleV3?.init.body));
+assert.equal(doubaoOldConsoleV3?.url, 'https://openspeech.bytedance.com/api/v3/tts/unidirectional');
+assert.equal(doubaoOldConsoleV3?.init.headers['X-Api-App-Id'], 'old-app-id');
+assert.equal(doubaoOldConsoleV3?.init.headers['X-Api-Access-Key'], 'access-token');
+assert.equal(doubaoOldConsoleV3?.init.headers['X-Api-Key'], undefined);
+assert.equal(doubaoOldConsoleV3?.init.headers['X-Api-Resource-Id'], 'seed-icl-2.0');
+assert.equal(doubaoOldConsoleV3Body.req_params.model, 'seed-tts-2.0-expressive');
+
+const doubaoMisplacedSubmodel = buildExternalTtsRequest(
+  {
+    ...defaultTtsConfig,
+    provider: 'doubao',
     apiKey: 'ark-key',
     appId: '',
-    model: 'seed-tts-2.0',
-    voiceId: '',
+    model: 'seed-tts-2.0-expressive',
+    voiceId: 'zh_female_vv_uranus_bigtts',
   },
-  '豆包新版没有填写音色。',
+  '兼容旧配置。',
 );
-const doubaoArkBlankVoiceBody = JSON.parse(String(doubaoArkBlankVoice?.init.body));
-assert.equal(doubaoArkBlankVoiceBody.req_params.speaker, '');
+const doubaoMisplacedSubmodelBody = JSON.parse(String(doubaoMisplacedSubmodel?.init.body));
+assert.equal(doubaoMisplacedSubmodel?.init.headers['X-Api-Resource-Id'], 'seed-tts-2.0');
+assert.equal(doubaoMisplacedSubmodelBody.req_params.model, 'seed-tts-2.0-expressive');
+
+const doubaoTts1 = buildExternalTtsRequest(
+  {
+    ...defaultTtsConfig,
+    provider: 'doubao',
+    apiKey: 'ark-key',
+    model: 'seed-tts-1.0',
+    doubaoModel: 'seed-tts-2.0-expressive',
+    voiceId: 'zh_female_wanwanxiaohe_moon_bigtts',
+  },
+  '豆包 1.0 试听。',
+);
+const doubaoTts1Body = JSON.parse(String(doubaoTts1?.init.body));
+assert.equal(doubaoTts1?.init.headers['X-Api-Resource-Id'], 'seed-tts-1.0');
+assert.equal(doubaoTts1Body.req_params.model, undefined);
 
 assert.deepEqual(
   extractDoubaoStreamAudioChunks('{"code":0,"message":"","data":"AAAA"}\n{"code":0,"message":"","data":"BBBB"}\n{"code":20000000,"message":"OK","data":null}'),

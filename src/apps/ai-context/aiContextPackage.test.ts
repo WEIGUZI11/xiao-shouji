@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 
-import { buildContextPackage } from '../system/SystemScreens';
+import { buildContextPackage } from './contextPackage';
 
 const now = Date.now();
 const character = {
@@ -67,5 +67,17 @@ assert.match(contextPackage.text, /晚上一起打游戏/);
 assert.match(contextPackage.text, /微信群聊/);
 assert.match(contextPackage.text, /带伞/);
 assert(contextPackage.previewRows.some((row) => row.app === 'QQ群聊' && /晚上一起打游戏/.test(row.detail)));
+
+const excludedPackage = buildContextPackage({
+  character,
+  range: '1d',
+  wechatLimit: 50,
+  qqLimit: 50,
+  state,
+  excludedSectionIds: ['qq-groups'],
+});
+assert.equal(excludedPackage.previewRows.find((row) => row.sectionId === 'qq-groups')?.excluded, true);
+assert.equal(excludedPackage.previewRows.find((row) => row.sectionId === 'wechat-groups')?.excluded, false);
+assert.equal(excludedPackage.text.includes(contextPackage.previewRows.find((row) => row.sectionId === 'qq-groups')?.detail || '__missing__'), false);
 
 console.log('aiContextPackage tests passed');

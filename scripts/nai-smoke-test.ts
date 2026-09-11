@@ -16,6 +16,12 @@ function u32(bytes: Uint8Array, offset: number) {
 function extractImageBytes(buffer: Buffer) {
   const bytes = new Uint8Array(buffer);
   if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) return buffer;
+  if (buffer.toString('utf8', 0, Math.min(buffer.length, 32)).trimStart().startsWith('{')) {
+    const data = JSON.parse(buffer.toString('utf8')) as { images?: Array<{ image?: string }> };
+    const encoded = data.images?.[0]?.image;
+    if (!encoded) throw new Error('NAI JSON response did not contain images[0].image.');
+    return Buffer.from(encoded, 'base64');
+  }
 
   let eocd = -1;
   for (let index = bytes.length - 22; index >= 0; index -= 1) {
@@ -83,6 +89,7 @@ async function callHandler(body: unknown) {
 
 const outputDir = process.env.NAI_TEST_OUTPUT_DIR || path.resolve(process.cwd(), 'qa-screenshots', 'nai-smoke-test');
 const outputPath = path.join(outputDir, `nai-smoke-${Date.now()}.png`);
+const rawOutputPath = outputPath.replace(/\.png$/, '.response.bin');
 const payload = buildNaiGenerateImagePayload({
   config: {
     ...defaultImageGenerationConfig,
@@ -109,8 +116,25 @@ if (result.statusCode < 200 || result.statusCode >= 300 || !Buffer.isBuffer(resu
   process.exit(1);
 }
 
-const imageBytes = extractImageBytes(result.body);
 await fs.mkdir(outputDir, { recursive: true });
+await fs.writeFile(rawOutputPath, result.body);
+let imageBytes: Buffer;
+try {
+  imageBytes = extractImageBytes(result.body);
+} catch (error) {
+  const head = result.body.subarray(0, 160);
+  console.error(JSON.stringify({
+    ok: false,
+    statusCode: result.statusCode,
+    contentType: result.headers['content-type'],
+    bytes: result.body.length,
+    headHex: head.subarray(0, 32).toString('hex'),
+    headText: head.toString('utf8').replace(/[\u0000-\u001f\u007f]/g, ' '),
+    rawOutputPath,
+    error: error instanceof Error ? error.message : String(error),
+  }, null, 2));
+  process.exit(1);
+}
 await fs.writeFile(outputPath, imageBytes);
 console.log(JSON.stringify({
   ok: true,

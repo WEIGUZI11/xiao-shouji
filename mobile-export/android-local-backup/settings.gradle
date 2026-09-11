@@ -1,9 +1,13 @@
 pluginManagement {
   def reactNativeGradlePlugin = new File(rootDir, "../node_modules/@react-native/gradle-plugin").absolutePath
-  includeBuild(reactNativeGradlePlugin)
+  includeBuild(reactNativeGradlePlugin) {
+    name = "react-native-gradle-plugin-settings"
+  }
 
   def expoPluginsPath = new File(rootDir, "../node_modules/expo-modules-autolinking/android/expo-gradle-plugin").absolutePath
-  includeBuild(expoPluginsPath)
+  includeBuild(expoPluginsPath) {
+    name = "expo-autolinking-settings-plugin"
+  }
 }
 
 plugins {
@@ -21,4 +25,6 @@ rootProject.name = '小手机'
 expoAutolinking.useExpoVersionCatalog()
 
 include ':app'
-includeBuild(expoAutolinking.reactNativeGradlePlugin)
+includeBuild(expoAutolinking.reactNativeGradlePlugin) {
+  name = "react-native-gradle-plugin-app"
+}

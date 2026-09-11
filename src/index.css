@@ -7,6 +7,86 @@
  * Dependencies: class names emitted by src/App.tsx and future split page components.
  * Maintenance note: legacy pastel/gothic overrides stay here; new full theme visuals live in src/themes/.
  */
+@font-face {
+  font-family: "XiaoPhone LXGW Marker Gothic";
+  src: url("./assets/fonts/lxgwmarkergothic/lxgwmarkergothic.woff2") format("woff2");
+  font-display: swap;
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: "XiaoPhone Zhuque Fangsong";
+  src: url("./assets/fonts/zhuquefangsong/zhuquefangsong.woff2") format("woff2");
+  font-display: swap;
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: "XiaoPhone DotGothic16";
+  src: url("./assets/fonts/dotgothic16/dotgothic16.woff2") format("woff2");
+  font-display: swap;
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: "XiaoPhone Zen Maru Gothic";
+  src: url("./assets/fonts/zenmarugothic/zenmarugothic.woff2") format("woff2");
+  font-display: swap;
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: "XiaoPhone ZCOOL KuaiLe";
+  src: url("./assets/fonts/zcoolkuaile/zcoolkuaile.woff2") format("woff2");
+  font-display: swap;
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: "XiaoPhone ZCOOL XiaoWei";
+  src: url("./assets/fonts/zcoolxiaowei/zcoolxiaowei.woff2") format("woff2");
+  font-display: swap;
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: "XiaoPhone ZCOOL QingKe HuangYou";
+  src: url("./assets/fonts/zcoolqingkehuangyou/zcoolqingkehuangyou.woff2") format("woff2");
+  font-display: swap;
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: "XiaoPhone Ma Shan Zheng";
+  src: url("./assets/fonts/mashanzheng/mashanzheng.woff2") format("woff2");
+  font-display: swap;
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: "XiaoPhone Long Cang";
+  src: url("./assets/fonts/longcang/longcang.woff2") format("woff2");
+  font-display: swap;
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: "XiaoPhone Zen Old Mincho";
+  src: url("./assets/fonts/zenoldmincho/zenoldmincho.woff2") format("woff2");
+  font-display: swap;
+  font-style: normal;
+  font-weight: 400;
+}
+
 :root {
   color-scheme: light;
 }
@@ -23,7 +103,7 @@ body {
 }
 
 .font-rounded {
-  --phone-font-family: "Comic Sans MS", "Segoe Print", "YouYuan", "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+  --phone-font-family: "XiaoPhone LXGW Marker Gothic", "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
   --phone-font-letter-spacing: 0;
 }
 
@@ -33,12 +113,47 @@ body {
 }
 
 .font-serif {
-  --phone-font-family: "STKaiti", "KaiTi", "SimKai", "FangSong", "SimSun", Georgia, serif;
+  --phone-font-family: "XiaoPhone Zhuque Fangsong", "FangSong", "SimSun", Georgia, serif;
   --phone-font-letter-spacing: 0;
 }
 
 .font-pixel {
-  --phone-font-family: Consolas, "Courier New", "SimHei", monospace;
+  --phone-font-family: "XiaoPhone DotGothic16", "Microsoft YaHei", "SimHei", monospace;
+  --phone-font-letter-spacing: 0;
+}
+
+.font-zen-maru {
+  --phone-font-family: "XiaoPhone Zen Maru Gothic", "Microsoft YaHei", "PingFang SC", sans-serif;
+  --phone-font-letter-spacing: 0;
+}
+
+.font-zcool-happy {
+  --phone-font-family: "XiaoPhone ZCOOL KuaiLe", "Microsoft YaHei", "PingFang SC", sans-serif;
+  --phone-font-letter-spacing: 0;
+}
+
+.font-zcool-xiaowei {
+  --phone-font-family: "XiaoPhone ZCOOL XiaoWei", "Microsoft YaHei", "PingFang SC", serif;
+  --phone-font-letter-spacing: 0;
+}
+
+.font-zcool-qingke {
+  --phone-font-family: "XiaoPhone ZCOOL QingKe HuangYou", "Microsoft YaHei", "PingFang SC", sans-serif;
+  --phone-font-letter-spacing: 0;
+}
+
+.font-ma-shan-zheng {
+  --phone-font-family: "XiaoPhone Ma Shan Zheng", "STKaiti", "KaiTi", "Microsoft YaHei", cursive;
+  --phone-font-letter-spacing: 0;
+}
+
+.font-long-cang {
+  --phone-font-family: "XiaoPhone Long Cang", "STKaiti", "KaiTi", "Microsoft YaHei", cursive;
+  --phone-font-letter-spacing: 0;
+}
+
+.font-zen-old-mincho {
+  --phone-font-family: "XiaoPhone Zen Old Mincho", "Songti SC", "SimSun", serif;
   --phone-font-letter-spacing: 0;
 }
 
@@ -130,6 +245,8 @@ body::-webkit-scrollbar,
 }
 
 .phone-shell {
+  --phone-bottom-extra-offset: 0px;
+  --chat-bottom-extra-offset: 0px;
   width: min(390px, calc(100vw - 16px)) !important;
   height: min(844px, calc(var(--app-vvh, 100dvh) - 16px)) !important;
   max-height: calc(var(--app-vvh, 100dvh) - 16px) !important;
@@ -138,6 +255,70 @@ body::-webkit-scrollbar,
   font-family: var(--phone-font-family, "Arial Rounded MT Bold", "Trebuchet MS", "Microsoft YaHei", "PingFang SC", system-ui, sans-serif);
   letter-spacing: var(--phone-font-letter-spacing, 0);
   box-shadow: 0 28px 70px rgba(0, 0, 0, 0.45);
+}
+
+.tts-queue-bar {
+  position: absolute;
+  z-index: 90;
+  right: 10px;
+  bottom: max(78px, calc(env(safe-area-inset-bottom, 0px) + 70px));
+  left: 10px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 58px;
+  border: 3px solid #111;
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--theme-panel, #fffaf0) 94%, transparent);
+  padding: 8px 9px;
+  color: var(--theme-text, #111);
+  box-shadow: 3px 4px 0 rgba(17, 17, 17, 0.85);
+  backdrop-filter: blur(10px);
+}
+
+.tts-queue-bar strong,
+.tts-queue-bar p,
+.tts-queue-bar small {
+  display: block;
+}
+
+.tts-queue-bar strong {
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.tts-queue-bar p {
+  overflow: hidden;
+  margin-top: 1px;
+  font-size: 11px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tts-queue-bar small {
+  margin-top: 1px;
+  font-size: 10px;
+  font-weight: 800;
+  opacity: 0.65;
+}
+
+.tts-queue-bar button {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 4px;
+  border: 2px solid #111;
+  border-radius: 12px;
+  background: #ffd6d6;
+  padding: 7px 8px;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.phone-shell.phone-bottom-lift {
+  --phone-bottom-extra-offset: 26px;
+  --chat-bottom-extra-offset: 26px;
 }
 
 .font-pixel .phone-shell,
@@ -152,6 +333,14 @@ body::-webkit-scrollbar,
 
 .phone-shell :is(section.h-full.overflow-y-auto, section.no-scrollbar.h-full.overflow-y-auto, .browser-app, .wechat-shell, .xhs-app) {
   padding-bottom: max(1.5rem, calc(env(safe-area-inset-bottom, 0px) + 1rem));
+}
+
+.phone-shell.phone-bottom-lift :is(section.h-full.overflow-y-auto, section.no-scrollbar.h-full.overflow-y-auto, .browser-app, .wechat-shell, .xhs-app, .music-screen) {
+  padding-bottom: max(calc(1.5rem + var(--phone-bottom-extra-offset)), calc(env(safe-area-inset-bottom, 0px) + 1rem + var(--phone-bottom-extra-offset))) !important;
+}
+
+.phone-shell.phone-bottom-lift :is(.dock, .page-dots, .qq-bottom-nav, .xhs-bottom) {
+  translate: 0 calc(-1 * var(--phone-bottom-extra-offset));
 }
 
 .phone-stage {
@@ -269,6 +458,93 @@ body::-webkit-scrollbar,
   color: var(--wechat-active-text, var(--wechat-text, currentColor));
   font-size: 9px;
   line-height: 1;
+}
+
+.wechat-floating-popup-wrap {
+  position: fixed;
+  top: max(12px, calc(env(safe-area-inset-top, 0px) + 10px));
+  left: 50%;
+  z-index: 1000;
+  display: grid;
+  width: min(390px, calc(100vw - 20px));
+  grid-template-columns: minmax(0, 1fr) 32px;
+  gap: 8px;
+  animation: wechatFloatingPopupIn 180ms ease-out;
+  transform: translateX(-50%);
+}
+
+.wechat-floating-popup {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: 36px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  border: 3px solid rgba(17, 17, 17, 0.86);
+  border-radius: 22px;
+  background: rgba(248, 255, 247, 0.94);
+  padding: 9px 12px;
+  color: #111;
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.22), 2px 3px 0 rgba(0, 0, 0, 0.14);
+  backdrop-filter: blur(14px);
+}
+
+.wechat-floating-popup-icon {
+  display: flex;
+  height: 36px;
+  width: 36px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  background: #dceecd;
+  color: #111;
+}
+
+.wechat-floating-popup-title,
+.wechat-floating-popup-body {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wechat-floating-popup-title {
+  font-size: 13px;
+  font-weight: 1000;
+}
+
+.wechat-floating-popup-body {
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 850;
+  opacity: 0.68;
+}
+
+.wechat-floating-popup-close {
+  display: flex;
+  height: 32px;
+  width: 32px;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  border: 2px solid rgba(17, 17, 17, 0.72);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #111;
+  font-size: 18px;
+  font-weight: 1000;
+  line-height: 1;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+}
+
+@keyframes wechatFloatingPopupIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
 }
 
 .shell-app-back-button {
@@ -873,14 +1149,20 @@ body::-webkit-scrollbar,
   top: 12px !important;
 }
 
+.first-use-tip .guide-close {
+  z-index: 4;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+}
+
 .first-use-tip {
   position: absolute;
-  inset: 0;
+  right: 22px;
+  bottom: 114px;
+  left: 22px;
   z-index: 55;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding: 24px 22px 112px;
   pointer-events: none;
 }
 
@@ -888,15 +1170,17 @@ body::-webkit-scrollbar,
   position: relative;
   width: 100%;
   border: 3px solid #111;
-  border-radius: 24px;
-  background: #fffaf0;
-  padding: 22px;
-  box-shadow: 4px 5px 0 rgba(0, 0, 0, 0.18);
+  border-radius: 20px;
+  background: rgba(255, 250, 240, 0.96);
+  padding: 12px 14px;
+  box-shadow: 3px 4px 0 rgba(0, 0, 0, 0.18), 0 14px 28px rgba(0, 0, 0, 0.16);
+  backdrop-filter: blur(10px);
   pointer-events: auto;
 }
 
 .first-use-tip-kicker {
   margin: 0 0 5px;
+  padding-right: 48px;
   font-size: 12px;
   font-weight: 1000;
   line-height: 1.2;
@@ -904,38 +1188,41 @@ body::-webkit-scrollbar,
 }
 
 .first-use-tip-panel h2 {
-  margin: 0 32px 9px 0;
-  font-size: 22px;
+  margin: 0 48px 7px 0;
+  font-size: 17px;
   font-weight: 1000;
   line-height: 1.15;
 }
 
 .first-use-tip-panel p {
   margin: 0;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 850;
-  line-height: 1.55;
+  line-height: 1.45;
 }
 
 .first-use-tip-actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 8px;
-  margin-top: 14px;
+  margin-top: 8px;
 }
 
 .first-use-tip-actions .guide-back-button {
-  font-size: 15px;
+  min-height: 44px;
+  padding: 6px 10px;
+  font-size: 13px;
 }
 
 .first-use-tip-secondary {
   display: inline-flex;
   width: auto;
-  min-width: 92px;
+  min-width: 72px;
   align-items: center;
   justify-content: center;
-  padding: 7px 12px;
-  font-size: 15px;
+  min-height: 44px;
+  padding: 8px 10px;
+  font-size: 13px;
   font-weight: 1000;
   text-align: center;
 }
@@ -1092,9 +1379,34 @@ body::-webkit-scrollbar,
   display: flex;
   justify-content: flex-end;
   gap: 6px;
-  overflow-x: auto;
   pointer-events: none;
 }
+
+.layout-edit-panel {
+  display: grid;
+  width: min(348px, calc(100vw - 28px));
+  gap: 8px;
+  border: 1px solid rgba(17, 17, 17, 0.16);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.94);
+  padding: 10px;
+  color: #252b3a;
+  box-shadow: 0 12px 30px rgba(30, 42, 70, 0.16);
+  pointer-events: auto;
+  backdrop-filter: blur(14px);
+}
+
+.layout-edit-panel > p {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 3px;
+  font-size: 12px;
+}
+
+.layout-edit-panel > p small { opacity: 0.58; }
+.layout-edit-panel > div { display: flex; justify-content: flex-end; gap: 6px; }
 
 .layout-toggle {
   display: flex;
@@ -1123,34 +1435,46 @@ body::-webkit-scrollbar,
   right: 0;
   display: flex;
   justify-content: center;
-  gap: 8px;
+  gap: 0;
   z-index: 8;
 }
 
 .page-dots button {
   display: flex;
-  min-height: 28px;
-  min-width: 32px;
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  min-height: 36px;
   align-items: center;
   justify-content: center;
+  border: 0;
   border-radius: 999px;
   background: transparent;
   padding: 0;
+  box-shadow: none;
 }
 
 .page-dots button::before {
-  content: "";
-  display: block;
-  height: 9px;
-  width: 9px;
-  border-radius: 999px;
-  background: #d9ddef;
-  transition: width 0.18s ease, background 0.18s ease;
+  content: none !important;
 }
 
-.page-dots button.active::before {
-  width: 22px;
-  background: #8994c9;
+.page-dots button.active {
+  background: transparent;
+  box-shadow: none;
+}
+
+.page-dot-mark {
+  display: block;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--theme-text, #242424) 24%, transparent);
+  transition: width 160ms ease, background-color 160ms ease;
+}
+
+.page-dots button.active .page-dot-mark {
+  width: 20px;
+  background: var(--theme-accent, #242424);
 }
 
 .dock-icon {
@@ -1285,6 +1609,116 @@ body::-webkit-scrollbar,
 
 .pill.active {
   background: #d9e8f6;
+}
+
+.compact-tab-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.compact-tab-grid .pill {
+  min-width: 0;
+  width: 100%;
+  padding-inline: 8px;
+  white-space: nowrap;
+}
+
+.settings-tab-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.settings-tab-grid .pill {
+  width: 100%;
+  min-width: 0;
+  padding-inline: 8px;
+  white-space: nowrap;
+}
+
+.settings-preset-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.settings-preset-pill {
+  min-width: 0;
+  min-height: 54px;
+  align-content: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.25;
+  text-align: center;
+  padding-inline: 10px;
+}
+
+.settings-feature-switch,
+.settings-advanced-toggle {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 2px solid rgb(17 17 17 / 18%);
+  border-radius: 16px;
+  background: rgb(255 255 255 / 58%);
+  padding: 12px 14px;
+  color: inherit;
+  font-size: 14px;
+  font-weight: 900;
+  text-align: left;
+}
+
+.settings-feature-switch > span,
+.settings-advanced-toggle > span {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-feature-switch > b {
+  flex: none;
+  border-radius: 999px;
+  background: #f0d6d6;
+  padding: 5px 9px;
+  font-size: 11px;
+}
+
+.settings-feature-switch.is-on {
+  border-color: rgb(44 105 57 / 38%);
+  background: #edf8e9;
+}
+
+.settings-feature-switch.is-on > b {
+  background: #cfe9c6;
+  color: #244b25;
+}
+
+.settings-feature-switch:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.settings-advanced-toggle {
+  margin-block: 12px;
+  background: rgb(231 244 255 / 72%);
+}
+
+.settings-config-status {
+  margin: -4px 0 10px;
+  border-radius: 12px;
+  background: #fff0b8;
+  padding: 8px 10px;
+  color: #6c4b00;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.settings-config-status.is-ready {
+  background: #dceecd;
+  color: #244b25;
 }
 
 .fetch-button {
@@ -1495,6 +1929,49 @@ body::-webkit-scrollbar,
   overflow: hidden;
 }
 
+.chat-background-preview {
+  position: relative;
+  height: 150px;
+  overflow: hidden;
+  border: 3px solid #111;
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--phone-bg) 80%, #d9e8f6);
+  box-shadow: 2px 3px 0 rgba(0, 0, 0, 0.12);
+}
+
+.chat-background-preview > img,
+.chat-background-preview > span[role="img"] {
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+}
+
+.chat-background-default-preview {
+  position: relative;
+  display: grid;
+  height: 100%;
+  place-items: center;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 20% 25%, rgba(129, 179, 235, 0.24), transparent 28%),
+    radial-gradient(circle at 80% 70%, rgba(244, 161, 191, 0.2), transparent 30%),
+    color-mix(in srgb, var(--phone-bg) 76%, white);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.chat-background-default-preview i {
+  position: absolute;
+  width: 42%;
+  height: 32px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.chat-background-default-preview i:first-of-type { left: 12px; top: 18px; }
+.chat-background-default-preview i:last-of-type { right: 12px; bottom: 18px; background: rgba(166, 214, 185, 0.82); }
+
 .icon-tool-button {
   display: flex;
   height: 34px;
@@ -1512,6 +1989,15 @@ body::-webkit-scrollbar,
   opacity: 0.38;
 }
 
+.icon-tool-button-wide {
+  width: auto;
+  min-width: 64px;
+  gap: 4px;
+  padding: 0 9px;
+  font-size: 11px;
+  font-weight: 900;
+}
+
 .font-choice-card {
   display: grid;
   min-height: 126px;
@@ -1519,20 +2005,43 @@ body::-webkit-scrollbar,
   gap: 6px;
 }
 
-.font-choice-card:nth-child(1) {
-  font-family: "Comic Sans MS", "Segoe Print", "YouYuan", "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+.character-appearance-details {
+  margin-bottom: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(17, 17, 17, 0.14);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.52);
 }
 
-.font-choice-card:nth-child(2) {
+.character-appearance-details > summary {
+  display: grid;
+  min-height: 58px;
+  grid-template-columns: minmax(0, 1fr) auto 18px;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.character-appearance-details > summary::-webkit-details-marker { display: none; }
+.character-appearance-details > summary > span { display: flex; align-items: center; gap: 7px; font-weight: 950; }
+.character-appearance-details > summary > small { font-size: 10px; font-weight: 800; opacity: 0.58; }
+.character-appearance-details[open] .character-appearance-chevron { rotate: 180deg; }
+
+.character-chat-background-editor {
+  display: grid;
+  gap: 10px;
+  border-top: 1px solid rgba(17, 17, 17, 0.1);
+  padding: 12px;
+}
+
+.character-chat-background-editor > p { font-size: 11px; font-weight: 750; line-height: 1.5; opacity: 0.62; }
+.chat-background-preview.compact { height: 112px; border-width: 1px; border-radius: 15px; box-shadow: none; }
+
+.font-choice-card-system,
+.font-choice-sample-system {
   font-family: system-ui, "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", "PingFang SC", sans-serif;
-}
-
-.font-choice-card:nth-child(3) {
-  font-family: "STKaiti", "KaiTi", "SimKai", "FangSong", "SimSun", Georgia, serif;
-}
-
-.font-choice-card:nth-child(4) {
-  font-family: Consolas, "Courier New", "SimHei", monospace;
 }
 
 .font-choice-sample {
@@ -1549,28 +2058,65 @@ body::-webkit-scrollbar,
   text-align: center;
 }
 
+.font-choice-card-rounded,
 .font-choice-sample-rounded {
-  font-family: "Comic Sans MS", "Segoe Print", "YouYuan", "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+  font-family: "XiaoPhone LXGW Marker Gothic", "Microsoft YaHei", "PingFang SC", sans-serif;
 }
 
-.font-choice-sample-system {
-  font-family: system-ui, "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", "PingFang SC", sans-serif;
-}
-
+.font-choice-card-serif,
 .font-choice-sample-serif {
-  font-family: "STKaiti", "KaiTi", "SimKai", "FangSong", "SimSun", Georgia, serif;
+  font-family: "XiaoPhone Zhuque Fangsong", "FangSong", "SimSun", serif;
   font-size: 17px;
   font-weight: 700;
+}
+
+.font-choice-card-pixel,
+.font-choice-sample-pixel {
+  font-family: "XiaoPhone DotGothic16", "Microsoft YaHei", monospace;
 }
 
 .font-choice-sample-pixel {
   border-radius: 4px;
   background: #111;
   color: #f8f1d8;
-  font-family: Consolas, "Courier New", "SimHei", monospace;
   font-size: 14px;
   letter-spacing: 0;
   text-shadow: 1px 0 0 currentColor;
+}
+
+.font-choice-card-zen-maru,
+.font-choice-sample-zen-maru {
+  font-family: "XiaoPhone Zen Maru Gothic", "Microsoft YaHei", sans-serif;
+}
+
+.font-choice-card-zcool-happy,
+.font-choice-sample-zcool-happy {
+  font-family: "XiaoPhone ZCOOL KuaiLe", "Microsoft YaHei", sans-serif;
+}
+
+.font-choice-card-zcool-xiaowei,
+.font-choice-sample-zcool-xiaowei {
+  font-family: "XiaoPhone ZCOOL XiaoWei", "Microsoft YaHei", serif;
+}
+
+.font-choice-card-zcool-qingke,
+.font-choice-sample-zcool-qingke {
+  font-family: "XiaoPhone ZCOOL QingKe HuangYou", "Microsoft YaHei", sans-serif;
+}
+
+.font-choice-card-ma-shan-zheng,
+.font-choice-sample-ma-shan-zheng {
+  font-family: "XiaoPhone Ma Shan Zheng", "STKaiti", "Microsoft YaHei", cursive;
+}
+
+.font-choice-card-long-cang,
+.font-choice-sample-long-cang {
+  font-family: "XiaoPhone Long Cang", "STKaiti", "Microsoft YaHei", cursive;
+}
+
+.font-choice-card-zen-old-mincho,
+.font-choice-sample-zen-old-mincho {
+  font-family: "XiaoPhone Zen Old Mincho", "Songti SC", "SimSun", serif;
 }
 
 .call-button {
@@ -3891,6 +4437,7 @@ body::-webkit-scrollbar,
 
 .qq-chat-screen {
   --wechat-active: var(--qq-accent, #1677ff);
+  --chat-bottom-extra-offset: 0px;
   --wechat-active-text: var(--qq-surface-strong, #ffffff);
   --wechat-bg: #f3f5f8;
   --wechat-surface: var(--qq-surface-strong, #ffffff);
@@ -3907,6 +4454,279 @@ body::-webkit-scrollbar,
   background: var(--wechat-bg);
   color: var(--wechat-text);
   font-family: var(--phone-font-family, "PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei", system-ui, sans-serif);
+}
+
+/* Preset management is a utility screen: keep its type and controls compact and readable. */
+.screen-presets .preset-manager-screen {
+  font-family: system-ui, "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", "PingFang SC", sans-serif !important;
+}
+
+.screen-presets .preset-compact-button,
+.screen-presets .preset-icon-button,
+.screen-presets .preset-delete-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid color-mix(in srgb, var(--phone-text) 72%, transparent);
+  background: color-mix(in srgb, var(--theme-panel) 82%, white);
+  color: var(--phone-text);
+  font-weight: 800;
+  line-height: 1;
+  box-shadow: 2px 2px 0 color-mix(in srgb, var(--phone-text) 70%, transparent);
+}
+
+.screen-presets .preset-compact-button {
+  min-height: 34px;
+  border-radius: 11px;
+  padding: 0 12px;
+  font-size: 12px;
+}
+
+.screen-presets .preset-icon-button,
+.screen-presets .preset-delete-button {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  border-radius: 10px;
+}
+
+.screen-presets .preset-delete-button {
+  border-color: #b4232f;
+  color: #b4232f;
+  background: #fff2f2;
+  box-shadow: 2px 2px 0 #b4232f;
+}
+
+.screen-presets .preset-danger-text-button {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 2px solid #b4232f;
+  border-radius: 11px;
+  background: #fff2f2;
+  color: #b4232f;
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 900;
+  box-shadow: 2px 2px 0 #b4232f;
+}
+
+.screen-presets .preset-icon-button:disabled {
+  opacity: 0.3;
+  box-shadow: none;
+}
+
+.screen-presets .preset-entry-card {
+  border: 1.5px solid color-mix(in srgb, var(--phone-text) 16%, transparent);
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--theme-panel) 60%, white);
+  padding: 6px 8px;
+}
+
+/* Give preset names a real title row on narrow phones. The old single flex row
+   let copy/delete/edit squeeze the name down to only a few characters. */
+.screen-presets .preset-entry-card > div:first-child {
+  display: grid;
+  grid-template-columns: 24px 24px minmax(0, 1fr) 32px 32px 36px;
+  align-items: center;
+  gap: 6px;
+}
+
+.screen-presets .preset-entry-card > div:first-child > .preset-drag-handle {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.screen-presets .preset-entry-card > div:first-child > .preset-entry-kind {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.screen-presets .preset-entry-card > div:first-child > button:nth-child(3) {
+  grid-column: 3 / 6;
+  grid-row: 1;
+  width: 100%;
+}
+
+.screen-presets .preset-entry-card > div:first-child > button:nth-child(3) strong {
+  overflow: visible;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.screen-presets .preset-entry-card > div:first-child > .preset-entry-toggle {
+  grid-column: 6;
+  grid-row: 1;
+}
+
+.screen-presets .preset-entry-card > div:first-child > .preset-icon-button[aria-label^="复制"] {
+  grid-column: 4;
+  grid-row: 2;
+}
+
+.screen-presets .preset-entry-card > div:first-child > .preset-delete-button {
+  grid-column: 5;
+  grid-row: 2;
+}
+
+.screen-presets .preset-entry-card > div:first-child > .preset-icon-button[aria-label^="编辑"] {
+  grid-column: 6;
+  grid-row: 2;
+}
+
+.screen-presets .preset-entry-drop-target {
+  border-color: var(--theme-accent);
+  background: color-mix(in srgb, var(--theme-accent) 12%, var(--theme-panel));
+  box-shadow: inset 0 3px 0 var(--theme-accent);
+}
+
+.screen-presets .preset-drag-handle,
+.screen-presets .preset-entry-kind {
+  display: inline-flex;
+  width: 24px;
+  height: 30px;
+  flex: 0 0 24px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  color: color-mix(in srgb, var(--phone-text) 52%, transparent);
+}
+
+.screen-presets .preset-drag-handle {
+  cursor: grab;
+  touch-action: none;
+}
+
+.screen-presets .preset-drag-handle:active {
+  cursor: grabbing;
+  background: color-mix(in srgb, var(--theme-accent) 16%, transparent);
+  color: var(--phone-text);
+}
+
+.screen-presets .preset-entry-kind.is-pinned {
+  color: #287452;
+  background: color-mix(in srgb, #43b581 15%, transparent);
+}
+
+.screen-presets .preset-entry-toggle {
+  position: relative;
+  width: 36px;
+  height: 22px;
+  flex: 0 0 36px;
+  border: 2px solid color-mix(in srgb, var(--phone-text) 28%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--phone-text) 13%, transparent);
+  transition: 150ms ease;
+}
+
+.screen-presets .preset-entry-toggle > span {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--phone-text) 58%, white);
+  transition: 150ms ease;
+}
+
+.screen-presets .preset-entry-toggle.is-enabled {
+  border-color: #21784c;
+  background: #35a76d;
+}
+
+.screen-presets .preset-entry-toggle.is-enabled > span {
+  left: 17px;
+  background: #fff;
+}
+
+.screen-presets .preset-icon-button.is-active,
+.screen-presets .preset-role-button.is-selected {
+  border-color: #111;
+  background: #111;
+  color: #fff;
+  box-shadow: 2px 2px 0 var(--theme-accent);
+}
+
+.screen-presets .preset-role-button {
+  min-height: 32px;
+  border: 2px solid color-mix(in srgb, var(--phone-text) 20%, transparent);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--theme-panel) 70%, white);
+  color: var(--phone-text);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.screen-presets .preset-delete-confirm {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  border-radius: 10px;
+  background: #b4232f;
+  color: white;
+  padding: 7px 8px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.screen-presets .preset-delete-confirm button {
+  flex: 0 0 auto;
+  border-radius: 7px;
+  background: white;
+  color: #8f1521;
+  padding: 5px 7px;
+  font-weight: 900;
+}
+
+.screen-presets .preset-manager-screen button[aria-pressed="true"],
+.screen-presets .preset-manager-screen button[aria-pressed="true"] * {
+  color: #fff !important;
+}
+
+.wechat-chat-screen,
+.qq-chat-screen {
+  --chat-bottom-extra-offset: 0px;
+}
+
+.chat-background-image,
+.chat-background-shade {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  width: 100%;
+  pointer-events: none;
+}
+
+.chat-background-image {
+  z-index: 0;
+  object-fit: cover;
+}
+
+.chat-background-shade {
+  z-index: 0;
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.has-custom-chat-background :is(.wechat-message-list, .qq-message-list) {
+  position: relative;
+  z-index: 1;
+  background: transparent !important;
+}
+
+.has-custom-chat-background :is(.wechat-chat-header, .qq-chat-header, .wechat-input-bar, .qq-input-bar) {
+  position: relative;
+  z-index: 2;
+}
+
+.chat-bottom-lift {
+  --chat-bottom-extra-offset: 26px;
 }
 
 .qq-chat-header {
@@ -3937,8 +4757,8 @@ body::-webkit-scrollbar,
     radial-gradient(circle at 10% 14%, rgba(94, 169, 236, 0.08), transparent 24%),
     radial-gradient(circle at 84% 60%, rgba(255, 130, 170, 0.055), transparent 26%),
     var(--qq-bg, #f7f8fa);
-  padding-bottom: calc(14px + var(--wechat-keyboard-lift, 0px));
-  scroll-padding-bottom: calc(72px + var(--wechat-keyboard-lift, 0px));
+  padding-bottom: calc(14px + var(--chat-bottom-extra-offset, 0px));
+  scroll-padding-bottom: calc(72px + var(--chat-bottom-extra-offset, 0px));
 }
 
 .qq-chat-screen .wechat-text-wrap {
@@ -3950,6 +4770,16 @@ body::-webkit-scrollbar,
   letter-spacing: 0;
   line-height: 1.5;
   padding: 9px 12px;
+}
+
+.qq-chat-screen .qq-message-stack {
+  max-width: min(86%, 430px);
+  min-width: 0;
+}
+
+.qq-chat-screen .qq-message-stack .wechat-text-wrap {
+  max-width: 100%;
+  line-height: 1.52;
 }
 
 .qq-chat-screen .wechat-text-user {
@@ -3977,7 +4807,7 @@ body::-webkit-scrollbar,
 
 .qq-input-bar {
   position: sticky;
-  bottom: var(--wechat-keyboard-lift, 0px);
+  bottom: var(--chat-bottom-extra-offset, 0px);
   z-index: 35;
   width: 100%;
   flex-shrink: 0;
@@ -4082,7 +4912,7 @@ body::-webkit-scrollbar,
 .qq-input-bar .wechat-plus-panel {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px 10px;
-  max-height: min(238px, 34dvh);
+  max-height: min(238px, calc(var(--app-vvh, 100dvh) - 190px));
   border-radius: 0;
   background: transparent;
   padding: 8px 2px 10px;
@@ -5230,8 +6060,8 @@ body::-webkit-scrollbar,
   -webkit-overflow-scrolling: touch;
   min-width: 0;
   overscroll-behavior: contain;
-  padding-bottom: calc(22px + var(--wechat-keyboard-lift, 0px));
-  scroll-padding-bottom: calc(84px + var(--wechat-keyboard-lift, 0px));
+  padding-bottom: calc(22px + var(--chat-bottom-extra-offset, 0px));
+  scroll-padding-bottom: calc(84px + var(--chat-bottom-extra-offset, 0px));
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 70px),
     #111;
@@ -5316,6 +6146,31 @@ body::-webkit-scrollbar,
   object-fit: cover;
 }
 
+.wechat-load-older {
+  display: block;
+  margin: 0 auto 14px;
+  border: 1px solid color-mix(in srgb, var(--accent-color, #07c160) 24%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-color, #fff) 92%, transparent);
+  padding: 7px 13px;
+  color: var(--muted-color, #6b7280);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.wechat-image-placeholder {
+  display: grid;
+  min-height: 118px;
+  width: 188px;
+  place-items: center;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--wechat-surface, #f2f2f2) 86%, #ffffff);
+  color: var(--wechat-muted, #777);
+  font-size: 12px;
+  font-weight: 800;
+  text-align: center;
+}
+
 .wechat-image-wrap figcaption {
   max-width: 100%;
   overflow: hidden;
@@ -5326,6 +6181,48 @@ body::-webkit-scrollbar,
   font-weight: 650;
   line-height: 1.35;
   white-space: nowrap;
+}
+
+.wechat-emotion-card {
+  display: flex;
+  max-width: min(100%, 236px);
+  align-items: center;
+  gap: 10px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--wechat-model-bubble, #ffffff) 78%, #fff8d8);
+  padding: 10px 12px;
+  color: var(--wechat-text, #111);
+  box-shadow: inset 0 0 0 1px rgba(17, 17, 17, 0.06);
+}
+
+.wechat-emotion-icon {
+  display: grid;
+  height: 30px;
+  width: 30px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 999px;
+  background: #fff0a8;
+  color: #111;
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.wechat-emotion-card strong,
+.wechat-emotion-card small {
+  display: block;
+}
+
+.wechat-emotion-card strong {
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.wechat-emotion-card small {
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.45;
 }
 
 .wechat-voice-bubble {
@@ -5488,7 +6385,7 @@ body::-webkit-scrollbar,
 
 .wechat-input-bar {
   position: sticky;
-  bottom: var(--wechat-keyboard-lift, 0px);
+  bottom: var(--chat-bottom-extra-offset, 0px);
   z-index: 35;
   width: 100%;
   max-width: 100%;
@@ -5503,7 +6400,7 @@ body::-webkit-scrollbar,
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
-  max-height: min(250px, 38dvh);
+  max-height: min(250px, calc(var(--app-vvh, 100dvh) - 190px));
   overflow-y: auto;
   margin-bottom: 10px;
   border-radius: 10px;
@@ -5668,6 +6565,87 @@ body::-webkit-scrollbar,
 
 .wechat-message-tools.justify-start {
   left: 0;
+}
+
+.wechat-selection-dot {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  place-items: center;
+  align-self: center;
+  border: 2px solid color-mix(in srgb, var(--wechat-muted, #777) 48%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--wechat-surface, #fff) 82%, transparent);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.wechat-selection-dot span {
+  width: 10px;
+  height: 10px;
+  border-radius: inherit;
+  background: transparent;
+}
+
+.wechat-selection-dot.active {
+  border-color: var(--wechat-active, #12c46e);
+  background: color-mix(in srgb, var(--wechat-active, #12c46e) 16%, var(--wechat-surface, #fff));
+}
+
+.wechat-selection-dot.active span {
+  background: var(--wechat-active, #12c46e);
+}
+
+.wechat-selection-bar {
+  display: flex;
+  min-height: 42px;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  border: 1px solid color-mix(in srgb, var(--wechat-line, rgba(0, 0, 0, 0.12)) 82%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--wechat-surface, #fff) 92%, transparent);
+  padding: 6px;
+  color: var(--wechat-text, #111827);
+  font-size: 13px;
+  font-weight: 900;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.12);
+}
+
+.wechat-selection-bar > span {
+  min-width: 0;
+  flex: 1;
+  text-align: center;
+}
+
+.wechat-selection-action,
+.wechat-selection-delete {
+  display: inline-flex;
+  min-height: 30px;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border: 0;
+  border-radius: 999px;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.wechat-selection-action {
+  width: 32px;
+  padding: 0;
+  background: color-mix(in srgb, var(--wechat-surface-2, #f3f4f6) 86%, transparent);
+  color: var(--wechat-muted, #6b7280);
+}
+
+.wechat-selection-delete {
+  background: #ef4444;
+  color: #fff;
+}
+
+.wechat-selection-delete:disabled {
+  opacity: 0.45;
 }
 
 .wechat-message figure,
@@ -5849,6 +6827,48 @@ body::-webkit-scrollbar,
   text-align: center;
   font-size: 12px;
   font-weight: 700;
+}
+
+.wechat-theater-card {
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid var(--wechat-line, rgba(255, 255, 255, 0.12));
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--wechat-surface-2, #222) 92%, var(--wechat-active, #12c46e));
+  padding: 11px 12px;
+  color: var(--wechat-text, #e7e7e7);
+}
+
+.wechat-theater-card header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 7px;
+  color: var(--wechat-active, #12c46e);
+  font-size: 12px;
+}
+
+.wechat-theater-card p {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 6;
+  white-space: pre-wrap;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.58;
+}
+
+.wechat-theater-card.is-expanded p {
+  display: block;
+  overflow: visible;
+}
+
+.wechat-theater-card > button {
+  margin-top: 8px;
+  color: var(--wechat-active, #12c46e);
+  font-size: 11px;
+  font-weight: 800;
 }
 
 .wechat-call-note {

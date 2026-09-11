@@ -18,6 +18,7 @@ export type ContextBudgetStats = {
 };
 
 export type PreviewRowIdentity = {
+  sectionId?: string;
   app: string;
   content: string;
   range: string;
@@ -72,7 +73,7 @@ export function buildContextBudgetStats(text: string, budget: ContextBudgetInfo,
 }
 
 export function buildPreviewRowKey(row: PreviewRowIdentity) {
-  return `${row.app}::${row.content}::${row.range}`;
+  return row.sectionId || `${row.app}::${row.content}::${row.range}`;
 }
 
 export function getPreviewRowExcerpt(detail: string, maxLength = 80) {

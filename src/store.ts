@@ -1,6 +1,6 @@
 ﻿/**
  * Global Zustand store for the small phone prototype.
- * Exports/types: Character, ChatMessage, ChatSession, PhoneCallRecord, DiaryEntry, CalendarEvent, GalleryPhoto, LifeEvent, GeneratedImageRecord, XiaohongshuNote, XiaohongshuProfile, CustomWidget, ThemeType, Screen, useAppStore.
+ * Exports/types: Character, ChatMessage, ChatSession, PhoneCallRecord, DiaryEntry, CalendarEvent, GalleryPhoto, LifeEvent, GeneratedImageRecord, XiaohongshuNote, XiaohongshuProfile, CustomWidget, ThemeType, BubbleStyleType, Screen, useAppStore.
  * Store actions: addCharacter, updateCharacter, openChat, add/delete/favorite/recall message with optional speakerId,
  * phone call record add/update/delete/favorite helpers, theme/profile/photo/sticker/group/tag/order/API/chat-preset setters,
  * diary/calendar/gallery/memo/xiaohongshu/B站/life event/active event helpers, desktop layout/widget helpers, migration for persisted data and default diary cleanup.
@@ -8,10 +8,15 @@
  * Persistence: localStorage key char-phone-framework; update version + migrate whenever old data must be corrected.
  */
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { createJSONStorage, persist } from 'zustand/middleware';
 import type { BilibiliSearchRecord, BilibiliVideoEntry } from './apps/bilibili/bilibiliTypes';
 import { createId } from './lib/utils';
 import { defaultImageGenerationConfig, type GeneratedImageRecord, type ImageGenerationConfig } from './lib/naiImage';
+import {
+  imageGenerationTaskHistoryLimit,
+  normalizeImageGenerationTasks,
+  type ImageGenerationTask,
+} from './lib/imageGenerationTasks';
 import { buildLifeEvent, normalizeLifeEvents, type LifeEvent, type LifeEventDraft } from './lifeEvents';
 import type { TheaterLengthKey, TheaterStyleKey, TheaterTopicDraft } from './apps/theater/theaterLogic';
 import { defaultUseruserWorldBookEntries } from './apps/theater/defaultUseruserWorldBook';
@@ -24,10 +29,17 @@ import {
   type UserProfileCharacterBindings,
   type UserProfilePreset,
 } from './apps/user-info/userProfilePrompt';
-import { defaultTtsConfig, type TtsConfig } from './tts';
+import { defaultTtsConfig, type TtsConfig, type TtsProvider } from './tts';
+import type { ChatPromptRoleMode } from './apps/shared/aiText';
+import { compactPersistedAppState, createQuotaSafeStateStorage } from './storePersistence';
 import { normalizeXiaohongshuNotes, normalizeXiaohongshuProfile } from './apps/xiaohongshu/xiaohongshuLogic';
 import type { XiaohongshuNote, XiaohongshuProfile } from './apps/xiaohongshu/types';
-import type { ThemeType } from './themes/themeOptions';
+import {
+  normalizeBubbleStyle,
+  normalizeTheme,
+  type BubbleStyleType,
+  type ThemeType,
+} from './themes/themeOptions';
 import { cleanupCharacterReferences } from './storeCharacterCleanup';
 import { limitWechatMoments, normalizeMomentContent, removeWechatMomentAt } from './apps/wechat/moments/momentsLogic';
 import {
@@ -43,6 +55,8 @@ import {
   type QqDynamicCommentLike,
   type QqDynamicPostLike,
 } from './apps/qq/dynamic/qqDynamicLogic';
+import { normalizeChatBottomLayout, type ChatBottomLayout } from './apps/wechat/chat/chatLayout';
+import { defaultGdMusicAdvancedSettings } from './apps/music/gdMusicApi';
 import {
   createDefaultAppPresets,
   mergeAppPresets,
@@ -54,19 +68,68 @@ import {
 } from './presets/softwarePresets';
 import { normalizeAppIconOverrides, updateAppIconOverride, type AppIconOverrides } from './shell/appIconOverrides';
 import { stripRemovedDefaultCharacters } from './removedDefaultCharacters';
+import { compileChatPresetEntries, normalizeChatPresetEntries, type ChatPresetEntry } from './apps/wechat/presets/chatPresetEntries';
+import {
+  createSmallPhonePresetEntries,
+  getSmallPhoneRpMode,
+  normalizeChatContextDepth,
+  smallPhonePresetNames,
+  smallPhonePresetTuning,
+} from './apps/wechat/presets/smallPhonePreset';
 
 export type { XiaohongshuNote, XiaohongshuProfile } from './apps/xiaohongshu/types';
 export type { LifeEvent } from './lifeEvents';
 export type { GeneratedImageRecord } from './lib/naiImage';
+export type { ImageGenerationTask } from './lib/imageGenerationTasks';
 export type QqChannel = QqChannelLike;
 export type QqChannelMessage = QqChannelMessageLike;
 export type QqDynamicComment = QqDynamicCommentLike;
 export type QqDynamicPost = QqDynamicPostLike;
 export type { ThemeType } from './themes/themeOptions';
-export type PhoneFontStyle = 'rounded' | 'system' | 'serif' | 'pixel';
+export type { BubbleStyleType } from './themes/themeOptions';
+export const phoneFontStyleIds = [
+  'rounded',
+  'system',
+  'serif',
+  'pixel',
+  'zen-maru',
+  'zcool-happy',
+  'zcool-xiaowei',
+  'zcool-qingke',
+  'ma-shan-zheng',
+  'long-cang',
+  'zen-old-mincho',
+] as const;
+export type PhoneFontStyle = (typeof phoneFontStyleIds)[number];
+
+export function normalizePhoneFontStyle(value: unknown): PhoneFontStyle {
+  return typeof value === 'string' && (phoneFontStyleIds as readonly string[]).includes(value)
+    ? value as PhoneFontStyle
+    : 'rounded';
+}
 import { starterStickerItems } from './apps/wechat/stickers/stickerPacks';
 
-const defaultAppPresets = createDefaultAppPresets();
+const defaultChatPresetEntries = createSmallPhonePresetEntries('short');
+const defaultChatPresetPrompt = compileChatPresetEntries(defaultChatPresetEntries, { replyStyle: 'burst' });
+
+function createSmallPhoneDefaultAppPresets() {
+  const presets = createDefaultAppPresets();
+  (['wechat', 'qq'] as const).forEach((key) => {
+    presets[key] = {
+      ...presets[key],
+      name: smallPhonePresetNames.short,
+      prompt: defaultChatPresetPrompt,
+      entries: [{
+        ...presets[key].entries[0],
+        name: smallPhonePresetNames.short,
+        prompt: defaultChatPresetPrompt,
+      }],
+    };
+  });
+  return presets;
+}
+
+const defaultAppPresets = createSmallPhoneDefaultAppPresets();
 const legacyPresetNames = {
   chat: '自然微信',
   browser: '活人感搜索',
@@ -109,14 +172,17 @@ export interface Character {
   avatar: string;
   description: string;
   personality: string;
+  scenario?: string;
+  messageExamples?: string;
   firstMessage: string;
   systemPrompt: string;
   imagePromptTags?: string;
   worldBook?: unknown;
   wallpaper?: string;
+  chatBackgroundImage?: string;
 }
 
-export type MessageKind = 'text' | 'voice' | 'sticker' | 'image' | 'call-note' | 'transfer' | 'red-packet' | 'shopping';
+export type MessageKind = 'text' | 'voice' | 'sticker' | 'image' | 'call-note' | 'theater' | 'transfer' | 'red-packet' | 'shopping';
 
 export interface ChatMessage {
   id: string;
@@ -215,6 +281,8 @@ export interface PurchaseRecord {
   itemName: string;
   amount: string;
   note: string;
+  direction?: 'income' | 'expense';
+  category?: string;
   createdAt: number;
 }
 
@@ -522,11 +590,29 @@ export interface MusicPlayerState {
 }
 
 export interface MusicSourceConfig {
+  gdBaseUrl: string;
+  gdSources: string;
+  gdQuality: string;
   neteaseBaseUrl: string;
   qqBaseUrl: string;
   minimaxBaseUrl: string;
   minimaxApiKey: string;
   minimaxModel: string;
+}
+
+export type TtsProviderConfigs = Partial<Record<TtsProvider, TtsConfig>>;
+
+export interface CustomImageProviderProfile {
+  id: string;
+  name: string;
+  config: ImageGenerationConfig;
+}
+
+export interface ImageProviderConfigs {
+  novelai: ImageGenerationConfig;
+  comfyui: ImageGenerationConfig;
+  customProfiles: CustomImageProviderProfile[];
+  activeCustomProfileId: string;
 }
 
 export interface CommunityVerificationConfig {
@@ -551,6 +637,7 @@ export interface AppLogEntry {
   type: 'info' | 'success' | 'error' | 'ai' | 'tts' | 'music' | 'image';
   title: string;
   detail?: string;
+  preserveFullDetail?: boolean;
   createdAt: number;
 }
 
@@ -573,6 +660,7 @@ export type Screen =
   | 'theater'
   | 'music'
   | 'memo'
+  | 'accounting'
   | 'active-events'
   | 'char-active'
   | 'browser'
@@ -583,6 +671,7 @@ export type Screen =
   | 'themes'
   | 'presets'
   | 'backup'
+  | 'image-tasks'
   | 'logs'
   | 'import';
 
@@ -595,7 +684,9 @@ interface AppState {
   activeChatId: string | null;
   activeChannel: 'wechat' | 'qq';
   theme: ThemeType;
+  bubbleStyle: BubbleStyleType;
   fontStyle: PhoneFontStyle;
+  chatBottomLayout: ChatBottomLayout;
   wallpaper: string | null;
   imageBed: string | null;
   userName: string;
@@ -636,8 +727,10 @@ interface AppState {
   apiKey: string;
   availableModels: string[];
   selectedModel: string;
+  chatPromptRoleMode: ChatPromptRoleMode;
   chatPresetName: string;
   chatPresetPrompt: string;
+  chatPresetEntries: ChatPresetEntry[];
   browserPresetName: string;
   browserPresetPrompt: string;
   xiaohongshuPresetName: string;
@@ -669,8 +762,14 @@ interface AppState {
   musicPlayer: MusicPlayerState;
   musicSourceConfig: MusicSourceConfig;
   ttsConfig: TtsConfig;
+  ttsProviderConfigs: TtsProviderConfigs;
   imageGenerationConfig: ImageGenerationConfig;
+  imageProviderConfigs: ImageProviderConfigs;
+  imageGenerationEnabled: boolean;
+  proactiveImageGenerationEnabled: boolean;
   generatedImageRecords: GeneratedImageRecord[];
+  imageGenerationTasks: ImageGenerationTask[];
+  aiContextExcludedSectionsByCharacter: Record<string, string[]>;
   communityVerificationConfig: CommunityVerificationConfig;
   appLogs: AppLogEntry[];
   presetName: string;
@@ -688,6 +787,7 @@ interface AppState {
   goBack: () => void;
   openChat: (characterId: string, channel: 'wechat' | 'qq') => void;
   addMessage: (characterId: string, channel: 'wechat' | 'qq', message: ChatMessage) => void;
+  addMessages: (characterId: string, channel: 'wechat' | 'qq', messages: ChatMessage[]) => void;
   updateMessage: (characterId: string, channel: 'wechat' | 'qq', messageId: string, updates: Partial<ChatMessage>) => void;
   deleteMessage: (characterId: string, channel: 'wechat' | 'qq', messageId: string) => void;
   toggleMessageFavorite: (characterId: string, channel: 'wechat' | 'qq', messageId: string) => void;
@@ -695,7 +795,9 @@ interface AppState {
   markVoiceMessagePlayed: (characterId: string, channel: 'wechat' | 'qq', messageId: string, playedAt?: number) => void;
   togglePinnedChat: (characterId: string, channel: 'wechat' | 'qq') => void;
   setTheme: (theme: ThemeType) => void;
+  setBubbleStyle: (bubbleStyle: BubbleStyleType) => void;
   setFontStyle: (fontStyle: PhoneFontStyle) => void;
+  setChatBottomLayout: (layout: ChatBottomLayout) => void;
   setWallpaper: (url: string | null) => void;
   setImageBed: (url: string | null) => void;
   setUserName: (name: string) => void;
@@ -762,7 +864,8 @@ interface AppState {
   deleteTheaterWorldBookEntry: (id: string) => void;
   setBrowserWorldBook: (content: string) => void;
   setBrowserApiConfig: (updates: Partial<Pick<AppState, 'browserApiBaseUrl' | 'browserApiKey' | 'browserSelectedModel'>>) => void;
-  setModelConfig: (updates: Partial<Pick<AppState, 'apiBaseUrl' | 'apiKey' | 'selectedModel' | 'chatPresetName' | 'chatPresetPrompt' | 'browserPresetName' | 'browserPresetPrompt' | 'xiaohongshuPresetName' | 'xiaohongshuPresetPrompt' | 'bilibiliPresetName' | 'bilibiliPresetPrompt' | 'phonePresetName' | 'phonePresetPrompt' | 'musicPresetName' | 'musicPresetPrompt' | 'chatContextDepth' | 'chatTemperature' | 'chatMaxTokens' | 'chatReplyStyle'>>) => void;
+  setModelConfig: (updates: Partial<Pick<AppState, 'apiBaseUrl' | 'apiKey' | 'selectedModel' | 'chatPromptRoleMode' | 'chatPresetName' | 'chatPresetPrompt' | 'browserPresetName' | 'browserPresetPrompt' | 'xiaohongshuPresetName' | 'xiaohongshuPresetPrompt' | 'bilibiliPresetName' | 'bilibiliPresetPrompt' | 'phonePresetName' | 'phonePresetPrompt' | 'musicPresetName' | 'musicPresetPrompt' | 'chatContextDepth' | 'chatTemperature' | 'chatMaxTokens' | 'chatReplyStyle'>>) => void;
+  setChatPresetEntries: (entries: ChatPresetEntry[], name?: string) => void;
   setAppPreset: (key: AppPresetKey, updates: Partial<AppPresetDraft>) => void;
   resetAppPreset: (key: AppPresetKey) => void;
   resetAllAppPresets: () => void;
@@ -811,8 +914,22 @@ interface AppState {
   setMusicPlayer: (updates: Partial<MusicPlayerState>) => void;
   setMusicSourceConfig: (updates: Partial<MusicSourceConfig>) => void;
   setTtsConfig: (updates: Partial<TtsConfig>) => void;
+  selectTtsProvider: (provider: TtsProvider) => void;
   setImageGenerationConfig: (updates: Partial<ImageGenerationConfig>) => void;
+  selectImageProvider: (provider: ImageGenerationConfig['provider']) => void;
+  addCustomImageProviderProfile: (name?: string) => string;
+  updateCustomImageProviderProfile: (id: string, updates: Partial<Pick<CustomImageProviderProfile, 'name' | 'config'>>) => void;
+  deleteCustomImageProviderProfile: (id: string) => void;
+  selectCustomImageProviderProfile: (id: string) => void;
+  setImageGenerationEnabled: (enabled: boolean) => void;
+  setProactiveImageGenerationEnabled: (enabled: boolean) => void;
   recordGeneratedImage: (record: GeneratedImageRecord) => string;
+  addImageGenerationTask: (task: Omit<ImageGenerationTask, 'id'> & Partial<Pick<ImageGenerationTask, 'id'>>) => string;
+  updateImageGenerationTask: (id: string, updates: Partial<Omit<ImageGenerationTask, 'id'>>) => void;
+  deleteImageGenerationTask: (id: string) => void;
+  clearImageGenerationTasks: () => void;
+  setAiContextSectionExcluded: (characterId: string, sectionId: string, excluded: boolean) => void;
+  clearAiContextSectionExclusions: (characterId: string) => void;
   setCommunityVerificationConfig: (updates: Partial<CommunityVerificationConfig>) => void;
   playMusicTrack: (trackId: string, record?: Partial<Omit<MusicListenRecord, 'id' | 'trackId' | 'createdAt'>>) => void;
   addMusicListenRecord: (record: Omit<MusicListenRecord, 'id' | 'createdAt'> & Partial<Pick<MusicListenRecord, 'id' | 'createdAt'>>) => string;
@@ -824,6 +941,7 @@ interface AppState {
   setLayoutMode: (mode: LayoutMode) => void;
   setDesktopPage: (page: 0 | 1) => void;
   setLayoutPosition: (id: string, position: LayoutPosition) => void;
+  resetLayoutPositions: (ids: string[]) => void;
   addCustomWidget: (page: 0 | 1, type: CustomWidget['type']) => void;
   updateCustomWidget: (id: string, updates: Partial<CustomWidget>) => void;
   removeCustomWidget: (id: string) => void;
@@ -945,22 +1063,164 @@ function migratePresetPrompt(saved: string | undefined, legacyName: string, save
 }
 
 const legacyDoubaoDefaultVoiceId = 'zh_female_cancan_uranus_bigtts';
+const defaultDoubaoVoiceId = 'zh_female_vv_uranus_bigtts';
 
 export function normalizeMigratedTtsConfig(ttsConfig: unknown): TtsConfig {
   const candidate = ttsConfig && typeof ttsConfig === 'object' ? ttsConfig as Partial<TtsConfig> : {};
   const provider = candidate.provider || 'browser';
-  const migratedVoiceId = provider === 'doubao' && candidate.voiceId === legacyDoubaoDefaultVoiceId
-    ? ''
-    : candidate.voiceId || defaultTtsConfig.voiceId;
+  const providerFallbacks: Record<TtsProvider, { model: string; voiceId: string }> = {
+    browser: { model: '', voiceId: 'default' },
+    local: { model: '', voiceId: 'default' },
+    openai: { model: 'gpt-4o-mini-tts', voiceId: 'alloy' },
+    gemini: { model: 'gemini-2.5-flash-preview-tts', voiceId: 'Kore' },
+    minimax: { model: 'speech-2.8-hd', voiceId: 'female-shaonv' },
+    doubao: { model: 'seed-tts-2.0', voiceId: defaultDoubaoVoiceId },
+  };
+  const fallback = providerFallbacks[provider];
+  const candidateModel = typeof candidate.model === 'string' ? candidate.model : fallback.model;
+  const migratedVoiceId = provider === 'doubao' && candidateModel === 'seed-icl-2.0'
+    ? (typeof candidate.voiceId === 'string' ? candidate.voiceId : '')
+    : provider === 'doubao' && (candidate.voiceId === legacyDoubaoDefaultVoiceId || !candidate.voiceId)
+      ? defaultDoubaoVoiceId
+      : typeof candidate.voiceId === 'string' ? candidate.voiceId : fallback.voiceId;
   return {
     ...defaultTtsConfig,
     ...candidate,
     provider,
     apiKey: candidate.apiKey || '',
     appId: candidate.appId || '',
-    model: candidate.model || defaultTtsConfig.model,
+    model: candidateModel,
     voiceId: migratedVoiceId,
   };
+}
+
+function getDefaultTtsConfigForProvider(provider: TtsProvider): TtsConfig {
+  const providerDefaults: Record<TtsProvider, Partial<TtsConfig>> = {
+    browser: { baseUrl: '', model: '', voiceId: 'default' },
+    local: { baseUrl: 'http://127.0.0.1:9880/tts', model: '', voiceId: 'default' },
+    openai: { baseUrl: '', model: 'gpt-4o-mini-tts', voiceId: 'alloy' },
+    gemini: { baseUrl: '', model: 'gemini-2.5-flash-preview-tts', voiceId: 'Kore' },
+    minimax: { baseUrl: 'https://api.minimax.io/v1/t2a_v2', model: 'speech-2.8-hd', voiceId: 'female-shaonv' },
+    doubao: { baseUrl: 'https://openspeech.bytedance.com/api/v3/tts/unidirectional', model: 'seed-tts-2.0', voiceId: defaultDoubaoVoiceId },
+  };
+  return {
+    ...defaultTtsConfig,
+    ...providerDefaults[provider],
+    provider,
+    apiKey: '',
+    appId: '',
+  };
+}
+
+export function normalizeTtsProviderConfigs(value: unknown, activeConfig: TtsConfig): TtsProviderConfigs {
+  const candidate = value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Partial<Record<TtsProvider, unknown>>
+    : {};
+  const providers: TtsProvider[] = ['browser', 'local', 'openai', 'gemini', 'minimax', 'doubao'];
+  const configs = Object.fromEntries(providers.map((provider) => {
+    const saved = candidate[provider];
+    const normalized = normalizeMigratedTtsConfig({
+      ...getDefaultTtsConfigForProvider(provider),
+      ...(saved && typeof saved === 'object' ? saved : {}),
+      provider,
+    });
+    return [provider, normalized];
+  })) as TtsProviderConfigs;
+  if (!candidate[activeConfig.provider] || typeof candidate[activeConfig.provider] !== 'object') {
+    configs[activeConfig.provider] = normalizeMigratedTtsConfig(activeConfig);
+  }
+  return configs;
+}
+
+function normalizeImageGenerationConfig(value: unknown, provider?: ImageGenerationConfig['provider']): ImageGenerationConfig {
+  const candidate = value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Partial<ImageGenerationConfig>
+    : {};
+  const nextProvider = provider || candidate.provider || 'novelai';
+  const defaultBaseUrl = nextProvider === 'comfyui'
+    ? 'http://127.0.0.1:8188'
+    : nextProvider === 'custom'
+      ? ''
+      : defaultImageGenerationConfig.baseUrl;
+  const candidateBaseUrl = typeof candidate.baseUrl === 'string' ? candidate.baseUrl.trim() : '';
+  return {
+    ...defaultImageGenerationConfig,
+    ...candidate,
+    provider: nextProvider,
+    baseUrl: candidateBaseUrl && candidateBaseUrl !== 'https://image.novelai.net/ai/generate-image'
+      ? candidateBaseUrl
+      : defaultBaseUrl,
+    apiKey: typeof candidate.apiKey === 'string' ? candidate.apiKey : '',
+    model: typeof candidate.model === 'string'
+      ? candidate.model
+      : nextProvider === 'novelai' ? defaultImageGenerationConfig.model : '',
+    availableModels: Array.isArray(candidate.availableModels) ? candidate.availableModels.filter((item): item is string => typeof item === 'string') : [],
+  };
+}
+
+function createDefaultImageProviderConfigs(): ImageProviderConfigs {
+  const customId = 'custom-image-default';
+  return {
+    novelai: normalizeImageGenerationConfig(defaultImageGenerationConfig, 'novelai'),
+    comfyui: normalizeImageGenerationConfig({}, 'comfyui'),
+    customProfiles: [{ id: customId, name: '公益站 1', config: normalizeImageGenerationConfig({}, 'custom') }],
+    activeCustomProfileId: customId,
+  };
+}
+
+export function normalizeImageProviderConfigs(value: unknown, activeConfig: ImageGenerationConfig): ImageProviderConfigs {
+  const defaults = createDefaultImageProviderConfigs();
+  const candidate = value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Partial<ImageProviderConfigs>
+    : {};
+  const hasSavedNovelai = Boolean(candidate.novelai && typeof candidate.novelai === 'object');
+  const hasSavedComfyui = Boolean(candidate.comfyui && typeof candidate.comfyui === 'object');
+  const hasSavedCustomProfiles = Array.isArray(candidate.customProfiles) && candidate.customProfiles.length > 0;
+  const customProfiles = Array.isArray(candidate.customProfiles)
+    ? candidate.customProfiles.flatMap((profile, index) => {
+      if (!profile || typeof profile !== 'object') return [];
+      const item = profile as Partial<CustomImageProviderProfile>;
+      const id = typeof item.id === 'string' && item.id.trim() ? item.id : `custom-image-${index + 1}`;
+      return [{
+        id,
+        name: typeof item.name === 'string' && item.name.trim() ? item.name.trim() : `公益站 ${index + 1}`,
+        config: normalizeImageGenerationConfig(item.config, 'custom'),
+      }];
+    })
+    : [];
+  if (activeConfig.provider === 'custom' && customProfiles.length === 0) {
+    customProfiles.push({ id: defaults.activeCustomProfileId, name: '公益站 1', config: normalizeImageGenerationConfig(activeConfig, 'custom') });
+  }
+  if (customProfiles.length === 0) customProfiles.push(...defaults.customProfiles);
+  const activeCustomProfileId = customProfiles.some((item) => item.id === candidate.activeCustomProfileId)
+    ? String(candidate.activeCustomProfileId)
+    : customProfiles[0].id;
+  const next: ImageProviderConfigs = {
+    novelai: normalizeImageGenerationConfig(candidate.novelai, 'novelai'),
+    comfyui: normalizeImageGenerationConfig(candidate.comfyui, 'comfyui'),
+    customProfiles,
+    activeCustomProfileId,
+  };
+  if (activeConfig.provider === 'novelai' && !hasSavedNovelai) next.novelai = normalizeImageGenerationConfig(activeConfig, 'novelai');
+  if (activeConfig.provider === 'comfyui' && !hasSavedComfyui) next.comfyui = normalizeImageGenerationConfig(activeConfig, 'comfyui');
+  if (activeConfig.provider === 'custom' && !hasSavedCustomProfiles) {
+    next.customProfiles = next.customProfiles.map((profile) => profile.id === activeCustomProfileId
+      ? { ...profile, config: normalizeImageGenerationConfig(activeConfig, 'custom') }
+      : profile);
+  }
+  return next;
+}
+
+function normalizeAiContextExclusions(value: unknown) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  return Object.fromEntries(Object.entries(value as Record<string, unknown>).flatMap(([characterId, sectionIds]) => {
+    if (!characterId.trim() || !Array.isArray(sectionIds)) return [];
+    const normalized = Array.from(new Set(sectionIds
+      .filter((item): item is string => typeof item === 'string')
+      .map((item) => item.trim())
+      .filter(Boolean))).slice(0, 32);
+    return normalized.length > 0 ? [[characterId, normalized]] : [];
+  }));
 }
 
 function normalizeChatSessions(chatSessions: unknown): Record<string, ChatSession> {
@@ -1419,8 +1679,7 @@ const defaultMusicTracks: MusicTrack[] = normalizeMusicTracks([
 
 const defaultMusicPlaylists: MusicPlaylist[] = [];
 const defaultMusicSourceConfig: MusicSourceConfig = {
-  neteaseBaseUrl: '',
-  qqBaseUrl: '',
+  ...defaultGdMusicAdvancedSettings,
   minimaxBaseUrl: 'https://api.minimax.io/v1/music_generation',
   minimaxApiKey: '',
   minimaxModel: 'music-2.6',
@@ -1463,6 +1722,334 @@ const defaultStickers: StickerItem[] = [
   },
 ];
 
+export function migratePersistedAppState(persistedState: unknown, fromVersion: number) {
+        const persisted = persistedState as Partial<AppState> & { qqBottomLayout?: unknown; chatBackgroundImage?: unknown };
+        const {
+          qqBottomLayout: legacyQqBottomLayout,
+          chatBackgroundImage: legacyChatBackgroundImage,
+          ...stateWithoutLegacyQqLayout
+        } = persisted;
+        const state = stateWithoutLegacyQqLayout as Partial<AppState>;
+        const persistedStickers = Array.isArray(state.stickers) ? state.stickers : [];
+        const stickers = persistedStickers.length > 0
+          ? persistedStickers.map((sticker, index) => {
+              if (typeof sticker === 'string') {
+                return { id: `legacy-sticker-${index}`, url: sticker, label: '旧版内置表情包', favorite: false };
+              }
+              return { ...sticker, favorite: Boolean(sticker.favorite) };
+            })
+          : defaultStickers;
+        const stickersWithStarters = Array.from(
+          new Map([...starterStickerItems, ...stickers].map((sticker) => [sticker.id, sticker])).values(),
+        );
+        const memos = normalizeMemos(state.memos);
+        const phoneCallRecords = normalizePhoneCallRecords(state.phoneCallRecords);
+        const theaterScenes = normalizeTheaterScenes(state.theaterScenes);
+        const theaterTopicEntries = normalizeTheaterTopicEntries(state.theaterTopicEntries);
+        const theaterWorldBookEntries = mergeDefaultTheaterWorldBookEntries(normalizeTheaterWorldBookEntries(state.theaterWorldBookEntries));
+        const musicTracks = normalizeMusicTracks(state.musicTracks);
+        const defaultTrackAudioUrls = new Map(defaultMusicTracks.map((track) => [track.id, track.audioUrl]));
+        const nextMusicTracks = (musicTracks.length > 0 ? musicTracks : defaultMusicTracks).map((track) => ({
+          ...track,
+          audioUrl: track.audioUrl || defaultTrackAudioUrls.get(track.id),
+        }));
+        const musicPlaylists = normalizeMusicPlaylists(state.musicPlaylists, nextMusicTracks)
+          .filter((playlist) => playlist.id !== 'music-playlist-shared' && playlist.id !== 'music-playlist-daily');
+        const nextMusicPlaylists = musicPlaylists.length > 0 ? musicPlaylists : defaultMusicPlaylists;
+        const musicListenRecords = normalizeMusicListenRecords(state.musicListenRecords, nextMusicTracks);
+        const playerCandidate = state.musicPlayer && typeof state.musicPlayer === 'object' ? state.musicPlayer : undefined;
+        const playerTrackId = playerCandidate?.trackId && nextMusicTracks.some((track) => track.id === playerCandidate.trackId)
+          ? playerCandidate.trackId
+          : nextMusicTracks[0]?.id;
+        const migratedAppPresets = mergeAppPresets(state.appPresets);
+        const migratedPresetValues = {
+          chatName: migratePresetName(state.chatPresetName, legacyPresetNames.chat, defaultSoftwarePresets.chat.name),
+          chatPrompt: migratePresetPrompt(state.chatPresetPrompt, legacyPresetNames.chat, state.chatPresetName, defaultSoftwarePresets.chat.prompt),
+          browserName: migratePresetName(state.browserPresetName, legacyPresetNames.browser, defaultSoftwarePresets.browser.name),
+          browserPrompt: migratePresetPrompt(state.browserPresetPrompt, legacyPresetNames.browser, state.browserPresetName, defaultSoftwarePresets.browser.prompt),
+          xiaohongshuName: migratePresetName(state.xiaohongshuPresetName, legacyPresetNames.xiaohongshu, defaultSoftwarePresets.xiaohongshu.name),
+          xiaohongshuPrompt: migratePresetPrompt(state.xiaohongshuPresetPrompt, legacyPresetNames.xiaohongshu, state.xiaohongshuPresetName, defaultSoftwarePresets.xiaohongshu.prompt),
+          bilibiliName: migratePresetName(state.bilibiliPresetName, legacyPresetNames.bilibili, defaultSoftwarePresets.bilibili.name),
+          bilibiliPrompt: migratePresetPrompt(state.bilibiliPresetPrompt, legacyPresetNames.bilibili, state.bilibiliPresetName, defaultSoftwarePresets.bilibili.prompt),
+          phoneName: migratePresetName(state.phonePresetName, legacyPresetNames.phone, defaultSoftwarePresets.phone.name),
+          phonePrompt: migratePresetPrompt(state.phonePresetPrompt, legacyPresetNames.phone, state.phonePresetName, defaultSoftwarePresets.phone.prompt),
+          musicName: migratePresetName(state.musicPresetName, legacyPresetNames.music, defaultSoftwarePresets.music.name),
+          musicPrompt: migratePresetPrompt(state.musicPresetPrompt, legacyPresetNames.music, state.musicPresetName, defaultSoftwarePresets.music.prompt),
+        };
+        const rawChatPresetEntries = normalizeChatPresetEntries(state.chatPresetEntries);
+        const removedBuiltInPresetNames = new Set([
+          '自然微信',
+          '小手机专用 · 短长 RP',
+          '活人感微信',
+          'AI助手',
+          '黏人连发',
+          '克制冷淡',
+        ]);
+        const hasSmallPhoneRpEntries = rawChatPresetEntries.some((entry) => entry.id === 'small-phone-short-rp')
+          && rawChatPresetEntries.some((entry) => entry.id === 'small-phone-long-rp');
+        const shouldMigrateToSmallPhonePreset = hasSmallPhoneRpEntries
+          || removedBuiltInPresetNames.has(state.chatPresetName || '')
+          || (!state.chatPresetName && rawChatPresetEntries.length === 0);
+        const migratedReplyStyle = shouldMigrateToSmallPhonePreset
+          ? (getSmallPhoneRpMode(state.chatReplyStyle || 'burst') === 'long' ? 'single' : 'burst')
+          : state.chatReplyStyle || 'auto';
+        const chatPresetEntries = shouldMigrateToSmallPhonePreset
+          ? createSmallPhonePresetEntries(getSmallPhoneRpMode(migratedReplyStyle), rawChatPresetEntries)
+          : rawChatPresetEntries;
+        const migratedChatPresetName = shouldMigrateToSmallPhonePreset
+          ? smallPhonePresetNames[getSmallPhoneRpMode(migratedReplyStyle)]
+          : migratedPresetValues.chatName;
+        const migratedChatPresetPrompt = chatPresetEntries.length > 0
+          ? compileChatPresetEntries(chatPresetEntries, { replyStyle: migratedReplyStyle })
+          : migratedPresetValues.chatPrompt;
+        const migratedRpMode = getSmallPhoneRpMode(migratedReplyStyle);
+        const presetTuning = smallPhonePresetTuning[migratedRpMode];
+        const migrateOldBuiltInTuning = fromVersion < 78 && shouldMigrateToSmallPhonePreset;
+        const migratedContextDepth = migrateOldBuiltInTuning && state.chatContextDepth === 600
+          ? presetTuning.contextDepth
+          : normalizeChatContextDepth(state.chatContextDepth, presetTuning.contextDepth);
+        const migratedMaxTokens = migrateOldBuiltInTuning && state.chatMaxTokens === 1800
+          ? presetTuning.maxTokens
+          : state.chatMaxTokens || presetTuning.maxTokens;
+        migratedAppPresets.wechat = {
+          ...migratedAppPresets.wechat,
+          name: migratedChatPresetName,
+          prompt: migratedChatPresetPrompt,
+        };
+        migratedAppPresets.qq = {
+          ...migratedAppPresets.qq,
+          name: migratedChatPresetName,
+          prompt: migratedChatPresetPrompt,
+        };
+        migratedAppPresets.browser = {
+          ...migratedAppPresets.browser,
+          name: migratedPresetValues.browserName,
+          prompt: migratedPresetValues.browserPrompt,
+        };
+        migratedAppPresets.xiaohongshu = {
+          ...migratedAppPresets.xiaohongshu,
+          name: migratedPresetValues.xiaohongshuName,
+          prompt: migratedPresetValues.xiaohongshuPrompt,
+        };
+        migratedAppPresets.bilibili = {
+          ...migratedAppPresets.bilibili,
+          name: migratedPresetValues.bilibiliName,
+          prompt: migratedPresetValues.bilibiliPrompt,
+        };
+        migratedAppPresets.phone = {
+          ...migratedAppPresets.phone,
+          name: migratedPresetValues.phoneName,
+          prompt: migratedPresetValues.phonePrompt,
+        };
+        migratedAppPresets.music = {
+          ...migratedAppPresets.music,
+          name: migratedPresetValues.musicName,
+          prompt: migratedPresetValues.musicPrompt,
+        };
+        const userPresetState = normalizeUserProfilePresets(
+          state.userProfiles,
+          state.userName || '我',
+          state.userProfile,
+          state.activeUserProfileId,
+        );
+        const activeUserPreset = userPresetState.presets.find((preset) => preset.id === userPresetState.activeId) || userPresetState.presets[0];
+        const userProfileCharacterBindings = normalizeUserProfileCharacterBindings(
+          state.userProfileCharacterBindings,
+          userPresetState.presets,
+        );
+        const rawTtsConfig: Partial<TtsConfig> = state.ttsConfig && typeof state.ttsConfig === 'object'
+          ? { ...state.ttsConfig }
+          : {};
+        if (rawTtsConfig.provider === 'doubao' && rawTtsConfig.voiceId === 'alloy') rawTtsConfig.voiceId = '';
+        if ((rawTtsConfig.provider === 'browser' || rawTtsConfig.provider === 'local') && rawTtsConfig.model === 'gpt-4o-mini-tts') rawTtsConfig.model = '';
+        const rawTtsProviderConfigs = state.ttsProviderConfigs && typeof state.ttsProviderConfigs === 'object'
+          ? { ...state.ttsProviderConfigs }
+          : {};
+        const contaminatedDoubao = rawTtsProviderConfigs.doubao;
+        if (contaminatedDoubao?.voiceId === 'alloy') rawTtsProviderConfigs.doubao = { ...contaminatedDoubao, voiceId: '' };
+        (['browser', 'local'] as const).forEach((provider) => {
+          const profile = rawTtsProviderConfigs[provider];
+          if (profile?.model === 'gpt-4o-mini-tts') rawTtsProviderConfigs[provider] = { ...profile, model: '' };
+        });
+        const migratedTtsConfig = normalizeMigratedTtsConfig(rawTtsConfig);
+        const migratedImageConfig = normalizeImageGenerationConfig(state.imageGenerationConfig);
+        const ttsProviderConfigs = normalizeTtsProviderConfigs(rawTtsProviderConfigs, migratedTtsConfig);
+        const imageProviderConfigs = normalizeImageProviderConfigs(state.imageProviderConfigs, migratedImageConfig);
+        const activeImageConfig = migratedImageConfig.provider === 'novelai'
+          ? imageProviderConfigs.novelai
+          : migratedImageConfig.provider === 'comfyui'
+            ? imageProviderConfigs.comfyui
+            : imageProviderConfigs.customProfiles.find((profile) => profile.id === imageProviderConfigs.activeCustomProfileId)?.config
+              || migratedImageConfig;
+        const activeTtsConfig = ttsProviderConfigs[migratedTtsConfig.provider] || migratedTtsConfig;
+        const migratedCharacters = stripRemovedDefaultCharacters(state.characters);
+        const legacyBackgroundReference = typeof legacyChatBackgroundImage === 'string' && legacyChatBackgroundImage.trim()
+          ? legacyChatBackgroundImage.trim()
+          : '';
+        const charactersWithScopedBackgrounds = migratedCharacters.map((character) => {
+          const scopedBackgroundReference = typeof character.chatBackgroundImage === 'string' && character.chatBackgroundImage.trim()
+            ? character.chatBackgroundImage.trim()
+            : legacyBackgroundReference;
+          const characterWithoutEmptyBackground = { ...character };
+          delete characterWithoutEmptyBackground.chatBackgroundImage;
+          return scopedBackgroundReference
+            ? { ...characterWithoutEmptyBackground, chatBackgroundImage: scopedBackgroundReference }
+            : characterWithoutEmptyBackground;
+        });
+        return {
+          ...state,
+          activeScreen: 'desktop',
+          previousScreen: 'desktop',
+          activeChatId: null,
+          chatSessions: normalizeChatSessions(state.chatSessions),
+          pinnedChatIds: state.pinnedChatIds && typeof state.pinnedChatIds === 'object' && !Array.isArray(state.pinnedChatIds) ? state.pinnedChatIds : {},
+          theme: normalizeTheme(state.theme),
+          bubbleStyle: normalizeBubbleStyle(state.bubbleStyle),
+          fontStyle: normalizePhoneFontStyle(state.fontStyle),
+          chatBottomLayout: normalizeChatBottomLayout(state.chatBottomLayout || legacyQqBottomLayout),
+          layoutPositions: fromVersion >= 67 && state.layoutPositions && typeof state.layoutPositions === 'object'
+            ? state.layoutPositions
+            : {},
+          desktopPage: 0,
+          appIconOverrides: normalizeAppIconOverrides(state.appIconOverrides),
+          wechatId: !state.wechatId || state.wechatId === 'Muon0417' ? '9142' : state.wechatId,
+          userName: activeUserPreset.name,
+          userProfile: normalizeUserProfile(activeUserPreset.profile),
+          userProfiles: userPresetState.presets,
+          activeUserProfileId: userPresetState.activeId,
+          userProfileCharacterBindings,
+          wechatStatus: state.wechatStatus && !legacyWechatStatuses.has(state.wechatStatus) ? state.wechatStatus : '',
+          wechatPhotos: state.wechatPhotos || [],
+          wechatMoments: state.wechatMoments || [],
+          stickers: stickersWithStarters,
+          characters: charactersWithScopedBackgrounds,
+          groupChats: state.groupChats || [],
+          qqChannels: Array.isArray(state.qqChannels) && state.qqChannels.length > 0 ? state.qqChannels : getDefaultQqChannels(),
+          qqChannelMessages: Array.isArray(state.qqChannelMessages) ? state.qqChannelMessages : [],
+          qqDynamicPosts: Array.isArray(state.qqDynamicPosts) ? state.qqDynamicPosts : [],
+          contactTags: state.contactTags || {},
+          purchaseRecords: Array.isArray(state.purchaseRecords)
+            ? state.purchaseRecords.map((record) => ({
+                ...record,
+                direction: record.direction === 'income' ? 'income' : 'expense',
+                category: typeof record.category === 'string' && record.category.trim() ? record.category.trim() : undefined,
+              }))
+            : [],
+          lifeEvents: normalizeLifeEvents(state.lifeEvents),
+          activeEventLastRefreshAt: typeof state.activeEventLastRefreshAt === 'number' ? state.activeEventLastRefreshAt : 0,
+          activeReminderAutomationEnabled: typeof state.activeReminderAutomationEnabled === 'boolean' ? state.activeReminderAutomationEnabled : true,
+          randomProactiveMessagesEnabled: typeof state.randomProactiveMessagesEnabled === 'boolean' ? state.randomProactiveMessagesEnabled : false,
+          phoneCallRecords,
+          bilibiliEntries: Array.isArray(state.bilibiliEntries) ? state.bilibiliEntries : [],
+          bilibiliSearches: Array.isArray(state.bilibiliSearches) ? state.bilibiliSearches : [],
+          browserSearches: Array.isArray(state.browserSearches) ? state.browserSearches : [],
+          browserBookmarks: Array.isArray(state.browserBookmarks) ? state.browserBookmarks : [],
+          browserHistory: Array.isArray(state.browserHistory) ? state.browserHistory : [],
+          theaterScenes,
+          theaterTopicEntries,
+          theaterWorldBookEntries,
+          browserWorldBook: state.browserWorldBook || '',
+          browserApiBaseUrl: state.browserApiBaseUrl || '',
+          browserApiKey: state.browserApiKey || '',
+          browserSelectedModel: state.browserSelectedModel || '',
+          apiBaseUrl: state.apiBaseUrl || '',
+          apiKey: state.apiKey || '',
+          availableModels: state.availableModels || [],
+          selectedModel: state.selectedModel || '',
+          chatPromptRoleMode: state.chatPromptRoleMode === 'default' || state.chatPromptRoleMode === 'system' || state.chatPromptRoleMode === 'user' ? state.chatPromptRoleMode : 'default',
+          chatPresetName: migratedChatPresetName,
+          chatPresetPrompt: migratedChatPresetPrompt,
+          chatPresetEntries,
+          browserPresetName: migratedPresetValues.browserName,
+          browserPresetPrompt: migratedPresetValues.browserPrompt,
+          xiaohongshuPresetName: migratedPresetValues.xiaohongshuName,
+          xiaohongshuPresetPrompt: migratedPresetValues.xiaohongshuPrompt,
+          bilibiliPresetName: migratedPresetValues.bilibiliName,
+          bilibiliPresetPrompt: migratedPresetValues.bilibiliPrompt,
+          phonePresetName: migratedPresetValues.phoneName,
+          phonePresetPrompt: migratedPresetValues.phonePrompt,
+          musicPresetName: migratedPresetValues.musicName,
+          musicPresetPrompt: migratedPresetValues.musicPrompt,
+          appPresets: migratedAppPresets,
+          chatContextDepth: migratedContextDepth,
+          chatTemperature: typeof state.chatTemperature === 'number' ? state.chatTemperature : presetTuning.temperature,
+          chatMaxTokens: fromVersion < 71 && state.chatMaxTokens === 520 ? 1200 : migratedMaxTokens,
+          chatReplyStyle: migratedReplyStyle,
+          diaries: normalizeDiaryEntries(state.diaries),
+          calendarEvents: normalizeCalendarEvents(state.calendarEvents),
+          galleryPhotos: normalizeGalleryPhotos(state.galleryPhotos),
+          galleryTags: Array.isArray(state.galleryTags) && state.galleryTags.length > 0 ? state.galleryTags : ['自拍', '截图', '风景', '约会', '日常', '穿搭', '吃饭', '旅行', '给char看'],
+          memos,
+          memoTags: normalizeMemoTags(state.memoTags, memos),
+          memoCharWriter: state.memoCharWriter || { enabled: false },
+          xiaohongshuProfile: normalizeXiaohongshuProfile(state.xiaohongshuProfile),
+          xiaohongshuNotes: normalizeXiaohongshuNotes(state.xiaohongshuNotes),
+          xiaohongshuFollowingIds: Array.isArray(state.xiaohongshuFollowingIds)
+            ? state.xiaohongshuFollowingIds.map((id) => String(id).trim()).filter(Boolean)
+            : [],
+          musicTracks: nextMusicTracks,
+          musicPlaylists: nextMusicPlaylists,
+          musicListenRecords,
+          musicPlayer: {
+            trackId: playerTrackId,
+            playing: false,
+            progress: typeof playerCandidate?.progress === 'number' ? Math.max(0, Math.min(100, playerCandidate.progress)) : 0,
+            duration: typeof playerCandidate?.duration === 'number' ? playerCandidate.duration : 0,
+            repeat: Boolean(playerCandidate?.repeat),
+            shuffle: Boolean(playerCandidate?.shuffle),
+          },
+          musicSourceConfig: {
+            ...defaultMusicSourceConfig,
+            ...(state.musicSourceConfig && typeof state.musicSourceConfig === 'object' ? state.musicSourceConfig : {}),
+          },
+          ttsConfig: activeTtsConfig,
+          ttsProviderConfigs,
+          imageGenerationConfig: activeImageConfig,
+          imageProviderConfigs,
+          imageGenerationEnabled: typeof state.imageGenerationEnabled === 'boolean' ? state.imageGenerationEnabled : true,
+          proactiveImageGenerationEnabled: typeof state.proactiveImageGenerationEnabled === 'boolean' ? state.proactiveImageGenerationEnabled : false,
+          generatedImageRecords: Array.isArray(state.generatedImageRecords) ? state.generatedImageRecords : [],
+          imageGenerationTasks: normalizeImageGenerationTasks(state.imageGenerationTasks),
+          aiContextExcludedSectionsByCharacter: normalizeAiContextExclusions(state.aiContextExcludedSectionsByCharacter),
+          communityVerificationConfig: {
+            ...defaultCommunityVerificationConfig,
+            ...(state.communityVerificationConfig && typeof state.communityVerificationConfig === 'object' ? state.communityVerificationConfig : {}),
+            authorizationUrl: typeof state.communityVerificationConfig?.authorizationUrl === 'string' && state.communityVerificationConfig.authorizationUrl.trim()
+              && !state.communityVerificationConfig.authorizationUrl.includes('api.xiejiang.de5.net')
+              ? state.communityVerificationConfig.authorizationUrl
+              : defaultCommunityVerificationConfig.authorizationUrl,
+            discordClientId: typeof state.communityVerificationConfig?.discordClientId === 'string'
+              ? state.communityVerificationConfig.discordClientId.trim()
+              : defaultCommunityVerificationConfig.discordClientId,
+            discordGuildIds: Array.isArray(state.communityVerificationConfig?.discordGuildIds) && state.communityVerificationConfig.discordGuildIds.length > 0
+              ? state.communityVerificationConfig.discordGuildIds.map((id) => String(id).trim()).filter(Boolean)
+              : defaultCommunityVerificationConfig.discordGuildIds,
+            discordRoleIds: Array.isArray(state.communityVerificationConfig?.discordRoleIds)
+              ? state.communityVerificationConfig.discordRoleIds.map((id) => String(id).trim()).filter(Boolean)
+              : defaultCommunityVerificationConfig.discordRoleIds,
+            discordInviteUrls: Array.isArray(state.communityVerificationConfig?.discordInviteUrls) && state.communityVerificationConfig.discordInviteUrls.length > 0
+              ? state.communityVerificationConfig.discordInviteUrls.map((url) => String(url).trim()).filter(Boolean)
+              : defaultCommunityVerificationConfig.discordInviteUrls,
+            requiredGroups: Array.isArray(state.communityVerificationConfig?.requiredGroups) && state.communityVerificationConfig.requiredGroups.length > 0
+              ? state.communityVerificationConfig.requiredGroups.map((group) => String(group).trim()).filter(Boolean)
+              : defaultCommunityVerificationConfig.requiredGroups,
+            verifiedGroups: Array.isArray(state.communityVerificationConfig?.verifiedGroups)
+              ? state.communityVerificationConfig.verifiedGroups.map((group) => String(group).trim()).filter(Boolean)
+              : [],
+            verificationMethod: state.communityVerificationConfig?.verificationMethod
+              || (Array.isArray(state.communityVerificationConfig?.verifiedGroups) && state.communityVerificationConfig.verifiedGroups.length > 0 ? 'discord' : undefined),
+            backdoorApiUrl: typeof state.communityVerificationConfig?.backdoorApiUrl === 'string'
+              ? state.communityVerificationConfig.backdoorApiUrl.trim()
+              : defaultCommunityVerificationConfig.backdoorApiUrl,
+            backdoorVerifiedUntil: typeof state.communityVerificationConfig?.backdoorVerifiedUntil === 'number'
+              ? state.communityVerificationConfig.backdoorVerifiedUntil
+              : undefined,
+          },
+          appLogs: Array.isArray(state.appLogs) ? state.appLogs.slice(0, 120) : [],
+        } as AppState;
+}
+
+
 export const useAppStore = create<AppState>()(
   persist(
     (set) => ({
@@ -1474,7 +2061,9 @@ export const useAppStore = create<AppState>()(
       activeChatId: null,
       activeChannel: 'wechat',
       theme: 'pastel',
+      bubbleStyle: 'theme',
       fontStyle: 'rounded',
+      chatBottomLayout: 'default',
       wallpaper: null,
       imageBed: null,
       userName: '我',
@@ -1515,8 +2104,10 @@ export const useAppStore = create<AppState>()(
       apiKey: '',
       availableModels: [],
       selectedModel: '',
+      chatPromptRoleMode: 'default',
       chatPresetName: defaultSoftwarePresets.chat.name,
       chatPresetPrompt: defaultSoftwarePresets.chat.prompt,
+      chatPresetEntries: defaultChatPresetEntries,
       browserPresetName: defaultSoftwarePresets.browser.name,
       browserPresetPrompt: defaultSoftwarePresets.browser.prompt,
       xiaohongshuPresetName: defaultSoftwarePresets.xiaohongshu.name,
@@ -1528,10 +2119,10 @@ export const useAppStore = create<AppState>()(
       musicPresetName: defaultSoftwarePresets.music.name,
       musicPresetPrompt: defaultSoftwarePresets.music.prompt,
       appPresets: defaultAppPresets,
-      chatContextDepth: 500,
-      chatTemperature: 0.8,
-      chatMaxTokens: 520,
-      chatReplyStyle: 'auto',
+      chatContextDepth: smallPhonePresetTuning.short.contextDepth,
+      chatTemperature: smallPhonePresetTuning.short.temperature,
+      chatMaxTokens: smallPhonePresetTuning.short.maxTokens,
+      chatReplyStyle: smallPhonePresetTuning.short.replyStyle,
       diaries: [],
       calendarEvents: [],
       galleryPhotos: [],
@@ -1553,8 +2144,14 @@ export const useAppStore = create<AppState>()(
       musicPlayer: { trackId: defaultMusicTracks[0]?.id, playing: false, progress: 0, duration: 0, repeat: false, shuffle: false },
       musicSourceConfig: defaultMusicSourceConfig,
       ttsConfig: defaultTtsConfig,
+      ttsProviderConfigs: normalizeTtsProviderConfigs({}, defaultTtsConfig),
       imageGenerationConfig: defaultImageGenerationConfig,
+      imageProviderConfigs: createDefaultImageProviderConfigs(),
+      imageGenerationEnabled: true,
+      proactiveImageGenerationEnabled: false,
       generatedImageRecords: [],
+      imageGenerationTasks: [],
+      aiContextExcludedSectionsByCharacter: {},
       communityVerificationConfig: defaultCommunityVerificationConfig,
       appLogs: [],
       presetName: '手机沉浸破限预设',
@@ -1577,6 +2174,9 @@ export const useAppStore = create<AppState>()(
             firstMessage: character.firstMessage || '',
             systemPrompt: character.systemPrompt || '',
             imagePromptTags: character.imagePromptTags || '',
+            chatBackgroundImage: typeof character.chatBackgroundImage === 'string' && character.chatBackgroundImage.trim()
+              ? character.chatBackgroundImage.trim()
+              : undefined,
           };
           const exists = state.characters.some((item) => item.id === normalized.id);
           return {
@@ -1603,6 +2203,9 @@ export const useAppStore = create<AppState>()(
           return {
             ...cleaned,
             pinnedChatIds: removePinnedChatIds(cleaned.pinnedChatIds, [id]),
+            aiContextExcludedSectionsByCharacter: Object.fromEntries(
+              Object.entries(state.aiContextExcludedSectionsByCharacter).filter(([characterId]) => characterId !== id),
+            ),
           };
         }),
       setScreen: (screen) => set((state) => ({ previousScreen: state.activeScreen, activeScreen: screen })),
@@ -1675,6 +2278,32 @@ export const useAppStore = create<AppState>()(
             },
           };
         }),
+      addMessages: (characterId, channel, messages) => {
+        if (messages.length === 0) return;
+        set((state) => {
+          const key = sessionKey(characterId, channel);
+          const session =
+            state.chatSessions[key] ||
+            ({
+              id: createId('session'),
+              characterId,
+              channel,
+              messages: [],
+              lastUpdated: Date.now(),
+            } satisfies ChatSession);
+
+          return {
+            chatSessions: {
+              ...state.chatSessions,
+              [key]: {
+                ...session,
+                messages: [...session.messages, ...messages],
+                lastUpdated: Date.now(),
+              },
+            },
+          };
+        });
+      },
       updateMessage: (characterId, channel, messageId, updates) =>
         set((state) => {
           const key = sessionKey(characterId, channel);
@@ -1766,7 +2395,9 @@ export const useAppStore = create<AppState>()(
           };
         }),
       setTheme: (theme) => set({ theme }),
+      setBubbleStyle: (bubbleStyle) => set({ bubbleStyle }),
       setFontStyle: (fontStyle) => set({ fontStyle }),
+      setChatBottomLayout: (chatBottomLayout) => set({ chatBottomLayout }),
       setWallpaper: (url) => set({ wallpaper: url }),
       setImageBed: (url) => set({ imageBed: url }),
       setUserName: (name) =>
@@ -2395,6 +3026,29 @@ export const useAppStore = create<AppState>()(
         })),
       setBrowserWorldBook: (content) => set({ browserWorldBook: content }),
       setBrowserApiConfig: (updates) => set(updates),
+      setChatPresetEntries: (entries, name) =>
+        set((state) => {
+          const normalized = normalizeChatPresetEntries(entries);
+          const prompt = compileChatPresetEntries(normalized);
+          const nextName = name?.trim() || state.chatPresetName;
+          const nextPresets = mergeAppPresets(state.appPresets);
+          nextPresets.wechat = {
+            ...nextPresets.wechat,
+            name: nextName,
+            prompt,
+          };
+          nextPresets.qq = {
+            ...nextPresets.qq,
+            name: nextName,
+            prompt,
+          };
+          return {
+            chatPresetEntries: normalized,
+            chatPresetName: nextName,
+            chatPresetPrompt: prompt,
+            appPresets: nextPresets,
+          };
+        }),
       setModelConfig: (updates) =>
         set((state) => {
           const nextPresets = mergeAppPresets(state.appPresets);
@@ -2407,6 +3061,7 @@ export const useAppStore = create<AppState>()(
           };
           if ('chatPresetName' in updates || 'chatPresetPrompt' in updates) {
             syncLegacyPreset('wechat', updates.chatPresetName, updates.chatPresetPrompt);
+            syncLegacyPreset('qq', updates.chatPresetName, updates.chatPresetPrompt);
           }
           if ('browserPresetName' in updates || 'browserPresetPrompt' in updates) {
             syncLegacyPreset('browser', updates.browserPresetName, updates.browserPresetPrompt);
@@ -2454,7 +3109,22 @@ export const useAppStore = create<AppState>()(
         }),
       resetAppPreset: (key) =>
         set((state) => {
-          const defaults = createDefaultAppPresets();
+          const defaults = createSmallPhoneDefaultAppPresets();
+          if (key === 'wechat' || key === 'qq') {
+            const nextPresets = mergeAppPresets(state.appPresets);
+            nextPresets.wechat = defaults.wechat;
+            nextPresets.qq = defaults.qq;
+            return {
+              appPresets: nextPresets,
+              chatPresetEntries: defaultChatPresetEntries,
+              chatPresetName: smallPhonePresetNames.short,
+              chatPresetPrompt: defaultChatPresetPrompt,
+              chatReplyStyle: smallPhonePresetTuning.short.replyStyle,
+              chatContextDepth: smallPhonePresetTuning.short.contextDepth,
+              chatTemperature: smallPhonePresetTuning.short.temperature,
+              chatMaxTokens: smallPhonePresetTuning.short.maxTokens,
+            };
+          }
           const nextPresets = {
             ...mergeAppPresets(state.appPresets),
             [key]: defaults[key],
@@ -2466,11 +3136,16 @@ export const useAppStore = create<AppState>()(
         }),
       resetAllAppPresets: () =>
         set(() => {
-          const nextPresets = createDefaultAppPresets();
+          const nextPresets = createSmallPhoneDefaultAppPresets();
           return {
             appPresets: nextPresets,
-            chatPresetName: nextPresets.wechat.name,
-            chatPresetPrompt: nextPresets.wechat.prompt,
+            chatPresetEntries: defaultChatPresetEntries,
+            chatPresetName: smallPhonePresetNames.short,
+            chatPresetPrompt: defaultChatPresetPrompt,
+            chatReplyStyle: smallPhonePresetTuning.short.replyStyle,
+            chatContextDepth: smallPhonePresetTuning.short.contextDepth,
+            chatTemperature: smallPhonePresetTuning.short.temperature,
+            chatMaxTokens: smallPhonePresetTuning.short.maxTokens,
             browserPresetName: nextPresets.browser.name,
             browserPresetPrompt: nextPresets.browser.prompt,
             xiaohongshuPresetName: nextPresets.xiaohongshu.name,
@@ -2986,21 +3661,120 @@ export const useAppStore = create<AppState>()(
           },
         })),
       setTtsConfig: (updates) =>
-        set((state) => ({
-          ttsConfig: {
+        set((state) => {
+          const ttsConfig = {
             ...defaultTtsConfig,
             ...state.ttsConfig,
             ...updates,
-          },
-        })),
+          };
+          return {
+            ttsConfig,
+            ttsProviderConfigs: {
+              ...state.ttsProviderConfigs,
+              [ttsConfig.provider]: ttsConfig,
+            },
+          };
+        }),
+      selectTtsProvider: (provider) =>
+        set((state) => {
+          const configs = {
+            ...state.ttsProviderConfigs,
+            [state.ttsConfig.provider]: state.ttsConfig,
+          };
+          const ttsConfig = normalizeMigratedTtsConfig(configs[provider] || getDefaultTtsConfigForProvider(provider));
+          return { ttsConfig, ttsProviderConfigs: { ...configs, [provider]: ttsConfig } };
+        }),
       setImageGenerationConfig: (updates) =>
-        set((state) => ({
-          imageGenerationConfig: {
+        set((state) => {
+          const imageGenerationConfig = normalizeImageGenerationConfig({
             ...defaultImageGenerationConfig,
             ...state.imageGenerationConfig,
             ...updates,
-          },
-        })),
+          });
+          const currentProfiles = normalizeImageProviderConfigs(state.imageProviderConfigs, state.imageGenerationConfig);
+          const imageProviderConfigs: ImageProviderConfigs = imageGenerationConfig.provider === 'novelai'
+            ? { ...currentProfiles, novelai: imageGenerationConfig }
+            : imageGenerationConfig.provider === 'comfyui'
+              ? { ...currentProfiles, comfyui: imageGenerationConfig }
+              : {
+                ...currentProfiles,
+                customProfiles: currentProfiles.customProfiles.map((profile) => profile.id === currentProfiles.activeCustomProfileId
+                  ? { ...profile, config: imageGenerationConfig }
+                  : profile),
+              };
+          return { imageGenerationConfig, imageProviderConfigs };
+        }),
+      selectImageProvider: (provider) =>
+        set((state) => {
+          const profiles = normalizeImageProviderConfigs(state.imageProviderConfigs, state.imageGenerationConfig);
+          const imageGenerationConfig = provider === 'novelai'
+            ? profiles.novelai
+            : provider === 'comfyui'
+              ? profiles.comfyui
+              : profiles.customProfiles.find((profile) => profile.id === profiles.activeCustomProfileId)?.config
+                || profiles.customProfiles[0].config;
+          return { imageGenerationConfig, imageProviderConfigs: profiles };
+        }),
+      addCustomImageProviderProfile: (name) => {
+        const id = createId('image-provider');
+        set((state) => {
+          const profiles = normalizeImageProviderConfigs(state.imageProviderConfigs, state.imageGenerationConfig);
+          const profile: CustomImageProviderProfile = {
+            id,
+            name: name?.trim() || `公益站 ${profiles.customProfiles.length + 1}`,
+            config: normalizeImageGenerationConfig({}, 'custom'),
+          };
+          return {
+            imageProviderConfigs: {
+              ...profiles,
+              customProfiles: [...profiles.customProfiles, profile],
+              activeCustomProfileId: id,
+            },
+            imageGenerationConfig: profile.config,
+          };
+        });
+        return id;
+      },
+      updateCustomImageProviderProfile: (id, updates) =>
+        set((state) => {
+          const profiles = normalizeImageProviderConfigs(state.imageProviderConfigs, state.imageGenerationConfig);
+          const customProfiles = profiles.customProfiles.map((profile) => profile.id === id
+            ? {
+              ...profile,
+              ...(typeof updates.name === 'string' ? { name: updates.name.trim() || profile.name } : {}),
+              ...(updates.config ? { config: normalizeImageGenerationConfig({ ...profile.config, ...updates.config }, 'custom') } : {}),
+            }
+            : profile);
+          const active = customProfiles.find((profile) => profile.id === profiles.activeCustomProfileId);
+          return {
+            imageProviderConfigs: { ...profiles, customProfiles },
+            ...(state.imageGenerationConfig.provider === 'custom' && active ? { imageGenerationConfig: active.config } : {}),
+          };
+        }),
+      deleteCustomImageProviderProfile: (id) =>
+        set((state) => {
+          const profiles = normalizeImageProviderConfigs(state.imageProviderConfigs, state.imageGenerationConfig);
+          if (profiles.customProfiles.length <= 1) return {};
+          const customProfiles = profiles.customProfiles.filter((profile) => profile.id !== id);
+          const activeCustomProfileId = profiles.activeCustomProfileId === id ? customProfiles[0].id : profiles.activeCustomProfileId;
+          const active = customProfiles.find((profile) => profile.id === activeCustomProfileId) || customProfiles[0];
+          return {
+            imageProviderConfigs: { ...profiles, customProfiles, activeCustomProfileId },
+            ...(state.imageGenerationConfig.provider === 'custom' ? { imageGenerationConfig: active.config } : {}),
+          };
+        }),
+      selectCustomImageProviderProfile: (id) =>
+        set((state) => {
+          const profiles = normalizeImageProviderConfigs(state.imageProviderConfigs, state.imageGenerationConfig);
+          const active = profiles.customProfiles.find((profile) => profile.id === id);
+          if (!active) return {};
+          return {
+            imageProviderConfigs: { ...profiles, activeCustomProfileId: id },
+            imageGenerationConfig: active.config,
+          };
+        }),
+      setImageGenerationEnabled: (enabled) => set({ imageGenerationEnabled: Boolean(enabled) }),
+      setProactiveImageGenerationEnabled: (enabled) => set({ proactiveImageGenerationEnabled: Boolean(enabled) }),
       recordGeneratedImage: (record) => {
         const imageId = record.imageId || createId('image');
         set((state) => ({
@@ -3018,6 +3792,40 @@ export const useAppStore = create<AppState>()(
         }));
         return imageId;
       },
+      addImageGenerationTask: (task) => {
+        const id = task.id || createId('image-task');
+        set((state) => ({
+          imageGenerationTasks: [
+            { ...task, id },
+            ...(state.imageGenerationTasks || []).filter((item) => item.id !== id),
+          ].slice(0, imageGenerationTaskHistoryLimit),
+        }));
+        return id;
+      },
+      updateImageGenerationTask: (id, updates) =>
+        set((state) => ({
+          imageGenerationTasks: (state.imageGenerationTasks || []).map((task) => task.id === id ? { ...task, ...updates, id } : task),
+        })),
+      deleteImageGenerationTask: (id) =>
+        set((state) => ({ imageGenerationTasks: (state.imageGenerationTasks || []).filter((task) => task.id !== id) })),
+      clearImageGenerationTasks: () => set({ imageGenerationTasks: [] }),
+      setAiContextSectionExcluded: (characterId, sectionId, excluded) =>
+        set((state) => {
+          const current = state.aiContextExcludedSectionsByCharacter[characterId] || [];
+          const next = excluded
+            ? Array.from(new Set([...current, sectionId])).slice(0, 32)
+            : current.filter((item) => item !== sectionId);
+          const collection = { ...state.aiContextExcludedSectionsByCharacter };
+          if (next.length > 0) collection[characterId] = next;
+          else delete collection[characterId];
+          return { aiContextExcludedSectionsByCharacter: collection };
+        }),
+      clearAiContextSectionExclusions: (characterId) =>
+        set((state) => {
+          const collection = { ...state.aiContextExcludedSectionsByCharacter };
+          delete collection[characterId];
+          return { aiContextExcludedSectionsByCharacter: collection };
+        }),
       setCommunityVerificationConfig: (updates) =>
         set((state) => ({
           communityVerificationConfig: {
@@ -3108,6 +3916,15 @@ export const useAppStore = create<AppState>()(
             [id]: position,
           },
         })),
+      resetLayoutPositions: (ids) =>
+        set((state) => {
+          const resetIds = new Set(ids);
+          return {
+            layoutPositions: Object.fromEntries(
+              Object.entries(state.layoutPositions).filter(([id]) => !resetIds.has(id)),
+            ),
+          };
+        }),
       addCustomWidget: (page, type) =>
         set((state) => ({
           customWidgets: [
@@ -3145,239 +3962,10 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: 'char-phone-framework',
-        version: 62,
-      migrate: (persistedState) => {
-        const state = persistedState as Partial<AppState>;
-        const persistedStickers = Array.isArray(state.stickers) ? state.stickers : [];
-        const stickers = persistedStickers.length > 0
-          ? persistedStickers.map((sticker, index) => {
-              if (typeof sticker === 'string') {
-                return { id: `legacy-sticker-${index}`, url: sticker, label: '旧版内置表情包', favorite: false };
-              }
-              return { ...sticker, favorite: Boolean(sticker.favorite) };
-            })
-          : defaultStickers;
-        const stickersWithStarters = Array.from(
-          new Map([...starterStickerItems, ...stickers].map((sticker) => [sticker.id, sticker])).values(),
-        );
-        const memos = normalizeMemos(state.memos);
-        const phoneCallRecords = normalizePhoneCallRecords(state.phoneCallRecords);
-        const theaterScenes = normalizeTheaterScenes(state.theaterScenes);
-        const theaterTopicEntries = normalizeTheaterTopicEntries(state.theaterTopicEntries);
-        const theaterWorldBookEntries = mergeDefaultTheaterWorldBookEntries(normalizeTheaterWorldBookEntries(state.theaterWorldBookEntries));
-        const musicTracks = normalizeMusicTracks(state.musicTracks);
-        const defaultTrackAudioUrls = new Map(defaultMusicTracks.map((track) => [track.id, track.audioUrl]));
-        const nextMusicTracks = (musicTracks.length > 0 ? musicTracks : defaultMusicTracks).map((track) => ({
-          ...track,
-          audioUrl: track.audioUrl || defaultTrackAudioUrls.get(track.id),
-        }));
-        const musicPlaylists = normalizeMusicPlaylists(state.musicPlaylists, nextMusicTracks)
-          .filter((playlist) => playlist.id !== 'music-playlist-shared' && playlist.id !== 'music-playlist-daily');
-        const nextMusicPlaylists = musicPlaylists.length > 0 ? musicPlaylists : defaultMusicPlaylists;
-        const musicListenRecords = normalizeMusicListenRecords(state.musicListenRecords, nextMusicTracks);
-        const playerCandidate = state.musicPlayer && typeof state.musicPlayer === 'object' ? state.musicPlayer : undefined;
-        const playerTrackId = playerCandidate?.trackId && nextMusicTracks.some((track) => track.id === playerCandidate.trackId)
-          ? playerCandidate.trackId
-          : nextMusicTracks[0]?.id;
-        const migratedAppPresets = mergeAppPresets(state.appPresets);
-        const migratedPresetValues = {
-          chatName: migratePresetName(state.chatPresetName, legacyPresetNames.chat, defaultSoftwarePresets.chat.name),
-          chatPrompt: migratePresetPrompt(state.chatPresetPrompt, legacyPresetNames.chat, state.chatPresetName, defaultSoftwarePresets.chat.prompt),
-          browserName: migratePresetName(state.browserPresetName, legacyPresetNames.browser, defaultSoftwarePresets.browser.name),
-          browserPrompt: migratePresetPrompt(state.browserPresetPrompt, legacyPresetNames.browser, state.browserPresetName, defaultSoftwarePresets.browser.prompt),
-          xiaohongshuName: migratePresetName(state.xiaohongshuPresetName, legacyPresetNames.xiaohongshu, defaultSoftwarePresets.xiaohongshu.name),
-          xiaohongshuPrompt: migratePresetPrompt(state.xiaohongshuPresetPrompt, legacyPresetNames.xiaohongshu, state.xiaohongshuPresetName, defaultSoftwarePresets.xiaohongshu.prompt),
-          bilibiliName: migratePresetName(state.bilibiliPresetName, legacyPresetNames.bilibili, defaultSoftwarePresets.bilibili.name),
-          bilibiliPrompt: migratePresetPrompt(state.bilibiliPresetPrompt, legacyPresetNames.bilibili, state.bilibiliPresetName, defaultSoftwarePresets.bilibili.prompt),
-          phoneName: migratePresetName(state.phonePresetName, legacyPresetNames.phone, defaultSoftwarePresets.phone.name),
-          phonePrompt: migratePresetPrompt(state.phonePresetPrompt, legacyPresetNames.phone, state.phonePresetName, defaultSoftwarePresets.phone.prompt),
-          musicName: migratePresetName(state.musicPresetName, legacyPresetNames.music, defaultSoftwarePresets.music.name),
-          musicPrompt: migratePresetPrompt(state.musicPresetPrompt, legacyPresetNames.music, state.musicPresetName, defaultSoftwarePresets.music.prompt),
-        };
-        migratedAppPresets.wechat = {
-          ...migratedAppPresets.wechat,
-          name: migratedPresetValues.chatName,
-          prompt: migratedPresetValues.chatPrompt,
-        };
-        migratedAppPresets.browser = {
-          ...migratedAppPresets.browser,
-          name: migratedPresetValues.browserName,
-          prompt: migratedPresetValues.browserPrompt,
-        };
-        migratedAppPresets.xiaohongshu = {
-          ...migratedAppPresets.xiaohongshu,
-          name: migratedPresetValues.xiaohongshuName,
-          prompt: migratedPresetValues.xiaohongshuPrompt,
-        };
-        migratedAppPresets.bilibili = {
-          ...migratedAppPresets.bilibili,
-          name: migratedPresetValues.bilibiliName,
-          prompt: migratedPresetValues.bilibiliPrompt,
-        };
-        migratedAppPresets.phone = {
-          ...migratedAppPresets.phone,
-          name: migratedPresetValues.phoneName,
-          prompt: migratedPresetValues.phonePrompt,
-        };
-        migratedAppPresets.music = {
-          ...migratedAppPresets.music,
-          name: migratedPresetValues.musicName,
-          prompt: migratedPresetValues.musicPrompt,
-        };
-        const userPresetState = normalizeUserProfilePresets(
-          state.userProfiles,
-          state.userName || '我',
-          state.userProfile,
-          state.activeUserProfileId,
-        );
-        const activeUserPreset = userPresetState.presets.find((preset) => preset.id === userPresetState.activeId) || userPresetState.presets[0];
-        const userProfileCharacterBindings = normalizeUserProfileCharacterBindings(
-          state.userProfileCharacterBindings,
-          userPresetState.presets,
-        );
-        return {
-          ...state,
-          activeScreen: 'desktop',
-          previousScreen: 'desktop',
-          activeChatId: null,
-          chatSessions: normalizeChatSessions(state.chatSessions),
-          pinnedChatIds: state.pinnedChatIds && typeof state.pinnedChatIds === 'object' && !Array.isArray(state.pinnedChatIds) ? state.pinnedChatIds : {},
-          theme: state.theme || 'pastel',
-          fontStyle: state.fontStyle === 'system' || state.fontStyle === 'serif' || state.fontStyle === 'pixel' ? state.fontStyle : 'rounded',
-          layoutPositions: {},
-          desktopPage: 0,
-          appIconOverrides: normalizeAppIconOverrides(state.appIconOverrides),
-          wechatId: !state.wechatId || state.wechatId === 'Muon0417' ? '9142' : state.wechatId,
-          userName: activeUserPreset.name,
-          userProfile: normalizeUserProfile(activeUserPreset.profile),
-          userProfiles: userPresetState.presets,
-          activeUserProfileId: userPresetState.activeId,
-          userProfileCharacterBindings,
-          wechatStatus: state.wechatStatus && !legacyWechatStatuses.has(state.wechatStatus) ? state.wechatStatus : '',
-          wechatPhotos: state.wechatPhotos || [],
-          wechatMoments: state.wechatMoments || [],
-          stickers: stickersWithStarters,
-          characters: stripRemovedDefaultCharacters(state.characters),
-          groupChats: state.groupChats || [],
-          qqChannels: Array.isArray(state.qqChannels) && state.qqChannels.length > 0 ? state.qqChannels : getDefaultQqChannels(),
-          qqChannelMessages: Array.isArray(state.qqChannelMessages) ? state.qqChannelMessages : [],
-          qqDynamicPosts: Array.isArray(state.qqDynamicPosts) ? state.qqDynamicPosts : [],
-          contactTags: state.contactTags || {},
-          purchaseRecords: state.purchaseRecords || [],
-          lifeEvents: normalizeLifeEvents(state.lifeEvents),
-          activeEventLastRefreshAt: typeof state.activeEventLastRefreshAt === 'number' ? state.activeEventLastRefreshAt : 0,
-          activeReminderAutomationEnabled: typeof state.activeReminderAutomationEnabled === 'boolean' ? state.activeReminderAutomationEnabled : true,
-          randomProactiveMessagesEnabled: typeof state.randomProactiveMessagesEnabled === 'boolean' ? state.randomProactiveMessagesEnabled : false,
-          phoneCallRecords,
-          bilibiliEntries: Array.isArray(state.bilibiliEntries) ? state.bilibiliEntries : [],
-          bilibiliSearches: Array.isArray(state.bilibiliSearches) ? state.bilibiliSearches : [],
-          browserSearches: Array.isArray(state.browserSearches) ? state.browserSearches : [],
-          browserBookmarks: Array.isArray(state.browserBookmarks) ? state.browserBookmarks : [],
-          browserHistory: Array.isArray(state.browserHistory) ? state.browserHistory : [],
-          theaterScenes,
-          theaterTopicEntries,
-          theaterWorldBookEntries,
-          browserWorldBook: state.browserWorldBook || '',
-          browserApiBaseUrl: state.browserApiBaseUrl || '',
-          browserApiKey: state.browserApiKey || '',
-          browserSelectedModel: state.browserSelectedModel || '',
-          apiBaseUrl: state.apiBaseUrl || '',
-          apiKey: state.apiKey || '',
-          availableModels: state.availableModels || [],
-          selectedModel: state.selectedModel || '',
-          chatPresetName: migratedPresetValues.chatName,
-          chatPresetPrompt: migratedPresetValues.chatPrompt,
-          browserPresetName: migratedPresetValues.browserName,
-          browserPresetPrompt: migratedPresetValues.browserPrompt,
-          xiaohongshuPresetName: migratedPresetValues.xiaohongshuName,
-          xiaohongshuPresetPrompt: migratedPresetValues.xiaohongshuPrompt,
-          bilibiliPresetName: migratedPresetValues.bilibiliName,
-          bilibiliPresetPrompt: migratedPresetValues.bilibiliPrompt,
-          phonePresetName: migratedPresetValues.phoneName,
-          phonePresetPrompt: migratedPresetValues.phonePrompt,
-          musicPresetName: migratedPresetValues.musicName,
-          musicPresetPrompt: migratedPresetValues.musicPrompt,
-          appPresets: migratedAppPresets,
-          chatContextDepth: state.chatContextDepth && state.chatContextDepth > 60 ? state.chatContextDepth : 500,
-          chatTemperature: typeof state.chatTemperature === 'number' ? state.chatTemperature : 0.8,
-          chatMaxTokens: state.chatMaxTokens || 520,
-          chatReplyStyle: state.chatReplyStyle || 'auto',
-          diaries: normalizeDiaryEntries(state.diaries),
-          calendarEvents: normalizeCalendarEvents(state.calendarEvents),
-          galleryPhotos: normalizeGalleryPhotos(state.galleryPhotos),
-          galleryTags: Array.isArray(state.galleryTags) && state.galleryTags.length > 0 ? state.galleryTags : ['自拍', '截图', '风景', '约会', '日常', '穿搭', '吃饭', '旅行', '给char看'],
-          memos,
-          memoTags: normalizeMemoTags(state.memoTags, memos),
-          memoCharWriter: state.memoCharWriter || { enabled: false },
-          xiaohongshuProfile: normalizeXiaohongshuProfile(state.xiaohongshuProfile),
-          xiaohongshuNotes: normalizeXiaohongshuNotes(state.xiaohongshuNotes),
-          xiaohongshuFollowingIds: Array.isArray(state.xiaohongshuFollowingIds)
-            ? state.xiaohongshuFollowingIds.map((id) => String(id).trim()).filter(Boolean)
-            : [],
-          musicTracks: nextMusicTracks,
-          musicPlaylists: nextMusicPlaylists,
-          musicListenRecords,
-          musicPlayer: {
-            trackId: playerTrackId,
-            playing: false,
-            progress: typeof playerCandidate?.progress === 'number' ? Math.max(0, Math.min(100, playerCandidate.progress)) : 0,
-            duration: typeof playerCandidate?.duration === 'number' ? playerCandidate.duration : 0,
-            repeat: Boolean(playerCandidate?.repeat),
-            shuffle: Boolean(playerCandidate?.shuffle),
-          },
-          musicSourceConfig: {
-            ...defaultMusicSourceConfig,
-            ...(state.musicSourceConfig && typeof state.musicSourceConfig === 'object' ? state.musicSourceConfig : {}),
-          },
-          ttsConfig: normalizeMigratedTtsConfig(state.ttsConfig),
-          imageGenerationConfig: {
-            ...defaultImageGenerationConfig,
-            ...(state.imageGenerationConfig && typeof state.imageGenerationConfig === 'object' ? state.imageGenerationConfig : {}),
-            baseUrl:
-              typeof state.imageGenerationConfig?.baseUrl === 'string'
-              && state.imageGenerationConfig.baseUrl.trim()
-              && state.imageGenerationConfig.baseUrl.trim() !== 'https://image.novelai.net/ai/generate-image'
-                ? state.imageGenerationConfig.baseUrl
-                : defaultImageGenerationConfig.baseUrl,
-          },
-          generatedImageRecords: Array.isArray(state.generatedImageRecords) ? state.generatedImageRecords : [],
-          communityVerificationConfig: {
-            ...defaultCommunityVerificationConfig,
-            ...(state.communityVerificationConfig && typeof state.communityVerificationConfig === 'object' ? state.communityVerificationConfig : {}),
-            authorizationUrl: typeof state.communityVerificationConfig?.authorizationUrl === 'string' && state.communityVerificationConfig.authorizationUrl.trim()
-              && !state.communityVerificationConfig.authorizationUrl.includes('api.xiejiang.de5.net')
-              ? state.communityVerificationConfig.authorizationUrl
-              : defaultCommunityVerificationConfig.authorizationUrl,
-            discordClientId: typeof state.communityVerificationConfig?.discordClientId === 'string'
-              ? state.communityVerificationConfig.discordClientId.trim()
-              : defaultCommunityVerificationConfig.discordClientId,
-            discordGuildIds: Array.isArray(state.communityVerificationConfig?.discordGuildIds) && state.communityVerificationConfig.discordGuildIds.length > 0
-              ? state.communityVerificationConfig.discordGuildIds.map((id) => String(id).trim()).filter(Boolean)
-              : defaultCommunityVerificationConfig.discordGuildIds,
-            discordRoleIds: Array.isArray(state.communityVerificationConfig?.discordRoleIds)
-              ? state.communityVerificationConfig.discordRoleIds.map((id) => String(id).trim()).filter(Boolean)
-              : defaultCommunityVerificationConfig.discordRoleIds,
-            discordInviteUrls: Array.isArray(state.communityVerificationConfig?.discordInviteUrls) && state.communityVerificationConfig.discordInviteUrls.length > 0
-              ? state.communityVerificationConfig.discordInviteUrls.map((url) => String(url).trim()).filter(Boolean)
-              : defaultCommunityVerificationConfig.discordInviteUrls,
-            requiredGroups: Array.isArray(state.communityVerificationConfig?.requiredGroups) && state.communityVerificationConfig.requiredGroups.length > 0
-              ? state.communityVerificationConfig.requiredGroups.map((group) => String(group).trim()).filter(Boolean)
-              : defaultCommunityVerificationConfig.requiredGroups,
-            verifiedGroups: Array.isArray(state.communityVerificationConfig?.verifiedGroups)
-              ? state.communityVerificationConfig.verifiedGroups.map((group) => String(group).trim()).filter(Boolean)
-              : [],
-            verificationMethod: state.communityVerificationConfig?.verificationMethod
-              || (Array.isArray(state.communityVerificationConfig?.verifiedGroups) && state.communityVerificationConfig.verifiedGroups.length > 0 ? 'discord' : undefined),
-            backdoorApiUrl: typeof state.communityVerificationConfig?.backdoorApiUrl === 'string'
-              ? state.communityVerificationConfig.backdoorApiUrl.trim()
-              : defaultCommunityVerificationConfig.backdoorApiUrl,
-            backdoorVerifiedUntil: typeof state.communityVerificationConfig?.backdoorVerifiedUntil === 'number'
-              ? state.communityVerificationConfig.backdoorVerifiedUntil
-              : undefined,
-          },
-          appLogs: Array.isArray(state.appLogs) ? state.appLogs.slice(0, 120) : [],
-        } as AppState;
-      },
+      version: 78,
+      storage: createJSONStorage(() => createQuotaSafeStateStorage()),
+      partialize: (state) => compactPersistedAppState(state as AppState),
+      migrate: migratePersistedAppState,
     },
   ),
 );

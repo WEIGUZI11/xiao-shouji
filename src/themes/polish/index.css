@@ -1,0 +1,278 @@
+/**
+ * Final theme layout and readability layer.
+ * Imported after every individual theme so shared safe-area fixes and
+ * short-screen corrections do not get scattered across large theme files.
+ */
+
+.phone-shell .desktop-screen {
+  isolation: isolate;
+}
+
+.phone-shell .desktop-canvas {
+  min-height: 0;
+}
+
+.theme-pastel .desktop-screen .layout-controls,
+.theme-guofeng .desktop-screen .layout-controls,
+.theme-celtic-paladin .desktop-screen .layout-controls,
+.theme-status-terminal .desktop-screen .layout-controls {
+  top: max(18px, calc(env(safe-area-inset-top, 0px) + 18px)) !important;
+}
+
+.theme-gothic .desktop-screen .layout-controls {
+  top: max(99px, calc(env(safe-area-inset-top, 0px) + 99px)) !important;
+}
+
+.theme-alcheris-pixel .desktop-screen .layout-controls {
+  top: max(38px, calc(env(safe-area-inset-top, 0px) + 38px)) !important;
+}
+
+.phone-shell .desktop-screen .dock {
+  position: absolute !important;
+  z-index: 45;
+}
+
+.phone-shell .desktop-screen .page-dots {
+  z-index: 44;
+}
+
+/* Keep the ink dock readable instead of leaving four unlabeled symbols. */
+.theme-guofeng.theme-guofeng .dock {
+  min-height: 76px !important;
+}
+
+.theme-guofeng.theme-guofeng .dock > button {
+  gap: 2px !important;
+}
+
+.theme-guofeng.theme-guofeng .dock button > span:last-child {
+  display: block !important;
+  min-height: 12px;
+  color: #303632 !important;
+  font-size: 9px !important;
+  line-height: 1 !important;
+}
+
+/* Keep the Celtic ornament, but restore recognizable app icons. */
+.theme-celtic-paladin {
+  --theme-bg: #e7dcc0;
+  --theme-panel: #fff8e7;
+  --theme-text: #21342f;
+  --theme-accent: #356779;
+  --theme-muted: #5f6f69;
+}
+
+.theme-celtic-paladin .cream-screen {
+  background:
+    radial-gradient(circle at 84% 12%, rgba(89, 123, 132, 0.16), transparent 26%),
+    linear-gradient(160deg, #f6edd6, #e3d6b8 72%, #d4c6a6) !important;
+}
+
+.theme-celtic-paladin .app-icon,
+.theme-celtic-paladin .dock-icon {
+  border-color: rgba(33, 52, 47, 0.28) !important;
+  background: linear-gradient(145deg, #fff9e9, #dfd2b3) !important;
+  color: #274f59 !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.74), 0 7px 16px rgba(35, 54, 48, 0.14) !important;
+}
+
+.theme-celtic-paladin .app-icon svg,
+.theme-celtic-paladin .dock-icon svg {
+  position: relative;
+  z-index: 3;
+  opacity: 1 !important;
+}
+
+.theme-celtic-paladin .app-icon::before,
+.theme-celtic-paladin .dock-icon::before {
+  content: "" !important;
+  inset: 6px !important;
+  border-radius: 15px !important;
+  background: transparent !important;
+}
+
+.theme-celtic-paladin .app-icon::after,
+.theme-celtic-paladin .dock-icon::after {
+  opacity: 0.55;
+}
+
+.theme-gothic.phone-stage {
+  background:
+    radial-gradient(circle at 78% 18%, rgba(216, 15, 31, 0.2), transparent 26%),
+    linear-gradient(145deg, #171719, #070708) !important;
+}
+
+/* Improve contrast on real phone brightness. */
+.theme-status-terminal {
+  --theme-bg: #eceef6;
+  --theme-text: #303446;
+  --theme-panel: rgba(255, 255, 255, 0.88);
+  --theme-accent: #6f76b7;
+  --theme-accent-soft: #dde1f4;
+  --theme-muted: #62677a;
+}
+
+.theme-status-terminal .app-icon,
+.theme-status-terminal .dock-icon {
+  border-color: rgba(78, 86, 126, 0.22) !important;
+  color: #3c4258 !important;
+}
+
+/* Pixel theme keeps its full dock inside shorter WebViews. */
+.theme-alcheris-pixel .dock {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  bottom: max(8px, env(safe-area-inset-bottom, 0px)) !important;
+  min-height: 82px;
+  padding: 8px 8px 9px !important;
+  transform: translateX(-50%) !important;
+}
+
+.theme-alcheris-pixel .dock-icon {
+  width: 48px !important;
+  height: 48px !important;
+}
+
+.theme-alcheris-pixel .dock button > span:last-child {
+  display: block !important;
+  min-height: 13px;
+  font-size: 10px !important;
+}
+
+.theme-alcheris-pixel .page-dots {
+  bottom: 96px !important;
+}
+
+@media (max-height: 760px) {
+  .phone-shell .desktop-screen {
+    padding-top: max(32px, calc(env(safe-area-inset-top, 0px) + 32px)) !important;
+    padding-bottom: 94px !important;
+  }
+
+  .phone-shell .desktop-canvas,
+  .theme-alcheris-pixel .desktop-canvas {
+    height: calc(var(--app-vvh, 100dvh) - 150px) !important;
+    min-height: 0 !important;
+    max-height: calc(var(--app-vvh, 100dvh) - 150px) !important;
+  }
+
+  .phone-shell .desktop-screen .page-dots {
+    bottom: 94px !important;
+  }
+
+  .phone-shell .desktop-screen .dock {
+    bottom: max(6px, env(safe-area-inset-bottom, 0px)) !important;
+  }
+}
+
+.theme-gothic .first-use-tip-panel {
+  border-color: #111 !important;
+  background: #f7f1eb !important;
+  color: #111 !important;
+}
+
+.theme-gothic .first-use-tip-panel :is(h2, p, strong, span) { color: #111 !important; }
+.theme-gothic .first-use-tip-secondary { border-color: #111 !important; background: #fff !important; color: #111 !important; }
+
+/* Appearance follows the selected phone skin. Keep the controls quiet enough to
+   read, but do not replace every theme with the same blue-grey control room. */
+.phone-stage .themes-screen {
+  --appearance-page: var(--phone-bg, #f3f6fb);
+  --appearance-panel: var(--panel-bg, rgba(255, 255, 255, 0.92));
+  --appearance-page-ink: var(--phone-text, #25304a);
+  --appearance-panel-ink: var(--c-panel-ink, var(--phone-text, #25304a));
+  --appearance-accent: var(--accent, #596e9f);
+  color: var(--appearance-page-ink) !important;
+  background: var(--appearance-page) !important;
+}
+
+.phone-stage .themes-screen > header {
+  border-bottom: 1px solid color-mix(in srgb, var(--appearance-page-ink) 14%, transparent);
+  background: color-mix(in srgb, var(--appearance-panel) 94%, transparent) !important;
+  color: var(--appearance-panel-ink) !important;
+  backdrop-filter: blur(14px);
+}
+
+.phone-stage .themes-screen .themes-panel {
+  border: 1px solid color-mix(in srgb, var(--appearance-panel-ink) 16%, transparent) !important;
+  border-radius: 20px !important;
+  background: var(--appearance-panel) !important;
+  padding: 13px !important;
+  color: var(--appearance-panel-ink) !important;
+  box-shadow: 0 10px 28px color-mix(in srgb, var(--appearance-page-ink) 10%, transparent) !important;
+}
+
+.phone-stage .themes-screen .theme-card,
+.phone-stage .themes-screen .software-icon-row {
+  border: 1px solid color-mix(in srgb, var(--appearance-panel-ink) 16%, transparent) !important;
+  background: color-mix(in srgb, var(--appearance-panel) 92%, var(--appearance-page)) !important;
+  color: var(--appearance-panel-ink) !important;
+  box-shadow: none !important;
+}
+
+.phone-stage .themes-screen :is(.appearance-disclosure p, .bubble-styles-disclosure p) {
+  color: var(--appearance-panel-ink) !important;
+  opacity: 0.82 !important;
+}
+
+.phone-stage .themes-screen .theme-card.active {
+  border-color: var(--appearance-accent) !important;
+  background: color-mix(in srgb, var(--appearance-accent) 13%, var(--appearance-panel)) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--appearance-accent) 18%, transparent) !important;
+}
+
+.phone-stage .themes-screen .theme-choice-card {
+  min-height: 144px;
+  padding: 8px !important;
+}
+
+.phone-stage .themes-screen .font-choice-card {
+  min-height: 108px;
+  padding: 10px !important;
+}
+
+.phone-stage .themes-screen .font-choice-card p,
+.phone-stage .themes-screen .theme-choice-copy :is(strong, small) {
+  color: var(--appearance-panel-ink) !important;
+}
+
+.phone-stage .themes-screen .icon-tool-button {
+  border: 1px solid color-mix(in srgb, var(--appearance-panel-ink) 20%, transparent);
+  background: var(--appearance-panel);
+  color: var(--appearance-panel-ink);
+}
+
+.phone-stage .themes-screen :is(h1, h2, p, strong, small, button, span) {
+  text-shadow: none !important;
+  -webkit-text-stroke: 0 !important;
+}
+
+.phone-stage .themes-screen .circle-button {
+  border: 1px solid color-mix(in srgb, var(--appearance-panel-ink) 20%, transparent) !important;
+  background: var(--appearance-panel) !important;
+  color: var(--appearance-panel-ink) !important;
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--appearance-page-ink) 11%, transparent) !important;
+  transform: none !important;
+}
+
+.theme-gothic .themes-screen {
+  --appearance-page: #0b0b0d;
+  --appearance-panel: #f2eee6;
+  --appearance-page-ink: #f2eee6;
+  --appearance-panel-ink: #17171a;
+  --appearance-accent: #a62a32;
+}
+
+/* The default theme is the relaxed everyday skin: pale surfaces and soft edges. */
+.theme-pastel :is(.hand-panel, .theme-card, .feature-tile) {
+  border-width: 1px !important;
+  border-color: rgba(82, 99, 132, 0.2) !important;
+  background: rgba(255, 255, 255, 0.86) !important;
+  box-shadow: 0 9px 24px rgba(71, 87, 120, 0.08) !important;
+}
+
+.theme-pastel :is(.hand-input, .fetch-button, .circle-button, .save-button, .character-avatar-button) {
+  border-width: 2px !important;
+  border-color: rgba(43, 52, 72, 0.72) !important;
+  box-shadow: 0 4px 12px rgba(71, 87, 120, 0.08) !important;
+}

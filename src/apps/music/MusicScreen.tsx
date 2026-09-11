@@ -30,71 +30,30 @@
 } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import { Character, ChatMessage, MusicPlaylist, MusicTrack, useAppStore } from '../../store';
-import { buildHttpErrorMessage, readHttpErrorDetail } from '../../lib/httpErrors';
 import { cn } from '../../lib/utils';
+import { runPaidTask } from '../../lib/paidTaskManager';
 import {
   buildMiniMaxMusicGenerationRequest,
   extractMiniMaxMusicAudio,
   formatMiniMaxLyrics,
   hexToAudioBlobUrl,
 } from './musicGeneration';
-
-type ChatCompletionMessage = { role: 'user' | 'assistant' | 'system'; content: string };
-
-function normalizeApiBaseUrl(url: string) {
-  const trimmed = url.trim().replace(/\/+$/, '');
-  if (!trimmed) return '';
-  return trimmed.endsWith('/v1') ? trimmed : `${trimmed}/v1`;
-}
-
-async function requestChatCompletion({
-  baseUrl,
-  apiKey,
-  model,
-  messages,
-  temperature,
-  maxTokens,
-}: {
-  baseUrl: string;
-  apiKey: string;
-  model: string;
-  messages: ChatCompletionMessage[];
-  temperature: number;
-  maxTokens: number;
-}) {
-  const endpoint = `${normalizeApiBaseUrl(baseUrl)}/chat/completions`;
-  useAppStore.getState().addAppLog?.({
-    type: 'ai',
-    title: '发送给 AI 的消息',
-    detail: JSON.stringify({ endpoint, model, messages, temperature, maxTokens }, null, 2),
-  });
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
-    },
-    body: JSON.stringify({
-      model,
-      messages,
-      temperature,
-      max_tokens: maxTokens,
-    }),
-  });
-  if (!response.ok) {
-    const message = buildHttpErrorMessage('聊天接口失败', {
-      status: response.status,
-      statusText: response.statusText,
-      detail: await readHttpErrorDetail(response),
-    });
-    useAppStore.getState().addAppLog?.({ type: 'error', title: 'AI 接口失败', detail: `${endpoint}\n${message}` });
-    throw new Error(message);
-  }
-  const data = await response.json();
-  const content = data?.choices?.[0]?.message?.content || '';
-  useAppStore.getState().addAppLog?.({ type: 'ai', title: 'AI 返回内容', detail: content });
-  return content;
-}
+import {
+  buildGdMusicLyricUrl,
+  buildGdMusicPicUrl,
+  buildGdMusicSearchUrl,
+  buildGdMusicUrlCandidates,
+  defaultGdMusicAdvancedSettings,
+  extractGdMusicLyrics,
+  extractGdMusicPic,
+  extractGdMusicPlayUrl,
+  getGdMusicQualityFallbacks,
+  gdMusicQualityOptions,
+  normalizeGdMusicBaseUrl,
+  normalizeGdMusicSearchResults,
+  normalizeGdMusicSources,
+} from './gdMusicApi';
+import { requestChatCompletion } from '../shared/aiText';
 
 function describeChatMessage(message: Pick<ChatMessage, 'kind' | 'content' | 'stickerLabel' | 'transcript' | 'recalled' | 'speakerId' | 'amount' | 'note' | 'itemName'>) {
   if (message.recalled) return '已撤回一条消息';
@@ -129,6 +88,7 @@ function Header({
   title,
   subtitle,
   tabs,
+  tabsClassName,
   onSave,
   onBack,
   saveLabel = '保存',
@@ -136,6 +96,7 @@ function Header({
   title: string;
   subtitle?: string;
   tabs?: React.ReactNode;
+  tabsClassName?: string;
   onSave?: () => void;
   onBack?: () => void;
   saveLabel?: string;
@@ -153,7 +114,7 @@ function Header({
         </div>
         {onSave ? <button onClick={onSave} className="save-button">{saveLabel}</button> : <span />}
       </div>
-      {tabs && <div className="no-scrollbar mt-5 flex gap-2 overflow-x-auto">{tabs}</div>}
+      {tabs && <div className={cn('no-scrollbar mt-5 gap-2', tabsClassName || 'flex overflow-x-auto')}>{tabs}</div>}
     </header>
   );
 }
@@ -190,8 +151,16 @@ type MusicTab = 'library' | 'player' | 'char' | 'me';
 type MusicLibraryView = 'index' | 'liked' | 'playlists' | 'playlist-detail' | 'history';
 
 const minimaxMusicModelPresets = [
-  { label: 'music-2.6', value: 'music-2.6' },
-  { label: 'music-2.6-free', value: 'music-2.6-free' },
+  {
+    label: 'Music 2.6（官方推荐）',
+    value: 'music-2.6',
+    description: '应用默认项；适用于 Token Plan 或付费账户，调用频率更高。',
+  },
+  {
+    label: 'Music 2.6 Free（官方限免）',
+    value: 'music-2.6-free',
+    description: '所有 API Key 均可使用的限免项，但调用频率更低。',
+  },
 ];
 
 type MusicPlaylistDraft = {
@@ -209,9 +178,14 @@ type MusicSearchResult = {
   album?: string;
   cover?: string;
   audioUrl?: string;
+  lyrics?: string;
   sourceUrl?: string;
   access: 'playable' | 'preview' | 'unplayable';
-  source: 'audius' | 'netease' | 'qq' | 'custom' | 'demo';
+  source: 'audius' | 'gd' | 'netease' | 'qq' | 'custom' | 'demo';
+  gdSource?: string;
+  gdCoverId?: string;
+  gdLyricId?: string;
+  quality?: string;
 };
 
 const demoMusicResult: MusicSearchResult = {
@@ -395,6 +369,7 @@ export function MusicScreen() {
   const [searchingMusic, setSearchingMusic] = useState(false);
   const [musicSearchResults, setMusicSearchResults] = useState<MusicSearchResult[]>([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
+  const [showMusicAdvancedSettings, setShowMusicAdvancedSettings] = useState(false);
   const [musicStatus, setMusicStatus] = useState('');
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
   const [quickPlaylistId, setQuickPlaylistId] = useState('');
@@ -464,6 +439,17 @@ export function MusicScreen() {
   };
 
   const searchSourceLabel = (result: MusicSearchResult) => {
+    if (result.source === 'gd') {
+      const labels: Record<string, string> = {
+        netease: 'GD·网易云',
+        bilibili: 'GD·B站',
+        joox: 'GD·JOOX',
+        migu: 'GD·咪咕',
+        kuwo: 'GD·酷我',
+        kugou: 'GD·酷狗',
+      };
+      return labels[result.gdSource || ''] || `GD·${result.gdSource || '音乐'}`;
+    }
     if (result.source === 'audius') return 'Audius';
     if (result.source === 'netease') return '网易云';
     if (result.source === 'qq') return 'QQ';
@@ -678,6 +664,34 @@ export function MusicScreen() {
     })).then((results) => results.filter(Boolean) as MusicSearchResult[]);
   };
 
+  const searchGdMusic = async (term: string): Promise<MusicSearchResult[]> => {
+    const baseUrl = normalizeGdMusicBaseUrl(musicSourceConfig.gdBaseUrl);
+    const sources = normalizeGdMusicSources(musicSourceConfig.gdSources);
+    addAppLog({ type: 'music', title: 'GD 音乐台搜索', detail: `${baseUrl}\nsources=${sources.join(',')}; keyword=${term}` });
+    const settled = await Promise.allSettled(sources.map(async (source) => {
+      const response = await fetch(buildGdMusicSearchUrl({ baseUrl, source, keyword: term, count: 20, page: 1 }));
+      if (!response.ok) throw new Error(`GD ${source} ${response.status}`);
+      const data = await response.json();
+      return normalizeGdMusicSearchResults(data).map((item): MusicSearchResult => ({
+        id: item.id,
+        sourceId: item.sourceId,
+        title: item.title,
+        artist: item.artist,
+        album: item.album,
+        cover: item.coverId && (/^https?:\/\//i.test(item.coverId) || item.coverId.startsWith('//'))
+          ? buildGdMusicPicUrl({ baseUrl, source: item.gdSource, id: item.coverId, size: 300 })
+          : undefined,
+        sourceUrl: undefined,
+        access: 'preview',
+        source: 'gd',
+        gdSource: item.gdSource,
+        gdCoverId: item.coverId,
+        gdLyricId: item.lyricId,
+      }));
+    }));
+    return settled.flatMap((item) => item.status === 'fulfilled' ? item.value : []);
+  };
+
   const searchExternalMusic = async () => {
     const term = externalQuery.trim();
     if (!term) return;
@@ -685,6 +699,7 @@ export function MusicScreen() {
     setMusicStatus('');
     try {
       const enabledSources = [
+        searchGdMusic(term),
         searchAudiusMusic(term),
         musicSourceConfig.neteaseBaseUrl.trim() ? searchNeteaseMusic(term) : Promise.resolve([]),
         musicSourceConfig.qqBaseUrl.trim() ? searchQqMusic(term) : Promise.resolve([]),
@@ -707,6 +722,33 @@ export function MusicScreen() {
   const resolveSearchResultAudioUrl = async (result: MusicSearchResult) => {
     if (result.audioUrl) return result.audioUrl;
     const id = result.sourceId || result.id.replace(/^(netease|qq)-/, '');
+    if (result.source === 'gd') {
+      const baseUrl = normalizeGdMusicBaseUrl(musicSourceConfig.gdBaseUrl);
+      const source = result.gdSource || 'netease';
+      const urls = buildGdMusicUrlCandidates({
+        baseUrl,
+        source,
+        id,
+        qualities: getGdMusicQualityFallbacks(musicSourceConfig.gdQuality),
+      });
+      for (const endpoint of urls) {
+        try {
+          const response = await fetch(endpoint);
+          if (!response.ok) continue;
+          const data = await response.json();
+          const extracted = extractGdMusicPlayUrl(data);
+          if (extracted?.audioUrl) {
+            result.quality = extracted.quality;
+            return window.location.protocol === 'https:' && extracted.audioUrl.startsWith('http://')
+              ? extracted.audioUrl.replace('http://', 'https://')
+              : extracted.audioUrl;
+          }
+        } catch {
+          // try next quality
+        }
+      }
+      return '';
+    }
     if (result.source === 'netease') {
       const baseUrl = trimMusicBaseUrl(musicSourceConfig.neteaseBaseUrl);
       if (!baseUrl || !id) return '';
@@ -742,7 +784,28 @@ export function MusicScreen() {
   const playableSearchResult = async (result: MusicSearchResult) => {
     const audioUrl = await resolveSearchResultAudioUrl(result);
     if (!audioUrl) return null;
-    return { ...result, audioUrl, access: 'playable' as const };
+    if (result.source !== 'gd') return { ...result, audioUrl, access: 'playable' as const };
+    const baseUrl = normalizeGdMusicBaseUrl(musicSourceConfig.gdBaseUrl);
+    const gdSource = result.gdSource || 'netease';
+    let cover = result.cover;
+    if (!cover && result.gdCoverId) {
+      try {
+        const picResponse = await fetch(buildGdMusicPicUrl({ baseUrl, source: gdSource, id: result.gdCoverId, size: 300 }));
+        if (picResponse.ok) cover = extractGdMusicPic(await picResponse.json()) || cover;
+      } catch {
+        cover = result.cover;
+      }
+    }
+    let lyrics = '';
+    if (result.gdLyricId) {
+      try {
+        const lyricResponse = await fetch(buildGdMusicLyricUrl({ baseUrl, source: gdSource, id: result.gdLyricId }));
+        if (lyricResponse.ok) lyrics = extractGdMusicLyrics(await lyricResponse.json());
+      } catch {
+        lyrics = '';
+      }
+    }
+    return { ...result, audioUrl, cover, lyrics, access: 'playable' as const };
   };
 
   const playSearchResult = async (result: MusicSearchResult) => {
@@ -758,8 +821,8 @@ export function MusicScreen() {
         album: resolved.album,
         cover: resolved.cover,
         audioUrl: resolved.audioUrl,
-        lyrics: '',
-        tags: [sourceTag(resolved), '可听'],
+        lyrics: resolved.lyrics || '',
+        tags: [sourceTag(resolved), resolved.quality ? `音质 ${resolved.quality}` : '可听'],
         source: 'browser',
         liked: false,
       });
@@ -771,8 +834,8 @@ export function MusicScreen() {
       album: resolved.album,
       cover: resolved.cover,
       audioUrl: resolved.audioUrl,
-      lyrics: '',
-      tags: [sourceTag(resolved), '可听'],
+      lyrics: resolved.lyrics || '',
+      tags: [sourceTag(resolved), resolved.quality ? `音质 ${resolved.quality}` : '可听'],
       liked: false,
       playCount: 0,
       source: 'browser',
@@ -796,8 +859,8 @@ export function MusicScreen() {
       album: resolved.album,
       cover: resolved.cover,
       audioUrl: resolved.audioUrl,
-      lyrics: '',
-      tags: [sourceTag(resolved), '可听'],
+      lyrics: resolved.lyrics || '',
+      tags: [sourceTag(resolved), resolved.quality ? `音质 ${resolved.quality}` : '可听'],
       source: 'browser',
       liked: false,
     });
@@ -818,8 +881,8 @@ export function MusicScreen() {
       album: resolved.album,
       cover: resolved.cover,
       audioUrl: resolved.audioUrl,
-      lyrics: '',
-      tags: [sourceTag(resolved), '可听'],
+      lyrics: resolved.lyrics || '',
+      tags: [sourceTag(resolved), resolved.quality ? `音质 ${resolved.quality}` : '可听'],
       source: 'browser',
       liked: false,
     });
@@ -995,10 +1058,7 @@ export function MusicScreen() {
     '这句副歌还会替我，停在你掌心',
   ].join('\n');
 
-  const getMiniMaxMusicApiKey = () => (
-    musicSourceConfig.minimaxApiKey.trim() ||
-    (ttsConfig.provider === 'minimax' ? ttsConfig.apiKey.trim() : '')
-  );
+  const getMiniMaxMusicApiKey = () => musicSourceConfig.minimaxApiKey.trim();
 
   const buildCharMusicPrompt = (payload: { character: Character; mood: string; melody: string; arrangement: string }) => [
     payload.mood,
@@ -1035,24 +1095,30 @@ export function MusicScreen() {
       }, null, 2),
     });
 
-    const response = await fetch(request.url, request.init);
-    const text = await response.text();
-    let data: unknown = {};
-    try {
-      data = text ? JSON.parse(text) : {};
-    } catch {
-      throw new Error('MiniMax 音乐返回的不是 JSON。');
-    }
-    if (!response.ok) {
-      throw new Error(`MiniMax 音乐生成失败：${response.status}`);
-    }
+    return runPaidTask({
+      kind: 'music-generation',
+      key: `${request.url}:${payload.character.id}`,
+      run: async (signal) => {
+        const response = await fetch(request.url, { ...request.init, signal });
+        const text = await response.text();
+        let data: unknown = {};
+        try {
+          data = text ? JSON.parse(text) : {};
+        } catch {
+          throw new Error('MiniMax 音乐返回的不是 JSON。');
+        }
+        if (!response.ok) {
+          throw new Error(`MiniMax 音乐生成失败：${response.status}`);
+        }
 
-    const audio = extractMiniMaxMusicAudio(data);
-    addAppLog({ type: 'music', title: 'MiniMax 音乐生成返回', detail: JSON.stringify({ kind: audio.kind, durationMs: audio.durationMs }, null, 2) });
-    return {
-      audioUrl: audio.kind === 'url' ? audio.audio : hexToAudioBlobUrl(audio.audio),
-      durationSeconds: audio.durationMs ? Math.max(1, Math.round(audio.durationMs / 1000)) : 0,
-    };
+        const audio = extractMiniMaxMusicAudio(data);
+        addAppLog({ type: 'music', title: 'MiniMax 音乐生成返回', detail: JSON.stringify({ kind: audio.kind, durationMs: audio.durationMs }, null, 2) });
+        return {
+          audioUrl: audio.kind === 'url' ? audio.audio : hexToAudioBlobUrl(audio.audio),
+          durationSeconds: audio.durationMs ? Math.max(1, Math.round(audio.durationMs / 1000)) : 0,
+        };
+      },
+    });
   };
 
   const generateMusicAudioForSong = async (track?: MusicTrack) => {
@@ -1064,7 +1130,7 @@ export function MusicScreen() {
       return;
     }
     if (!getMiniMaxMusicApiKey()) {
-      setCharSongStatus('先在这里填写 MiniMax 音乐 API Key，或在设置里选 MiniMax TTS 并填 key。');
+      setCharSongStatus('先在音乐高级设置里填写 MiniMax 音乐 API Key；音乐和 TTS 的密钥不会互相复用。');
       return;
     }
 
@@ -1268,30 +1334,36 @@ export function MusicScreen() {
     setCharSongStatus('正在发送给 TTS/歌声模型...');
     addAppLog({ type: 'tts', title: '发送唱歌请求', detail: JSON.stringify({ endpoint, title, voice: ttsConfig.voiceId, melody, arrangement, lyrics: text }, null, 2) });
     try {
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          text,
-          lyrics: text,
-          title,
-          melody,
-          arrangement,
-          voice: ttsConfig.voiceId,
-          voiceId: ttsConfig.voiceId,
-          mode: 'sing',
-        }),
+      const audioUrl = await runPaidTask({
+        kind: 'tts-synthesis',
+        key: `${endpoint}:sing:${title}`,
+        run: async (signal) => {
+          const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              text,
+              lyrics: text,
+              title,
+              melody,
+              arrangement,
+              voice: ttsConfig.voiceId,
+              voiceId: ttsConfig.voiceId,
+              mode: 'sing',
+            }),
+            signal,
+          });
+          if (!response.ok) throw new Error(`TTS 失败：${response.status}`);
+          const contentType = response.headers.get('content-type') || '';
+          if (contentType.includes('application/json')) {
+            const data = await response.json();
+            const resolvedUrl = musicText(data?.audioUrl) || musicText(data?.url) || musicText(data?.data?.audioUrl) || musicText(data?.data?.url);
+            if (!resolvedUrl) throw new Error('TTS 没有返回音频地址');
+            return resolvedUrl;
+          }
+          return URL.createObjectURL(await response.blob());
+        },
       });
-      if (!response.ok) throw new Error(`TTS 失败：${response.status}`);
-      const contentType = response.headers.get('content-type') || '';
-      let audioUrl = '';
-      if (contentType.includes('application/json')) {
-        const data = await response.json();
-        audioUrl = musicText(data?.audioUrl) || musicText(data?.url) || musicText(data?.data?.audioUrl) || musicText(data?.data?.url);
-      } else {
-        audioUrl = URL.createObjectURL(await response.blob());
-      }
-      if (!audioUrl) throw new Error('TTS 没有返回音频地址');
       const targetId = track?.id || activeCharSong?.id;
       if (targetId) updateMusicTrack(targetId, { audioUrl });
       setCharSongStatus('唱歌音频已生成，正在播放。');
@@ -1434,6 +1506,7 @@ export function MusicScreen() {
                 ? () => setLibraryView('index')
                 : undefined
         }
+        tabsClassName="compact-tab-grid"
         tabs={
           <>
             <Pill icon={<Search />} label="曲库" active={tab === 'library'} onClick={() => setTab('library')} />
@@ -1479,18 +1552,56 @@ export function MusicScreen() {
               <button onClick={searchExternalMusic} disabled={searchingMusic} className="circle-button" title="搜索"><Search className="h-5 w-5" /></button>
             </div>
             <div className="mt-3 grid gap-2">
-              <input
-                value={musicSourceConfig.neteaseBaseUrl}
-                onChange={(event) => setMusicSourceConfig({ neteaseBaseUrl: event.target.value })}
+              <select
+                value={musicSourceConfig.gdQuality}
+                onChange={(event) => setMusicSourceConfig({ gdQuality: event.target.value })}
                 className="hand-input w-full text-xs"
-                placeholder="网易云 API Base URL，例如 http://localhost:3002"
-              />
-              <input
-                value={musicSourceConfig.qqBaseUrl}
-                onChange={(event) => setMusicSourceConfig({ qqBaseUrl: event.target.value })}
-                className="hand-input w-full text-xs"
-                placeholder="QQ 音乐 API Base URL，例如 http://localhost:3300"
-              />
+              >
+                {gdMusicQualityOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+              </select>
+              <div className="rounded-2xl border-[2px] border-[#111]/15 bg-white/45">
+                <button
+                  onClick={() => setShowMusicAdvancedSettings(!showMusicAdvancedSettings)}
+                  className="flex w-full items-center justify-between gap-3 px-3 py-3 text-left text-sm font-black"
+                >
+                  <span className="flex items-center gap-2"><MoreHorizontal className="h-4 w-4" />高级设置</span>
+                  <ChevronRight className={cn('h-5 w-5 transition-transform', showMusicAdvancedSettings && 'rotate-90')} />
+                </button>
+                {showMusicAdvancedSettings && (
+                  <div className="grid gap-2 border-t-[2px] border-[#111]/15 p-3">
+                    <input
+                      value={musicSourceConfig.gdBaseUrl}
+                      onChange={(event) => setMusicSourceConfig({ gdBaseUrl: event.target.value })}
+                      className="hand-input w-full text-xs"
+                      placeholder="GD 音乐台接口"
+                    />
+                    <input
+                      value={musicSourceConfig.gdSources}
+                      onChange={(event) => setMusicSourceConfig({ gdSources: event.target.value })}
+                      className="hand-input w-full text-xs"
+                      placeholder="搜索来源：netease,bilibili,joox"
+                    />
+                    <input
+                      value={musicSourceConfig.neteaseBaseUrl}
+                      onChange={(event) => setMusicSourceConfig({ neteaseBaseUrl: event.target.value })}
+                      className="hand-input w-full text-xs"
+                      placeholder="旧版网易云 API，可不填"
+                    />
+                    <input
+                      value={musicSourceConfig.qqBaseUrl}
+                      onChange={(event) => setMusicSourceConfig({ qqBaseUrl: event.target.value })}
+                      className="hand-input w-full text-xs"
+                      placeholder="旧版 QQ 音乐 API，可不填"
+                    />
+                    <button
+                      onClick={() => setMusicSourceConfig({ ...defaultGdMusicAdvancedSettings })}
+                      className="flex h-11 items-center justify-center gap-2 rounded-2xl border-[2px] border-[#111]/20 bg-white/80 text-xs font-black"
+                    >
+                      <RefreshCw className="h-4 w-4" />恢复默认
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
             {musicStatus && <p className="mt-2 text-xs font-black opacity-60">{musicStatus}</p>}
             <div className="mt-3 rounded-3xl border-[2px] border-[#111]/15">
@@ -1808,6 +1919,9 @@ export function MusicScreen() {
           </Field>
           <Field icon={<Sparkles />} label="MiniMax 音乐">
             <div className="grid gap-2">
+              <p className="rounded-2xl bg-white/55 p-3 text-xs font-bold leading-5 opacity-75">
+                这是 MiniMax 官方音乐模型快捷项，不是豆包 TTS 预设。应用默认使用 Music 2.6；此页面只做文字或歌词生成音乐，所以不显示翻唱模型。
+              </p>
               <div className="flex flex-wrap gap-2">
                 {minimaxMusicModelPresets.map((preset) => (
                   <button
@@ -1820,6 +1934,10 @@ export function MusicScreen() {
                   </button>
                 ))}
               </div>
+              <p className="px-1 text-xs font-bold leading-5 opacity-65">
+                {minimaxMusicModelPresets.find((preset) => preset.value === (musicSourceConfig.minimaxModel || 'music-2.6'))?.description
+                  || '这是自定义模型名，是否支持取决于当前 MiniMax 账户和接口。'}
+              </p>
               <input
                 value={musicSourceConfig.minimaxModel}
                 onChange={(event) => setMusicSourceConfig({ minimaxModel: event.target.value })}
@@ -1830,7 +1948,7 @@ export function MusicScreen() {
                 value={musicSourceConfig.minimaxApiKey}
                 onChange={(event) => setMusicSourceConfig({ minimaxApiKey: event.target.value })}
                 className="hand-input w-full text-xs"
-                placeholder="MiniMax 音乐 API Key；也可复用设置里的 MiniMax TTS Key"
+                placeholder="MiniMax 音乐 API Key（与 TTS Key 独立保存）"
                 type="password"
               />
               <input

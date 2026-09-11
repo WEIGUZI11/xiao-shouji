@@ -47,13 +47,77 @@ function buildExpoPushMessages(item, devices) {
   }));
 }
 
+async function proxyTtsRequest(payload = {}) {
+  const url = String(payload.url || '');
+  if (!/^https?:\/\//i.test(url)) {
+    const error = new Error('Invalid TTS proxy URL');
+    error.statusCode = 400;
+    throw error;
+  }
+  const upstream = await fetch(url, {
+    method: payload.init?.method || 'GET',
+    headers: payload.init?.headers || {},
+    body: payload.init?.body,
+  });
+  return {
+    status: upstream.status,
+    contentType: upstream.headers.get('content-type') || 'application/octet-stream',
+    body: Buffer.from(await upstream.arrayBuffer()),
+  };
+}
+
+function isTrustedImageProxyUrl(value) {
+  try {
+    const target = new URL(String(value || ''));
+    const hostname = target.hostname.toLowerCase();
+    const hosts = ['api.openai.com', 'image.novelai.net', ...String(process.env.IMAGE_PROXY_ALLOWED_HOSTS || '').split(',')]
+      .map((item) => item.trim().toLowerCase())
+      .filter(Boolean);
+    return target.protocol === 'https:' && !target.username && !target.password
+      && hosts.some((host) => hostname === host || hostname.endsWith(`.${host}`));
+  } catch {
+    return false;
+  }
+}
+
+async function proxyImageRequest(payload = {}) {
+  const url = String(payload.url || '');
+  if (!isTrustedImageProxyUrl(url)) {
+    const error = new Error('Image proxy host is not trusted');
+    error.statusCode = 403;
+    throw error;
+  }
+  const method = String(payload.init?.method || 'GET').toUpperCase();
+  if (!['GET', 'POST'].includes(method)) {
+    const error = new Error('Unsupported upstream method');
+    error.statusCode = 405;
+    throw error;
+  }
+  const upstream = await fetch(url, {
+    method,
+    headers: payload.init?.headers || {},
+    body: method === 'POST' ? payload.init?.body : undefined,
+    signal: AbortSignal.timeout(150000),
+  });
+  const body = Buffer.from(await upstream.arrayBuffer());
+  if (body.byteLength > 32 * 1024 * 1024) {
+    const error = new Error('Image response is too large');
+    error.statusCode = 413;
+    throw error;
+  }
+  return {
+    status: upstream.status,
+    contentType: upstream.headers.get('content-type') || 'application/octet-stream',
+    body,
+  };
+}
+
 function createNaiProxyApp({ pushSender = createExpoPushSender(), nowProvider = Date.now } = {}) {
   const app = express();
   const allowedOrigin = process.env.NAI_ALLOWED_ORIGIN || '*';
   const reminderStore = createProactiveReminderStore({ filePath: process.env.PROACTIVE_REMINDER_STORE_PATH });
   const reminderIntervalMs = Math.max(5000, Number(process.env.PROACTIVE_REMINDER_TICK_MS || 30000));
 
-  app.use(express.json({ limit: process.env.NAI_PROXY_BODY_LIMIT || '2mb' }));
   app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -63,6 +127,14 @@ function createNaiProxyApp({ pushSender = createExpoPushSender(), nowProvider = 
       return;
     }
     next();
+  });
+  app.use(express.json({ limit: process.env.NAI_PROXY_BODY_LIMIT || '2mb' }));
+  app.use((error, req, res, next) => {
+    if (error?.type === 'entity.parse.failed' || error instanceof SyntaxError) {
+      res.status(400).json({ ok: false, message: 'invalid json' });
+      return;
+    }
+    next(error);
   });
 
   const pushCreatedReminders = async (items) => {
@@ -113,6 +185,32 @@ function createNaiProxyApp({ pushSender = createExpoPushSender(), nowProvider = 
       relay: process.env.NAI_RELAY_URL ? 'enabled' : 'disabled',
       proxy: process.env.NAI_HTTPS_PROXY || process.env.HTTPS_PROXY ? 'enabled' : 'disabled',
     });
+  });
+
+  app.post('/api/tts/proxy', async (req, res) => {
+    try {
+      const result = await proxyTtsRequest(req.body || {});
+      res.status(result.status);
+      res.setHeader('content-type', result.contentType);
+      res.setHeader('cache-control', 'no-store');
+      res.send(result.body);
+    } catch (error) {
+      const status = Number(error?.statusCode || 500);
+      res.status(status).json({ error: error instanceof Error ? error.message : 'TTS proxy failed' });
+    }
+  });
+
+  app.post('/api/image/proxy', async (req, res) => {
+    try {
+      const result = await proxyImageRequest(req.body || {});
+      res.status(result.status);
+      res.setHeader('content-type', result.contentType);
+      res.setHeader('cache-control', 'no-store');
+      res.send(result.body);
+    } catch (error) {
+      const status = Number(error?.statusCode || 500);
+      res.status(status).json({ error: error instanceof Error ? error.message : 'Image proxy failed' });
+    }
   });
 
   app.post('/api/proactive-reminders', (req, res) => {
@@ -178,4 +276,7 @@ module.exports = {
   createNaiProxyApp,
   buildExpoPushMessages,
   createExpoPushSender,
+  isTrustedImageProxyUrl,
+  proxyImageRequest,
+  proxyTtsRequest,
 };

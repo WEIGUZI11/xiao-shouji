@@ -1,7 +1,9 @@
 import { Heart, ImagePlus, MessageCircle, Palette, Send, Sparkles, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
-import { hashPrompt, requestNaiImage } from '../../../lib/naiImage';
+import { PersistentImage } from '../../../components/PersistentImage';
+import { requestAppImage } from '../../../lib/appImageGeneration';
+import { buildNovelAiPrompt, hashPrompt } from '../../../lib/naiImage';
 import { createId } from '../../../lib/utils';
 import { useAppStore } from '../../../store';
 import {
@@ -18,6 +20,8 @@ export function QQDynamic() {
     userName,
     userAvatar,
     imageGenerationConfig,
+    imageGenerationEnabled,
+    proactiveImageGenerationEnabled,
     addQqDynamicPost,
     deleteQqDynamicPost,
     toggleQqDynamicLike,
@@ -49,14 +53,18 @@ export function QQDynamic() {
     if (!prompt || generating) return;
     setGenerating(true);
     const imageId = createId('qq-space-image');
-    const fullPrompt = `QQ space post cover, casual mobile social feed image, ${prompt}`;
+    const fullPrompt = buildNovelAiPrompt(`QQ space post cover, casual mobile social feed image, ${prompt}`, 'gallery');
     const promptHash = hashPrompt(fullPrompt);
     try {
       addAppLog({ type: 'image', title: 'QQ 空间生图开始', detail: `prompt_hash=${promptHash}; model=${imageGenerationConfig.model}` });
-      const nextImage = await requestNaiImage({
+      const nextImage = await requestAppImage({
         config: imageGenerationConfig,
         prompt: fullPrompt,
+        triggerType: 'manual',
+        imageGenerationEnabled,
+        proactiveImageGenerationEnabled,
         timeoutMs: 45000,
+        source: 'qq-space',
       });
       recordGeneratedImage({
         imageId,
@@ -158,7 +166,7 @@ export function QQDynamic() {
         />
         {imageUrl && (
           <figure className="qq-dynamic-image-preview">
-            <img src={imageUrl} alt="QQ 空间配图预览" />
+            <PersistentImage src={imageUrl} alt="QQ 空间配图预览" />
             <figcaption>{imageSource === 'generated' ? 'AI 生图配图' : '文字图片配图'}</figcaption>
           </figure>
         )}
@@ -171,10 +179,12 @@ export function QQDynamic() {
             <Palette className="h-4 w-4" />
             文字图片
           </button>
-          <button type="button" onClick={generateImage} disabled={generating || !(imagePrompt.trim() || content.trim())}>
-            <ImagePlus className="h-4 w-4" />
-            {generating ? '生成中' : '生成配图'}
-          </button>
+          {imageGenerationEnabled && (
+            <button type="button" onClick={generateImage} disabled={generating || !(imagePrompt.trim() || content.trim())}>
+              <ImagePlus className="h-4 w-4" />
+              {generating ? '生成中' : '生成配图'}
+            </button>
+          )}
           <button type="button" onClick={publishPost} disabled={!content.trim() && !imageUrl}>
             <Send className="h-4 w-4" />
             发表
@@ -193,7 +203,7 @@ export function QQDynamic() {
         <article key={post.id} className="qq-dynamic-post">
           <header>
             <span className="qq-dynamic-avatar">
-              {post.authorAvatar ? <img src={post.authorAvatar} alt="" /> : post.authorName.slice(0, 1)}
+              {post.authorAvatar ? <PersistentImage src={post.authorAvatar} alt="" /> : post.authorName.slice(0, 1)}
             </span>
             <div>
               <strong>{post.authorName}</strong>
@@ -206,7 +216,7 @@ export function QQDynamic() {
             )}
           </header>
           <p>{post.content}</p>
-          {post.imageUrl && <img src={post.imageUrl} alt="QQ 空间动态配图" className="qq-dynamic-post-image" />}
+          {post.imageUrl && <PersistentImage src={post.imageUrl} alt="QQ 空间动态配图" className="qq-dynamic-post-image" />}
           <div className="qq-dynamic-post-actions">
             <button type="button" onClick={() => toggleQqDynamicLike(post.id, 'user')} className={post.likes.includes('user') ? 'active' : ''}>
               <Heart className="h-4 w-4" />

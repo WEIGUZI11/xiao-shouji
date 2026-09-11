@@ -2,11 +2,13 @@ import { Volume2 } from 'lucide-react';
 import { useRef, useState } from 'react';
 
 import { cn } from '../../../lib/utils';
+import { BubbleOrnaments } from './components/BubbleOrnaments';
 
 type VoiceMessageBubbleProps = {
   content: string;
   duration?: number;
   transcript?: string;
+  replyTo?: string;
   isUser: boolean;
   isUnread?: boolean;
   onPlay: () => void;
@@ -17,6 +19,7 @@ export function VoiceMessageBubble({
   content,
   duration,
   transcript,
+  replyTo,
   isUser,
   isUnread,
   onPlay,
@@ -64,6 +67,8 @@ export function VoiceMessageBubble({
         style={{ width }}
         title="点击播放，长按或右键查看转写"
       >
+        <BubbleOrnaments />
+        {replyTo && <span className={cn('wechat-reply-line', isUser ? 'wechat-reply-user' : 'wechat-reply-model')}><b>引用</b>{replyTo}</span>}
         {isUnread && <span className="wechat-voice-unread-dot" aria-label="未听语音" />}
         <span className="wechat-voice-icon">
           <Volume2 className="h-4 w-4" />

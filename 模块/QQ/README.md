@@ -48,6 +48,7 @@
 ## 聊天边界
 
 - QQ 聊天数据仍复用 `src/store.ts` 的 `chatSessions`，通过 `channel: "qq"` 与微信隔离。
+- QQ 聊天房间读取主题 App 的 `bubbleStyle`，与微信共享气泡美化选择；`src/themes/bubbles/index.css` 只覆盖外观，不改变 QQ 会话数据和 AI 回复逻辑。
 - QQ 聊天房间暂时复用 `src/apps/wechat/chat/ChatScreen.tsx` 的发送、AI 回复、图片、语音、表情、引用、收藏、撤回能力。
 - 共享聊天房间会按 `activeChannel === "qq"` 使用 QQ 专属提示词、QQ 软件预设和 QQ 日志文案；不再把 QQ API 回复要求写成微信气泡。
 - 不复制微信四页签、朋友圈、微信通讯录或微信生活卡片整套实现到 QQ。

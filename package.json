@@ -8,6 +8,8 @@
   },
   "scripts": {
     "dev": "vite --port=3000 --host=0.0.0.0",
+    "test": "node scripts/run-tests.mjs",
+    "test:selected-themes": "node scripts/selected-theme-visual-regression.mjs",
     "build": "vite build",
     "preview": "vite preview",
     "clean": "rm -rf dist",
@@ -17,6 +19,7 @@
     "nai:proxy": "node server/nai-proxy.cjs",
     "nai:test": "tsx scripts/nai-smoke-test.ts",
     "nai:model-matrix:test": "tsx scripts/nai-model-matrix-smoke-test.ts",
+    "doubao:tts:test": "tsx scripts/doubao-tts-smoke-test.ts",
     "wechat:proactive-image:test": "tsx scripts/wechat-proactive-image-smoke-test.ts"
   },
   "dependencies": {

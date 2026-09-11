@@ -70,7 +70,7 @@ try {
 
   assert.equal(
     formatReminderMessage({ timeZone: 'America/New_York', hour: 6, minute: 5, task: 'wake up' }, new Date('2026-06-21T18:05:00+08:00').getTime()),
-    'Now is New York time morning 06:05. Reminder: wake up',
+    '现在是用户所在地时间 2026年6月21日 06:05（星期日，清晨，时区 America/New_York，UTC-04:00）。提醒：wake up',
   );
 } finally {
   fs.rmSync(tempDir, { recursive: true, force: true });

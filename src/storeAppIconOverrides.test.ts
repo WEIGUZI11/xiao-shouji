@@ -24,4 +24,11 @@ assert.deepEqual(useAppStore.getState().appIconOverrides, {
 useAppStore.getState().clearAppIconOverride('wechat');
 assert.deepEqual(useAppStore.getState().appIconOverrides, {});
 
+useAppStore.getState().setAppIconOverride('qq', 'xiaophone://image/icon-1');
+assert.equal(useAppStore.getState().appIconOverrides.qq, 'xiaophone://image/icon-1');
+
+useAppStore.setState({ layoutPositions: { wechat: { x: 99, y: 99 }, qq: { x: 88, y: 88 } } } as any);
+useAppStore.getState().resetLayoutPositions(['wechat']);
+assert.deepEqual(useAppStore.getState().layoutPositions, { qq: { x: 88, y: 88 } });
+
 console.log('store app icon override actions ok');

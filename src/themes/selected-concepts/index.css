@@ -1,0 +1,753 @@
+/*
+ * User-selected numbered whole-phone themes.
+ * These are real UI skins: every app icon, image slot and dock action stays live.
+ * Large artwork is never bundled; the desktop image window is always user supplied.
+ */
+
+:where(
+  .theme-concept-01, .theme-concept-02, .theme-concept-03, .theme-concept-04, .theme-concept-12,
+  .theme-concept-20, .theme-concept-25, .theme-concept-26, .theme-concept-27,
+  .theme-concept-33, .theme-concept-45, .theme-concept-47, .theme-concept-57,
+  .theme-concept-58
+) {
+  --phone-bg: var(--c-bg);
+  --phone-text: var(--c-ink);
+  --panel-bg: var(--c-panel);
+  --accent: var(--c-accent);
+  --c-panel-ink: var(--c-ink);
+  --c-muted: color-mix(in srgb, var(--c-ink) 62%, var(--c-bg));
+  --c-radius: 16px;
+  --c-icon-radius: 14px;
+  --c-shadow: 0 10px 24px rgba(35, 31, 42, .12);
+}
+
+.theme-concept-01 {
+  --c-bg: #f0f0e6; --c-panel: #fbfaf2; --c-ink: #22281d; --c-accent: #75894c;
+  --c-shadow: 0 12px 30px rgba(68, 76, 46, .12); --c-radius: 24px; --c-icon-radius: 50%;
+}
+.theme-concept-02 {
+  --c-bg: #292827; --c-panel: #383634; --c-ink: #f3eee4; --c-panel-ink: #f3eee4; --c-accent: #b45f43;
+  --c-muted: #bdb4a8; --c-shadow: 0 8px 20px rgba(0, 0, 0, .28); --c-radius: 2px; --c-icon-radius: 0;
+}
+.theme-concept-03 {
+  --c-bg: #f7f6f2; --c-panel: #ffffff; --c-ink: #111111; --c-accent: #d12a32;
+  --c-shadow: 4px 4px 0 rgba(17, 17, 17, .12); --c-radius: 0; --c-icon-radius: 0;
+}
+.theme-concept-04 {
+  --c-bg: #ecebdd; --c-panel: #f8f4df; --c-ink: #303a2b; --c-accent: #77875d;
+  --c-shadow: 0 12px 28px rgba(62, 74, 52, .13); --c-radius: 22px; --c-icon-radius: 18px;
+}
+.theme-concept-12 {
+  --c-bg: #e9edf2; --c-panel: #f8fafc; --c-ink: #1c283b; --c-accent: #2862d2;
+  --c-shadow: 0 9px 24px rgba(46, 65, 93, .13); --c-radius: 12px; --c-icon-radius: 12px;
+}
+.theme-concept-20 {
+  --c-bg: #171313; --c-panel: #eee0c6; --c-ink: #f7edda; --c-panel-ink: #2a1718; --c-accent: #b83238;
+  --c-muted: #80655d; --c-shadow: 7px 8px 0 rgba(101, 23, 28, .52); --c-radius: 4px; --c-icon-radius: 4px;
+}
+.theme-concept-25 {
+  --c-bg: #ece7ed; --c-panel: #fbf8f2; --c-ink: #34303c; --c-accent: #9c3438;
+  --c-shadow: 0 12px 26px rgba(70, 59, 79, .14); --c-radius: 18px; --c-icon-radius: 14px;
+}
+.theme-concept-26 {
+  --c-bg: #eff2f8; --c-panel: #ffffff; --c-ink: #16275d; --c-accent: #2f64cd;
+  --c-shadow: 4px 4px 0 rgba(54, 92, 168, .18); --c-radius: 2px; --c-icon-radius: 3px;
+}
+.theme-concept-27 {
+  --c-bg: #191515; --c-panel: #f2e7d3; --c-ink: #f5ead9; --c-panel-ink: #281819; --c-accent: #d22b32;
+  --c-muted: #795b55; --c-shadow: 8px 8px 0 rgba(210, 43, 50, .48); --c-radius: 2px; --c-icon-radius: 2px;
+}
+.theme-concept-33 {
+  --c-bg: #3a2b20; --c-panel: #f0ddb0; --c-ink: #fff1cc; --c-panel-ink: #3a2a1e; --c-accent: #4f8275;
+  --c-muted: #7c6648; --c-shadow: 5px 5px 0 rgba(24, 15, 10, .5); --c-radius: 2px; --c-icon-radius: 2px;
+  font-family: "DotGothic16", "Courier New", monospace;
+}
+.theme-concept-45 {
+  --c-bg: #bf765d; --c-panel: #f2dfc7; --c-ink: #4d2d22; --c-accent: #747d58;
+  --c-shadow: 0 10px 18px rgba(88, 44, 31, .22), inset 0 1px 0 rgba(255,255,255,.45);
+  --c-radius: 24px; --c-icon-radius: 18px;
+}
+.theme-concept-47 {
+  --c-bg: #1c1f1b; --c-panel: #a0b45b; --c-ink: #d6e86a; --c-panel-ink: #172011; --c-accent: #bad84d;
+  --c-muted: #4c5d2e; --c-shadow: inset 3px 3px 0 #10110f, inset -2px -2px 0 #d0e27a, 4px 4px 0 #0b0c0a;
+  --c-radius: 3px; --c-icon-radius: 3px; font-family: "DotGothic16", "Courier New", monospace;
+}
+.theme-concept-57 {
+  --c-bg: #d9d2e6; --c-panel: #f8f4eb; --c-ink: #3d394a; --c-accent: #68617f;
+  --c-shadow: 0 12px 25px rgba(63, 55, 78, .19), inset 0 1px 0 rgba(255,255,255,.8);
+  --c-radius: 18px; --c-icon-radius: 14px;
+}
+.theme-concept-58 {
+  --c-bg: #f7f8f7; --c-panel: #ffffff; --c-ink: #25294c; --c-accent: #e75ca2;
+  --c-shadow: 0 9px 18px rgba(50, 57, 87, .17); --c-radius: 9px; --c-icon-radius: 4px;
+}
+
+:where(
+  .theme-concept-01, .theme-concept-02, .theme-concept-03, .theme-concept-04, .theme-concept-12,
+  .theme-concept-20, .theme-concept-25, .theme-concept-26, .theme-concept-27,
+  .theme-concept-33, .theme-concept-45, .theme-concept-47, .theme-concept-57,
+  .theme-concept-58
+) .phone-shell {
+  border-color: color-mix(in srgb, var(--c-ink) 78%, #141414) !important;
+  background: var(--c-bg);
+  color: var(--c-ink);
+  box-shadow: 0 24px 58px rgba(0,0,0,.32);
+}
+
+:where(
+  .theme-concept-01, .theme-concept-02, .theme-concept-03, .theme-concept-04, .theme-concept-12,
+  .theme-concept-20, .theme-concept-25, .theme-concept-26, .theme-concept-27,
+  .theme-concept-33, .theme-concept-45, .theme-concept-47, .theme-concept-57,
+  .theme-concept-58
+) :is(.cream-screen, .lock-screen) {
+  background: var(--c-bg) !important;
+  color: var(--c-ink);
+}
+
+/* Shared live desktop components. Themes below change their material and composition. */
+:where(
+  .theme-concept-01, .theme-concept-02, .theme-concept-03, .theme-concept-04, .theme-concept-12,
+  .theme-concept-20, .theme-concept-25, .theme-concept-26, .theme-concept-27,
+  .theme-concept-33, .theme-concept-45, .theme-concept-47, .theme-concept-57,
+  .theme-concept-58
+) :is(.app-icon, .dock-icon) {
+  width: 54px !important;
+  height: 54px !important;
+  border: 0 !important;
+  border-radius: var(--c-icon-radius) !important;
+  background: var(--c-panel) !important;
+  color: var(--c-accent) !important;
+  box-shadow: var(--c-shadow) !important;
+}
+
+:where(
+  .theme-concept-01, .theme-concept-02, .theme-concept-03, .theme-concept-04, .theme-concept-12,
+  .theme-concept-20, .theme-concept-25, .theme-concept-26, .theme-concept-27,
+  .theme-concept-33, .theme-concept-45, .theme-concept-47, .theme-concept-57,
+  .theme-concept-58
+) .app-label {
+  color: var(--c-ink) !important;
+  font-weight: 850 !important;
+  text-shadow: none !important;
+}
+
+:where(
+  .theme-concept-01, .theme-concept-02, .theme-concept-03, .theme-concept-04, .theme-concept-12,
+  .theme-concept-20, .theme-concept-25, .theme-concept-26, .theme-concept-27,
+  .theme-concept-33, .theme-concept-45, .theme-concept-47, .theme-concept-57,
+  .theme-concept-58
+) :is(.time-card, .image-bed) {
+  width: 340px;
+  border: 0 !important;
+  border-radius: var(--c-radius) !important;
+  background: var(--c-panel) !important;
+  color: var(--c-panel-ink) !important;
+  box-shadow: var(--c-shadow) !important;
+}
+
+:where(
+  .theme-concept-01, .theme-concept-02, .theme-concept-03, .theme-concept-04, .theme-concept-12,
+  .theme-concept-20, .theme-concept-25, .theme-concept-26, .theme-concept-27,
+  .theme-concept-33, .theme-concept-45, .theme-concept-47, .theme-concept-57,
+  .theme-concept-58
+) .time-card {
+  height: 78px;
+  padding: 10px 15px;
+}
+
+:where(
+  .theme-concept-01, .theme-concept-02, .theme-concept-03, .theme-concept-04, .theme-concept-12,
+  .theme-concept-20, .theme-concept-25, .theme-concept-26, .theme-concept-27,
+  .theme-concept-33, .theme-concept-45, .theme-concept-47, .theme-concept-57,
+  .theme-concept-58
+) .image-bed {
+  height: 132px;
+}
+
+:where(
+  .theme-concept-01, .theme-concept-02, .theme-concept-03, .theme-concept-04, .theme-concept-12,
+  .theme-concept-20, .theme-concept-25, .theme-concept-26, .theme-concept-27,
+  .theme-concept-33, .theme-concept-45, .theme-concept-47, .theme-concept-57,
+  .theme-concept-58
+) .image-bed.has-image-bed {
+  padding: 0;
+  overflow: hidden;
+}
+
+:where(
+  .theme-concept-01, .theme-concept-02, .theme-concept-03, .theme-concept-04, .theme-concept-12,
+  .theme-concept-20, .theme-concept-25, .theme-concept-26, .theme-concept-27,
+  .theme-concept-33, .theme-concept-45, .theme-concept-47, .theme-concept-57,
+  .theme-concept-58
+) .dock {
+  right: 14px;
+  bottom: 12px;
+  left: 14px;
+  gap: 8px;
+  border: 0 !important;
+  border-radius: var(--c-radius) !important;
+  background: color-mix(in srgb, var(--c-panel) 94%, transparent) !important;
+  padding: 9px 10px;
+  color: var(--c-panel-ink);
+  box-shadow: var(--c-shadow) !important;
+}
+
+:where(
+  .theme-concept-01, .theme-concept-02, .theme-concept-03, .theme-concept-04, .theme-concept-12,
+  .theme-concept-20, .theme-concept-25, .theme-concept-26, .theme-concept-27,
+  .theme-concept-33, .theme-concept-45, .theme-concept-47, .theme-concept-57,
+  .theme-concept-58
+) .dock > button > span:last-child {
+  color: var(--c-panel-ink) !important;
+}
+
+:where(
+  .theme-concept-01, .theme-concept-02, .theme-concept-03, .theme-concept-04, .theme-concept-12,
+  .theme-concept-20, .theme-concept-25, .theme-concept-26, .theme-concept-27,
+  .theme-concept-33, .theme-concept-45, .theme-concept-47, .theme-concept-57,
+  .theme-concept-58
+) :is(.layout-toggle, .shell-notification-button) {
+  border: 0 !important;
+  border-radius: 12px !important;
+  background: color-mix(in srgb, var(--c-panel) 94%, transparent) !important;
+  color: var(--c-panel-ink) !important;
+  box-shadow: 0 8px 20px rgba(20, 20, 26, .11) !important;
+}
+
+/* Swipe is the primary page interaction; the buttons are only compact accessible dots. */
+:where(
+  .theme-concept-01, .theme-concept-02, .theme-concept-03, .theme-concept-04, .theme-concept-12,
+  .theme-concept-20, .theme-concept-25, .theme-concept-26, .theme-concept-27,
+  .theme-concept-33, .theme-concept-45, .theme-concept-47, .theme-concept-57,
+  .theme-concept-58
+) .page-dots {
+  gap: 0;
+}
+
+:where(
+  .theme-concept-01, .theme-concept-02, .theme-concept-03, .theme-concept-04, .theme-concept-12,
+  .theme-concept-20, .theme-concept-25, .theme-concept-26, .theme-concept-27,
+  .theme-concept-33, .theme-concept-45, .theme-concept-47, .theme-concept-57,
+  .theme-concept-58
+) .page-dots button {
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  min-height: 32px;
+  border: 0 !important;
+  background: transparent !important;
+  padding: 0;
+  box-shadow: none !important;
+}
+
+.page-dot-mark {
+  display: block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(42, 43, 50, .27);
+  transition: width .18s ease, background .18s ease;
+}
+
+.page-dots button.active .page-dot-mark {
+  width: 15px;
+  border-radius: 999px;
+  background: var(--c-accent, #222);
+}
+
+/* Whole-app surfaces stay readable without turning every screen into the same outlined card. */
+:where(
+  .theme-concept-01, .theme-concept-02, .theme-concept-03, .theme-concept-04, .theme-concept-12,
+  .theme-concept-20, .theme-concept-25, .theme-concept-26, .theme-concept-27,
+  .theme-concept-33, .theme-concept-45, .theme-concept-47, .theme-concept-57,
+  .theme-concept-58
+) :is(
+  header, .wechat-topbar, .wechat-tabs, .wechat-chat-header, .wechat-input-bar,
+  .qq-chat-header, .browser-tabs, .browser-toolbar, .xhs-topbar, .xhs-bottom
+) {
+  border-color: color-mix(in srgb, var(--c-ink) 10%, transparent) !important;
+  background: color-mix(in srgb, var(--c-panel) 96%, transparent) !important;
+  color: var(--c-panel-ink) !important;
+  box-shadow: 0 5px 16px rgba(33, 31, 40, .08);
+}
+
+:where(
+  .theme-concept-01, .theme-concept-02, .theme-concept-03, .theme-concept-04, .theme-concept-12,
+  .theme-concept-20, .theme-concept-25, .theme-concept-26, .theme-concept-27,
+  .theme-concept-33, .theme-concept-45, .theme-concept-47, .theme-concept-57,
+  .theme-concept-58
+) :is(
+  .hand-panel, .theme-card, .feature-tile, .custom-widget, .guide-panel,
+  .notification-sheet, .notification-card, .hand-note, .app-chip,
+  .wechat-chat-row, .wechat-contact-row, .wechat-menu-row, .wechat-empty-card,
+  .wechat-me-hero, .wechat-photo-wall, .wechat-plus-panel, .wechat-plus-action,
+  .wechat-moment-composer, .wechat-moment-card, .wechat-moments-hero,
+  .qq-search-bar, .qq-quick-action, .qq-row, .qq-empty-state,
+  .xhs-surface, .xhs-note-card, .xhs-detail,
+  .browser-result-header, .browser-result-card, .browser-page-view, .browser-history-row
+) {
+  border: 0 !important;
+  border-radius: var(--c-radius) !important;
+  background: var(--c-panel) !important;
+  color: var(--c-panel-ink) !important;
+  box-shadow: 0 7px 20px rgba(34, 31, 42, .09) !important;
+}
+
+:where(
+  .theme-concept-01, .theme-concept-02, .theme-concept-03, .theme-concept-04, .theme-concept-12,
+  .theme-concept-20, .theme-concept-25, .theme-concept-26, .theme-concept-27,
+  .theme-concept-33, .theme-concept-45, .theme-concept-47, .theme-concept-57,
+  .theme-concept-58
+) :is(
+  .circle-button, .save-button, .pill, .call-button, .fetch-button,
+  .browser-tool, .browser-window-button, .wechat-icon-button, .wechat-mini-button
+) {
+  border: 0 !important;
+  border-radius: max(10px, calc(var(--c-radius) * .65)) !important;
+  background: var(--c-panel) !important;
+  color: var(--c-panel-ink) !important;
+  box-shadow: 0 4px 12px rgba(34, 31, 42, .1) !important;
+}
+
+:where(
+  .theme-concept-01, .theme-concept-02, .theme-concept-03, .theme-concept-04, .theme-concept-12,
+  .theme-concept-20, .theme-concept-25, .theme-concept-26, .theme-concept-27,
+  .theme-concept-33, .theme-concept-45, .theme-concept-47, .theme-concept-57,
+  .theme-concept-58
+) :is(.theme-card.active, .pill.active, .layout-toggle.active, .fetch-button, .wechat-compose-send, .xhs-primary-button) {
+  background: var(--c-accent) !important;
+  color: #fff !important;
+}
+
+:where(
+  .theme-concept-01, .theme-concept-02, .theme-concept-03, .theme-concept-04, .theme-concept-12,
+  .theme-concept-20, .theme-concept-25, .theme-concept-26, .theme-concept-27,
+  .theme-concept-33, .theme-concept-45, .theme-concept-47, .theme-concept-57,
+  .theme-concept-58
+) :is(.hand-input, .widget-input, select, textarea, input, .browser-address, .browser-home-search, .browser-worldbook-input, .browser-setting-input) {
+  border: 1px solid color-mix(in srgb, var(--c-panel-ink) 18%, transparent) !important;
+  background: var(--c-panel) !important;
+  color: var(--c-panel-ink) !important;
+  caret-color: var(--c-accent);
+}
+
+:where(
+  .theme-concept-01, .theme-concept-02, .theme-concept-03, .theme-concept-04, .theme-concept-12,
+  .theme-concept-20, .theme-concept-25, .theme-concept-26, .theme-concept-27,
+  .theme-concept-33, .theme-concept-45, .theme-concept-47, .theme-concept-57,
+  .theme-concept-58
+) :is(.wechat-shell, .wechat-chat-screen) {
+  --wechat-bg: var(--c-bg);
+  --wechat-surface: var(--c-panel);
+  --wechat-surface-2: color-mix(in srgb, var(--c-accent) 13%, var(--c-panel));
+  --wechat-text: var(--c-panel-ink);
+  --wechat-muted: var(--c-muted);
+  --wechat-line: color-mix(in srgb, var(--c-panel-ink) 13%, transparent);
+  --wechat-active: var(--c-accent);
+  --wechat-active-text: #fff;
+  --wechat-user-bubble: var(--c-accent);
+  --wechat-model-bubble: var(--c-panel);
+  --wechat-badge: var(--c-accent);
+  background: var(--c-bg) !important;
+  color: var(--c-ink) !important;
+}
+
+:where(
+  .theme-concept-01, .theme-concept-02, .theme-concept-03, .theme-concept-04, .theme-concept-12,
+  .theme-concept-20, .theme-concept-25, .theme-concept-26, .theme-concept-27,
+  .theme-concept-33, .theme-concept-45, .theme-concept-47, .theme-concept-57,
+  .theme-concept-58
+) .wechat-page {
+  background: var(--c-bg) !important;
+  color: var(--c-ink) !important;
+}
+
+:where(
+  .theme-concept-01, .theme-concept-02, .theme-concept-03, .theme-concept-04, .theme-concept-12,
+  .theme-concept-20, .theme-concept-25, .theme-concept-26, .theme-concept-27,
+  .theme-concept-33, .theme-concept-45, .theme-concept-47, .theme-concept-57,
+  .theme-concept-58
+) .wechat-tab-button { color: var(--c-muted) !important; }
+
+:where(
+  .theme-concept-01, .theme-concept-02, .theme-concept-03, .theme-concept-04, .theme-concept-12,
+  .theme-concept-20, .theme-concept-25, .theme-concept-26, .theme-concept-27,
+  .theme-concept-33, .theme-concept-45, .theme-concept-47, .theme-concept-57,
+  .theme-concept-58
+) .wechat-tab-button.active { color: var(--c-accent) !important; }
+
+:where(
+  .theme-concept-01, .theme-concept-02, .theme-concept-03, .theme-concept-04, .theme-concept-12,
+  .theme-concept-20, .theme-concept-25, .theme-concept-26, .theme-concept-27,
+  .theme-concept-33, .theme-concept-45, .theme-concept-47, .theme-concept-57,
+  .theme-concept-58
+) :is(.qq-home-screen, .qq-chat-screen) {
+  --qq-bg: var(--c-bg); --qq-header-bg: var(--c-panel); --qq-text: var(--c-panel-ink);
+  --qq-heading: var(--c-panel-ink); --qq-muted: var(--c-muted); --qq-accent: var(--c-accent);
+  --qq-accent-soft: color-mix(in srgb, var(--c-accent) 13%, var(--c-panel));
+  --qq-surface: var(--c-panel); --qq-surface-strong: var(--c-panel);
+  --qq-line: color-mix(in srgb, var(--c-panel-ink) 13%, transparent); --qq-shadow: var(--c-shadow);
+  --qq-radius: var(--c-radius);
+}
+
+/* 01 — botanical geometry: wide quiet canvas, circular controls, no box grid. */
+.theme-concept-01 :is(.app-icon, .dock-icon) {
+  box-shadow: 0 8px 22px rgba(76, 90, 50, .13) !important;
+}
+.theme-concept-01 .dock { background: rgba(251, 250, 242, .72) !important; }
+.theme-concept-01 :is(.time-card, .image-bed) { border-radius: 28px !important; }
+.theme-concept-01 .image-bed { width: 166px; height: 154px; }
+.theme-concept-01 .time-card { width: 160px; height: 154px; }
+.theme-concept-01 .time-text { font-size: 29px; line-height: 1.05; }
+.theme-concept-01 .guide-mark { display: none; }
+
+/* 03 — editorial: hard black shadows and one red registration color. */
+.theme-concept-03 .phone-shell { border-width: 4px; }
+.theme-concept-03 :is(.app-icon, .dock-icon, .time-card, .image-bed, .dock) {
+  border-radius: 0 !important;
+  box-shadow: 4px 4px 0 rgba(17,17,17,.13) !important;
+}
+.theme-concept-03 .time-card { border-top: 5px solid #111 !important; }
+.theme-concept-03 .image-bed { border-top: 9px solid var(--c-accent) !important; }
+.theme-concept-03 .dock { border-top: 2px solid #111 !important; }
+
+/* 02 — dark vinyl editorial: split record player and terracotta clock. */
+.theme-concept-02 .desktop-screen {
+  background: linear-gradient(145deg, #31302e, #242423) !important;
+}
+.theme-concept-02 .time-card {
+  width: 126px;
+  height: 154px;
+  justify-content: flex-start;
+  border: 1px solid #8e4c39 !important;
+  background: #9d523a !important;
+  padding: 20px 15px;
+}
+.theme-concept-02 .time-text {
+  color: #fff4e5;
+  font-family: Georgia, serif;
+  font-size: 25px;
+  line-height: 1;
+  letter-spacing: -1px;
+  white-space: nowrap;
+}
+.theme-concept-02 .guide-mark { display: none; }
+.theme-concept-02 .date-text { white-space: nowrap; }
+.theme-concept-02 .image-bed {
+  width: 194px;
+  height: 154px;
+  border: 1px solid #77716a !important;
+  background:
+    radial-gradient(circle at 48% 48%, #a85b40 0 7px, #1b1b1a 8px 42px, #4b4844 43px 45px, #e8dfcf 46px) !important;
+}
+.theme-concept-02 .image-bed:not(.has-image-bed)::after {
+  content: "自定义唱片封面";
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  left: 8px;
+  color: #332f2b;
+  font-size: 11px;
+  font-weight: 850;
+  text-align: center;
+}
+.theme-concept-02 :is(.app-icon, .dock-icon) {
+  border-bottom: 1px solid #6d6964 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+.theme-concept-02 .dock {
+  border: 1px solid #5a5650 !important;
+  background: rgba(48, 47, 45, .94) !important;
+}
+
+/* 04 — tea notebook: soft paper tiles with restrained green type. */
+.theme-concept-04 .desktop-screen { background: #ecebdd !important; }
+.theme-concept-04 :is(.app-icon, .dock-icon) { border-radius: 20px 12px 20px 12px !important; }
+.theme-concept-04 .time-card { width: 148px; height: 154px; }
+.theme-concept-04 .image-bed { width: 168px; height: 154px; background: #f5f0da !important; }
+.theme-concept-04 .time-text { font-size: 28px; line-height: 1.05; }
+.theme-concept-04 .guide-mark { display: none; }
+
+/* 12 — architecture: clean white planes and cobalt rails. */
+.theme-concept-12 :is(.app-icon, .dock-icon) { box-shadow: 0 7px 18px rgba(38, 88, 185, .12) !important; }
+.theme-concept-12 :is(.time-card, .image-bed) { border-left: 6px solid var(--c-accent) !important; }
+.theme-concept-12 .dock { border-bottom: 5px solid var(--c-accent) !important; }
+
+/* 20 — stage: apps arrive before the user image, with cream props over a dark stage. */
+.theme-concept-20 .desktop-screen { background: #171313 !important; }
+.theme-concept-20 .desktop-screen::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse at 50% -18%, transparent 0 42%, #6f2029 43% 57%, transparent 58%),
+    linear-gradient(104deg, #6f2029 0 12%, transparent 12% 88%, #6f2029 88%),
+    linear-gradient(180deg, rgba(150, 43, 51, .35), transparent 24%);
+}
+.theme-concept-20 .time-card {
+  border-left: 8px solid #8d2831 !important;
+  background: linear-gradient(90deg, #eee0c6 0 66%, #1d1717 66% 100%) !important;
+}
+.theme-concept-20 :is(.app-icon, .dock-icon) { color: #b83238 !important; }
+.theme-concept-20 .app-icon {
+  clip-path: polygon(7% 0, 94% 5%, 100% 90%, 10% 100%, 0 15%);
+  transform: rotate(-1.5deg);
+}
+.theme-concept-20 .app-button:nth-of-type(even) .app-icon { transform: rotate(1.5deg); }
+
+/* 25 — paper mystery: one shared floating app sheet, not eight outlined cards. */
+.theme-concept-25 .desktop-canvas::before {
+  content: ""; position: absolute; z-index: 0; left: 0; top: 146px; width: 340px; height: 202px;
+  border-radius: 22px; background: rgba(251,248,242,.94); box-shadow: var(--c-shadow); pointer-events: none;
+  clip-path: polygon(0 5%, 7% 0, 19% 4%, 31% 1%, 44% 5%, 57% 1%, 70% 4%, 83% 0, 100% 5%, 100% 100%, 0 100%);
+}
+.theme-concept-25 .desktop-screen {
+  background:
+    radial-gradient(ellipse at 85% 9%, rgba(171, 160, 194, .58), transparent 28%),
+    linear-gradient(135deg, #f7f2e9 0 32%, #ded6e9 32% 42%, #f5efe7 42%) !important;
+}
+.theme-concept-25 .time-card { border-bottom: 3px solid #a53b40 !important; }
+.theme-concept-25 .image-bed { border: 1px dashed #aaa0aa !important; }
+.theme-concept-25 :is(.app-icon, .dock-icon) { background: transparent !important; box-shadow: none !important; }
+
+/* 26 — blue Y2K desktop windows. */
+.theme-concept-26 .desktop-screen {
+  background-color: #eff2f8 !important;
+  background-image: linear-gradient(rgba(47,100,205,.045) 1px, transparent 1px), linear-gradient(90deg, rgba(47,100,205,.045) 1px, transparent 1px) !important;
+  background-size: 18px 18px !important;
+}
+.theme-concept-26 .desktop-canvas::before {
+  content: "快速应用                                      –  □  ×";
+  position: absolute; z-index: 0; left: 0; top: 160px; width: 340px; height: 202px;
+  box-sizing: border-box; padding: 4px 8px; background: linear-gradient(#e58abd 0 24px, #fff 24px);
+  border: 1px solid #7094d3; color: #18356c; font-size: 11px; font-weight: 900;
+  box-shadow: 4px 4px 0 rgba(54,92,168,.18); pointer-events: none;
+}
+.theme-concept-26 :is(.time-card, .image-bed) { position: relative; padding-top: 30px; border: 1px solid #789cdf !important; }
+.theme-concept-26 :is(.time-card, .image-bed)::before {
+  content: "STATUS                                      –  □  ×";
+  position: absolute; inset: 0 0 auto; height: 22px; padding: 3px 7px;
+  background: linear-gradient(90deg, #76a1ea, #e58abd); color: #17356c; font-size: 10px; font-weight: 900; text-align: left;
+}
+.theme-concept-26 .image-bed::before { content: "自定义图片                                  –  ×"; }
+.theme-concept-26 :is(.app-icon, .dock-icon) { box-shadow: 3px 3px 0 rgba(47,100,205,.2) !important; }
+
+/* 27 — kinetic editorial: image first, apps lower, solid red cutouts instead of thin lines. */
+.theme-concept-27 .desktop-screen { background: #191515 !important; }
+.theme-concept-27 .desktop-screen::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(150deg, #ca2830 0 18%, transparent 18% 77%, #ca2830 77%);
+}
+.theme-concept-27 :is(.app-icon, .dock-icon) { color: var(--c-accent) !important; }
+.theme-concept-27 .desktop-canvas::before {
+  content: ""; position: absolute; z-index: 0; top: 158px; left: 0; width: 340px; height: 200px;
+  background: #f2e7d3; clip-path: polygon(0 3%, 96% 0, 100% 91%, 3% 100%); pointer-events: none;
+}
+.theme-concept-27 .time-card { background: linear-gradient(105deg, #f2e7d3 0 46%, #c82931 46% 50%, #191515 50%) !important; }
+.theme-concept-27 .app-icon { background: transparent !important; box-shadow: none !important; }
+.theme-concept-27 .app-label { color: #281819 !important; }
+.theme-concept-27 .image-bed { min-height: 134px; border: 2px dashed #d22b32 !important; background: #151313 !important; color: #f2e7d3 !important; }
+
+/* 33 — pixel café: a warm pixel screen with tactile square keys. */
+.theme-concept-33 .desktop-screen { background: #3a2b20 !important; image-rendering: pixelated; }
+.theme-concept-33 :is(.time-card, .image-bed, .dock) { border: 3px double #816942 !important; }
+.theme-concept-33 .time-card { height: 102px; padding-bottom: 34px; }
+.theme-concept-33 .time-card::after {
+  content: "心情 ♥ 86   体力 72/100   灵感 58";
+  position: absolute; right: 8px; bottom: 7px; left: 8px;
+  border-top: 2px dotted #816942; padding-top: 6px; color: #3a2a1e;
+  font: 10px/1.2 "DotGothic16", monospace; text-align: center;
+}
+.theme-concept-33 .desktop-canvas::before {
+  content: ""; position: absolute; z-index: 0; top: 160px; left: 0; width: 340px; height: 190px;
+  border: 3px double #816942;
+  background: linear-gradient(#8e7549 1px, transparent 1px), linear-gradient(90deg, #8e7549 1px, transparent 1px), #f0ddb0;
+  background-size: 85px 95px; pointer-events: none;
+}
+.theme-concept-33 .app-icon { border: 0 !important; background: transparent !important; box-shadow: none !important; }
+.theme-concept-33 .app-label { color: #3a2a1e !important; }
+.theme-concept-33 .dock-icon { border: 2px solid #7d643f !important; }
+
+/* 45 — clay daily: deliberately borderless, soft and touchable. */
+.theme-concept-45 .phone-shell { border-color: #6e3e31 !important; }
+.theme-concept-45 :is(.app-icon, .dock-icon, .time-card, .image-bed, .dock) { border: 0 !important; }
+.theme-concept-45 :is(.app-icon, .dock-icon) { border-radius: 20px !important; }
+
+/* 47 — handheld: physical screen, acid pixels and inset keys. */
+.theme-concept-47 .phone-shell { border-width: 9px; border-radius: 24px; }
+.theme-concept-47 .desktop-screen { background: #1c1f1b !important; }
+.theme-concept-47 :is(.time-card, .image-bed, .dock) { border: 3px solid #0c0e0a !important; }
+.theme-concept-47 :is(.app-icon, .dock-icon) { border: 2px solid #0c0e0a !important; }
+
+/* 57 — layered paper reference: top information on paper, shared app sheet, user image below. */
+.theme-concept-57 .phone-shell { border-width: 3px; border-radius: 27px; border-color: #4b4955 !important; }
+.theme-concept-57 .desktop-screen {
+  background: linear-gradient(180deg, #f8f4ec 0 31%, #d9d2e6 31% 100%) !important;
+}
+.theme-concept-57 .desktop-screen::before {
+  content: ""; position: absolute; z-index: 0; left: -34px; right: -30px; top: 152px; height: 116px;
+  border-radius: 0 0 58% 34%; background: #f7f2e8;
+  box-shadow: 0 12px 13px rgba(67,58,79,.18), 0 27px 0 #ece7df, 0 34px 14px rgba(63,55,77,.16);
+  transform: rotate(-5deg); pointer-events: none;
+}
+.theme-concept-57 .desktop-screen::after {
+  content: ""; position: absolute; z-index: 1; left: -34px; top: 230px; width: 470px; height: 60px;
+  border-top: 3px solid #aa3038; border-radius: 50%; transform: rotate(-7deg); pointer-events: none;
+  box-shadow: 0 -1px 0 rgba(91,35,39,.22);
+}
+.theme-concept-57 .desktop-canvas::before {
+  content: ""; position: absolute; z-index: 1; left: 0; top: 252px; width: 340px; height: 198px;
+  border-radius: 20px; background: rgba(248,244,235,.96); box-shadow: var(--c-shadow); pointer-events: none;
+}
+.theme-concept-57 .desktop-canvas > .draggable-item { z-index: 2; }
+.theme-concept-57 .time-card {
+  height: 145px; padding: 8px 10px; background: transparent !important; box-shadow: none !important;
+}
+.theme-concept-57 .time-text { font-family: Georgia, "Times New Roman", serif; font-size: 48px; line-height: 1; font-weight: 500; }
+.theme-concept-57 .date-text { margin-top: 12px; font-size: 15px; }
+.theme-concept-57 .guide-mark { align-self: flex-start; color: #474451; font-size: 0; }
+.theme-concept-57 .guide-mark::before { content: "●"; font-size: 24px; }
+.theme-concept-57 :is(.app-icon, .dock-icon) {
+  background: transparent !important; color: #67617f !important; box-shadow: none !important;
+}
+.theme-concept-57 :is(.app-icon, .dock-icon) svg { filter: drop-shadow(1px 2px 1px rgba(56,49,71,.3)); stroke-width: 2.6; }
+.theme-concept-57 .image-bed { height: 130px; border-radius: 14px !important; background: rgba(252,250,247,.88) !important; }
+.theme-concept-57 .dock { border-radius: 46% 46% 18px 18px / 18px 18px 26px 26px !important; }
+
+/* 58 — millennium windows reference: real app grid inside pink/cyan desktop windows. */
+.theme-concept-58 .phone-shell { border-width: 3px; border-radius: 24px; border-color: #5a5b64 !important; }
+.theme-concept-58 .desktop-screen {
+  background-color: #f8f8f6 !important;
+  background-image: linear-gradient(rgba(75,84,104,.045) 1px, transparent 1px), linear-gradient(90deg, rgba(75,84,104,.045) 1px, transparent 1px) !important;
+  background-size: 18px 18px !important;
+}
+.theme-concept-58 .desktop-canvas::before {
+  content: "快速应用                                      –  □  ×";
+  position: absolute; z-index: 0; left: 0; top: 154px; width: 340px; height: 204px;
+  box-sizing: border-box; padding: 4px 8px; background: linear-gradient(#eca1c9 0 24px, rgba(255,255,255,.96) 24px);
+  border: 1px solid #777b83; border-radius: 9px; color: #433048; font-size: 11px; font-weight: 900;
+  box-shadow: 0 8px 16px rgba(50,57,87,.18); pointer-events: none;
+}
+.theme-concept-58 .desktop-canvas::after {
+  content: "小工具       –  ×"; position: absolute; z-index: 1; right: 0; top: 336px;
+  width: 104px; height: 52px; box-sizing: border-box; padding: 3px 7px;
+  border: 1px solid #757c82; border-radius: 7px; background: linear-gradient(#87d4d7 0 21px, #fff 21px);
+  color: #274f58; font-size: 10px; font-weight: 900; box-shadow: 0 6px 12px rgba(50,57,87,.14); pointer-events: none;
+}
+.theme-concept-58 .desktop-canvas > .draggable-item { z-index: 2; }
+.theme-concept-58 :is(.time-card, .image-bed) {
+  position: relative; border: 1px solid #777b83 !important; border-radius: 9px !important; padding-top: 30px;
+}
+.theme-concept-58 .time-card { height: 126px; }
+.theme-concept-58 .image-bed { height: 154px; }
+.theme-concept-58 :is(.time-card, .image-bed)::before {
+  content: "STATUS                                      –  □  ×";
+  position: absolute; inset: 0 0 auto; height: 23px; padding: 3px 7px;
+  border-radius: 8px 8px 0 0; background: #eca1c9; color: #4c2f48; font-size: 10px; font-weight: 900; text-align: left;
+}
+.theme-concept-58 .image-bed::before { content: "自定义图片                                  –  ×"; background: #87d4d7; color: #234c58; }
+.theme-concept-58 :is(.app-icon, .dock-icon) { border: 1px solid #c4c6ca !important; box-shadow: 2px 3px 0 rgba(71,76,91,.14) !important; }
+.theme-concept-58 :is([data-screen="wechat"], [data-screen="accounting"], [data-screen="memo"], [data-screen="phone"], [data-screen="contacts"]) { --screen-icon-color: #42b7bb; }
+.theme-concept-58 :is([data-screen="qq"], [data-screen="calendar"], [data-screen="diary"], [data-screen="peek"], [data-screen="settings"], [data-screen="themes"]) { --screen-icon-color: #e75ca2; }
+.theme-concept-58 :is(.app-icon, .dock-icon)[data-screen] { color: var(--screen-icon-color, #42b7bb) !important; }
+.theme-concept-58 .dock { border: 1px solid #c6c9cc !important; border-radius: 17px !important; }
+.theme-concept-57 .guide-mark::before { content: "\1F514"; font-size: 20px; }
+.theme-concept-58 .desktop-canvas::after {
+  top: 366px;
+  content: "\5C0F\5DE5\5177      – ×\A                 ☺";
+  white-space: pre;
+  line-height: 23px;
+}
+
+/* Theme picker miniatures — distinct compositions, not one recolored preview. */
+[data-theme-preview^="concept-"] .theme-choice-visual { border: 0; box-shadow: 0 7px 16px rgba(32,31,38,.12); }
+[data-theme-preview="concept-01"] .theme-choice-visual { --preview-bg:#f0f0e6;--preview-panel:#fbfaf2;--preview-accent:#75894c;--preview-ink:#22281d; border-radius:18px; }
+[data-theme-preview="concept-02"] .theme-choice-visual { --preview-bg:#292827;--preview-panel:#383634;--preview-accent:#b45f43;--preview-ink:#f3eee4; border-radius:2px; }
+[data-theme-preview="concept-03"] .theme-choice-visual { --preview-bg:#f7f6f2;--preview-panel:#fff;--preview-accent:#d12a32;--preview-ink:#111; border-radius:0; box-shadow:4px 4px 0 #222; }
+[data-theme-preview="concept-04"] .theme-choice-visual { --preview-bg:#ecebdd;--preview-panel:#f8f4df;--preview-accent:#77875d;--preview-ink:#303a2b; border-radius:16px 8px 16px 8px; }
+[data-theme-preview="concept-12"] .theme-choice-visual { --preview-bg:#e9edf2;--preview-panel:#f8fafc;--preview-accent:#2862d2;--preview-ink:#1c283b; }
+[data-theme-preview="concept-20"] .theme-choice-visual { --preview-bg:#171313;--preview-panel:#eee0c6;--preview-accent:#b83238;--preview-ink:#f7edda; border-radius:2px; }
+[data-theme-preview="concept-25"] .theme-choice-visual { --preview-bg:#ece7ed;--preview-panel:#fbf8f2;--preview-accent:#9c3438;--preview-ink:#34303c; border-radius:14px; }
+[data-theme-preview="concept-26"] .theme-choice-visual { --preview-bg:#eff2f8;--preview-panel:#fff;--preview-accent:#2f64cd;--preview-ink:#16275d; border-radius:2px; }
+[data-theme-preview="concept-27"] .theme-choice-visual { --preview-bg:#191515;--preview-panel:#f2e7d3;--preview-accent:#d22b32;--preview-ink:#f5ead9; border-radius:2px; }
+[data-theme-preview="concept-33"] .theme-choice-visual { --preview-bg:#3a2b20;--preview-panel:#f0ddb0;--preview-accent:#4f8275;--preview-ink:#fff1cc; border-radius:2px; image-rendering:pixelated; }
+[data-theme-preview="concept-45"] .theme-choice-visual { --preview-bg:#bf765d;--preview-panel:#f2dfc7;--preview-accent:#747d58;--preview-ink:#4d2d22; border-radius:20px; }
+[data-theme-preview="concept-47"] .theme-choice-visual { --preview-bg:#1c1f1b;--preview-panel:#a0b45b;--preview-accent:#bad84d;--preview-ink:#d6e86a; border-radius:3px; image-rendering:pixelated; }
+[data-theme-preview="concept-57"] .theme-choice-visual { --preview-bg:#d9d2e6;--preview-panel:#f8f4eb;--preview-accent:#68617f;--preview-ink:#3d394a; border-radius:15px; }
+[data-theme-preview="concept-58"] .theme-choice-visual { --preview-bg:#f7f8f7;--preview-panel:#fff;--preview-accent:#e75ca2;--preview-ink:#25294c; border-radius:5px; }
+
+.desktop-image-upload-status {
+  position: absolute; z-index: 80; left: 50%; bottom: 112px; transform: translateX(-50%);
+  width: max-content; max-width: calc(100% - 44px); border-radius: 999px;
+  background: rgba(22,24,29,.88); padding: 8px 13px; color: #fff;
+  font-size: 12px; font-weight: 800; box-shadow: 0 8px 22px rgba(0,0,0,.2);
+}
+
+@media (max-height: 720px) {
+  :where(
+  .theme-concept-01, .theme-concept-02, .theme-concept-03, .theme-concept-04, .theme-concept-12,
+    .theme-concept-20, .theme-concept-25, .theme-concept-26, .theme-concept-27,
+    .theme-concept-33, .theme-concept-45, .theme-concept-47, .theme-concept-57,
+    .theme-concept-58
+  ) .desktop-canvas { transform: scale(.9); transform-origin: top left; width: 111%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-dot-mark { transition: none; }
+}
+
+/* 58 final layout: compact windows with no overlap on either desktop page. */
+.theme-concept-58 .desktop-canvas-page-1::before,
+.theme-concept-58 .desktop-canvas-page-2::before {
+  position: absolute;
+  z-index: 0;
+  left: 0;
+  width: 340px;
+  box-sizing: border-box;
+  padding: 5px 8px;
+  border: 1px solid #777b83;
+  border-radius: 9px;
+  color: #433048;
+  font-size: 11px;
+  font-weight: 900;
+  box-shadow: 0 6px 14px rgba(50,57,87,.14);
+  pointer-events: none;
+}
+
+.theme-concept-58 .desktop-canvas-page-1::before {
+  content: "\5FEB\901F\5E94\7528                                    \2013  \00D7";
+  top: 180px;
+  height: 190px;
+  background: linear-gradient(#eca1c9 0 24px, rgba(255,255,255,.96) 24px);
+}
+
+.theme-concept-58 .desktop-canvas-page-2::before {
+  content: "\5DE5\5177\4E0E\5185\5BB9                                \2013  \00D7";
+  top: 146px;
+  height: 296px;
+  background: linear-gradient(#87d4d7 0 24px, rgba(255,255,255,.96) 24px);
+  color: #234c58;
+}
+
+.theme-concept-58 .desktop-canvas::after {
+  content: none;
+  display: none;
+}
+
+.theme-concept-58 .time-card {
+  height: 116px;
+}
+
+.theme-concept-58 .image-bed {
+  height: 142px;
+}
+
+.theme-concept-58 :is(.app-icon, .dock-icon) {
+  width: 50px;
+  height: 50px;
+  background: rgba(255,255,255,.98) !important;
+}
+
+.theme-concept-58 :is(.app-icon, .dock-icon) > svg {
+  display: block;
+  opacity: 1;
+}

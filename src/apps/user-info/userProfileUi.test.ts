@@ -4,6 +4,7 @@ import {
   buildUserProfileDeleteMessage,
   buildUserProfileDeleteTitle,
   getUserProfileDisplayName,
+  normalizeAvatarCrop,
   normalizeUserAvatarReaderResult,
 } from './userProfileUi';
 
@@ -24,5 +25,9 @@ assert.equal(normalizeUserAvatarReaderResult('data:image/png;base64,abc'), 'data
 assert.equal(normalizeUserAvatarReaderResult('   '), '');
 assert.equal(normalizeUserAvatarReaderResult(null), '');
 assert.equal(normalizeUserAvatarReaderResult(new ArrayBuffer(2)), '');
+
+assert.deepEqual(normalizeAvatarCrop({ scale: 0.5, x: -90, y: 95 }), { scale: 1, x: -50, y: 50 });
+assert.deepEqual(normalizeAvatarCrop({ scale: 2.2, x: 12, y: -8 }), { scale: 2.2, x: 12, y: -8 });
+assert.deepEqual(normalizeAvatarCrop({ scale: Number.NaN, x: Number.NaN, y: Number.NaN }), { scale: 1, x: 0, y: 0 });
 
 console.log('userProfileUi tests passed');

@@ -2,6 +2,7 @@ import { Copy, Heart, MessageCircle, MoreHorizontal, Pin, RefreshCw, Send, Trash
 import type { Key } from 'react';
 import { useState } from 'react';
 
+import { PersistentImage } from '../../../components/PersistentImage';
 import { WeChatAvatar } from '../shared/WeChatShared';
 import { momentDecorationLabels, momentMoodLabels, type DecoratedMoment } from './momentsLogic';
 
@@ -85,7 +86,7 @@ export function MomentCard({
           {moment.images.length > 0 && (
             <div className="mt-2 grid grid-cols-3 gap-1.5">
               {moment.images.map((image, index) => (
-                <img key={`${image}-${index}`} src={image} alt="朋友圈图片" className="aspect-square rounded-[6px] object-cover" />
+                <PersistentImage key={`${image}-${index}`} src={image} alt="朋友圈图片" className="aspect-square rounded-[6px] object-cover" />
               ))}
             </div>
           )}

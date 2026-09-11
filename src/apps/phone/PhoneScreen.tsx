@@ -23,8 +23,8 @@ import {
 import React, { useEffect, useMemo, useState } from 'react';
 import { Character, PhoneCallRecord, PhoneCallStatus, PhoneCallTranscriptLine, useAppStore } from '../../store';
 import { cn, createId } from '../../lib/utils';
-import { buildHttpErrorMessage, readHttpErrorDetail } from '../../lib/httpErrors';
 import { speakWithConfiguredTts } from '../../tts';
+import { requestChatCompletion } from '../shared/aiText';
 
 type PhoneListView = 'recent' | 'missed' | 'outgoing' | 'incoming';
 type PhoneView = 'home' | PhoneListView | 'dial' | 'ringing' | 'active' | 'detail';
@@ -102,47 +102,33 @@ async function requestPhoneLine({
   userDraft: string;
   presetPrompt: string;
 }) {
-  const endpoint = `${normalizeApiBaseUrl(baseUrl)}/chat/completions`;
   const history = transcript
     .slice(-10)
     .map((line) => `${line.speaker === 'user' ? '用户' : character.name}：${line.text}`)
     .join('\n');
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
+  const messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }> = [
+    {
+      role: 'system',
+      content: [
+        getCharacterPhonePrompt(character) || `你是${character.name}。`,
+        '现在是手机电话，不是聊天软件。只输出一句听筒里的口语回复，短、自然、有停顿感。',
+        presetPrompt,
+        '不要写旁白、动作描写、括号、编号、长篇解释。',
+      ].join('\n'),
     },
-    body: JSON.stringify({
-      model,
-      temperature: 0.72,
-      max_tokens: 90,
-      messages: [
-        {
-          role: 'system',
-          content: [
-            getCharacterPhonePrompt(character) || `你是${character.name}。`,
-            '现在是手机电话，不是聊天软件。只输出一句听筒里的口语回复，短、自然、有停顿感。',
-            presetPrompt,
-            '不要写旁白、动作描写、括号、编号、长篇解释。',
-          ].join('\n'),
-        },
-        {
-          role: 'user',
-          content: `最近通话字幕：\n${history || '刚接通。'}\n\n用户刚说：${userDraft || '对方沉默了一下。'}\n\n请回一句。`,
-        },
-      ],
-    }),
-  });
-  if (!response.ok) {
-    throw new Error(buildHttpErrorMessage('电话 AI 失败', {
-      status: response.status,
-      statusText: response.statusText,
-      detail: await readHttpErrorDetail(response),
-    }));
-  }
-  const data = await response.json();
-  return String(data?.choices?.[0]?.message?.content || '').trim();
+    {
+      role: 'user',
+      content: `最近通话字幕：\n${history || '刚接通。'}\n\n用户刚说：${userDraft || '对方沉默了一下。'}\n\n请回一句。`,
+    },
+  ];
+  return (await requestChatCompletion({
+    baseUrl,
+    apiKey,
+    model,
+    temperature: 0.72,
+    maxTokens: 90,
+    messages,
+  })).trim();
 }
 
 function formatDuration(seconds: number) {

@@ -1,5 +1,6 @@
-import { Bot, CircleUserRound, Clock, Copy, FileText, MessageCircle, Shield } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Bot, CircleUserRound, Clock, Copy, FileText, MessageCircle, RotateCcw, Shield, Trash2 } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 
 import { cn } from '../../lib/utils';
 import { useAppStore } from '../../store';
@@ -9,7 +10,7 @@ import {
   contextBudgetOptions,
   type ContextBudgetKey,
   type ContextRangeKey,
-} from '../system/SystemScreens';
+} from './contextPackage';
 import {
   buildContextBudgetStats,
   buildPreviewRowKey,
@@ -31,7 +32,27 @@ const budgetLabels: Record<ContextBudgetKey, string> = {
 };
 
 export function AIContextScreen() {
-  const state = useAppStore();
+  const state = useAppStore(useShallow((store) => ({
+    characters: store.characters,
+    chatSessions: store.chatSessions,
+    groupChats: store.groupChats,
+    diaries: store.diaries,
+    browserSearches: store.browserSearches,
+    browserHistory: store.browserHistory,
+    browserBookmarks: store.browserBookmarks,
+    browserWorldBook: store.browserWorldBook,
+    xiaohongshuNotes: store.xiaohongshuNotes,
+    musicListenRecords: store.musicListenRecords,
+    musicTracks: store.musicTracks,
+    galleryPhotos: store.galleryPhotos,
+    memos: store.memos,
+    calendarEvents: store.calendarEvents,
+    userName: store.userName,
+    aiContextExcludedSectionsByCharacter: store.aiContextExcludedSectionsByCharacter,
+    setAiContextSectionExcluded: store.setAiContextSectionExcluded,
+    clearAiContextSectionExclusions: store.clearAiContextSectionExclusions,
+    addAppLog: store.addAppLog,
+  })));
   const { characters, addAppLog } = state;
   const [characterId, setCharacterId] = useState(characters[0]?.id || '');
   const [range, setRange] = useState<ContextRangeKey>('5d');
@@ -47,7 +68,17 @@ export function AIContextScreen() {
     if (!characterId && characters[0]?.id) setCharacterId(characters[0].id);
   }, [characterId, characters]);
 
-  if (!character) {
+  const excludedSectionIds = character ? state.aiContextExcludedSectionsByCharacter[character.id] || [] : [];
+  const contextPackage = useMemo(
+    () => character
+      ? buildContextPackage({ character, range, wechatLimit, qqLimit, excludedSectionIds, state: state as ReturnType<typeof useAppStore.getState> })
+      : null,
+    [character, excludedSectionIds, qqLimit, range, state, wechatLimit],
+  );
+  const budgetInfo = { ...contextBudgetOptions[budget], label: budgetLabels[budget] };
+  const budgetStats = useMemo(() => buildContextBudgetStats(contextPackage?.text || '', budgetInfo), [budgetInfo.label, budgetInfo.max, budgetInfo.min, contextPackage?.text]);
+
+  if (!character || !contextPackage) {
     return (
       <section className="ai-context-app no-scrollbar h-full overflow-y-auto pb-8">
         <Header title="AI 上下文" subtitle="先导入角色，再生成角色独立上下文" />
@@ -58,9 +89,6 @@ export function AIContextScreen() {
     );
   }
 
-  const contextPackage = buildContextPackage({ character, range, wechatLimit, qqLimit, state });
-  const budgetInfo = { ...contextBudgetOptions[budget], label: budgetLabels[budget] };
-  const budgetStats = buildContextBudgetStats(contextPackage.text, budgetInfo);
   const overBudget = budgetStats.status === 'over-budget';
   const overHardLimit = budgetStats.status === 'over-hard-limit';
   const hardLimitRemaining = Math.max(0, 60000 - budgetStats.chars);
@@ -108,7 +136,7 @@ export function AIContextScreen() {
           </select>
         </Field>
         <Field icon={<Clock />} label="现实时间范围">
-          <div className="no-scrollbar flex gap-2 overflow-x-auto">
+          <div className="compact-tab-grid">
             {rangeOptions.map((item) => (
               <Pill key={item.id} icon={<Clock />} label={item.label} active={range === item.id} onClick={() => setRange(item.id)} />
             ))}
@@ -128,7 +156,7 @@ export function AIContextScreen() {
           </Field>
         </div>
         <Field icon={<Shield />} label="上下文预算">
-          <div className="no-scrollbar flex gap-2 overflow-x-auto">
+          <div className="compact-tab-grid">
             {(Object.keys(contextBudgetOptions) as ContextBudgetKey[]).map((id) => (
               <Pill key={id} icon={<Shield />} label={budgetLabels[id]} active={budget === id} onClick={() => setBudget(id)} />
             ))}
@@ -146,6 +174,15 @@ export function AIContextScreen() {
             {budgetStats.percentOfBudget}%
           </span>
         </div>
+        {excludedSectionIds.length > 0 && (
+          <button
+            type="button"
+            onClick={() => state.clearAiContextSectionExclusions(character.id)}
+            className="fetch-button mt-3 bg-[#e7f4ff]"
+          >
+            <RotateCcw className="h-4 w-4" />恢复全部已排除来源（{excludedSectionIds.length}）
+          </button>
+        )}
         <div className="mt-3 grid grid-cols-2 gap-2 text-xs font-black">
           <span className="rounded-2xl bg-white/70 px-3 py-2">{budgetStats.chars} 字</span>
           <span className="rounded-2xl bg-white/70 px-3 py-2">约 {budgetStats.estimatedTokens} tokens</span>
@@ -160,14 +197,14 @@ export function AIContextScreen() {
             const rowKey = buildPreviewRowKey(row);
             const expanded = Boolean(expandedPreviewRows[rowKey]);
             return (
-              <article key={rowKey} className="border-b-[2px] border-[#111]/15 p-3 text-xs font-bold last:border-b-0">
+              <article key={rowKey} className={cn('border-b-[2px] border-[#111]/15 p-3 text-xs font-bold last:border-b-0', row.excluded && 'bg-[#f3f3f3] opacity-65')}>
                 <button
                   type="button"
                   onClick={() => togglePreviewRow(rowKey)}
                   aria-expanded={expanded}
                   className="grid w-full grid-cols-[74px_1fr_64px] gap-2 text-left"
                 >
-                  <span className="font-black">{row.app}</span>
+                  <span className="font-black">{row.app}{row.excluded ? '（已排除）' : ''}</span>
                   <span className="min-w-0">
                     <span className="block truncate">{row.content}</span>
                     <span className="block opacity-55">{row.method} · {row.range}</span>
@@ -180,6 +217,14 @@ export function AIContextScreen() {
                     {row.detail}
                   </pre>
                 )}
+                <button
+                  type="button"
+                  onClick={() => state.setAiContextSectionExcluded(character.id, row.sectionId, !row.excluded)}
+                  className={cn('mt-2 inline-flex items-center gap-1 rounded-full border border-[#111]/20 px-2.5 py-1 text-[11px] font-black', row.excluded ? 'bg-[#dceecd]' : 'bg-[#ffd6d6]')}
+                >
+                  {row.excluded ? <RotateCcw className="h-3.5 w-3.5" /> : <Trash2 className="h-3.5 w-3.5" />}
+                  {row.excluded ? '恢复到上下文' : '从上下文排除'}
+                </button>
               </article>
             );
           })}

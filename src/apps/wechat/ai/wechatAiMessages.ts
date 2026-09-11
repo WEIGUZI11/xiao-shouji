@@ -9,6 +9,57 @@ export type WeChatAiParsedPart =
 const actionLinePattern = /^\[(sticker|transfer|red-packet|shopping|image)(?:\s+([^\]]+))?\]$/;
 const pairPattern = /(\w[\w-]*)=(?:"([^"]*)"|'([^']*)'|([^\s]+))/g;
 const thinkingLinePattern = /^(思考|思路|推理|分析|reasoning|thinking)\s*[:：]/i;
+const structuralLinePattern = /^[\[\]{}(),;]+$/;
+
+function stripMarkdownFence(value: string) {
+  const trimmed = value.trim();
+  const match = trimmed.match(/^```(?:json|javascript|js|text)?\s*\n?([\s\S]*?)\n?```$/i);
+  return (match?.[1] ?? trimmed).trim();
+}
+
+function collectReplyStrings(value: unknown): string[] {
+  if (typeof value === 'string') return value.trim() ? [value] : [];
+  if (Array.isArray(value)) return value.flatMap(collectReplyStrings);
+  if (!value || typeof value !== 'object') return [];
+
+  const record = value as Record<string, unknown>;
+  for (const key of ['messages', 'replies', 'content', 'text', 'reply', 'message']) {
+    if (!(key in record)) continue;
+    const result = collectReplyStrings(record[key]);
+    if (result.length > 0) return result;
+  }
+  return [];
+}
+
+function unwrapStructuredReply(reply: string) {
+  const clean = stripMarkdownFence(reply);
+  if (!/^[\[{]/.test(clean)) return [clean];
+  try {
+    const extracted = collectReplyStrings(JSON.parse(clean));
+    return extracted.length > 0 ? extracted : [clean];
+  } catch {
+    return [clean];
+  }
+}
+
+function stripThinkingContent(value: string) {
+  return value
+    .replace(/<think>[\s\S]*?<\/think>/gi, '\n')
+    .replace(/<thinking>[\s\S]*?<\/thinking>/gi, '\n')
+    .replace(/<(?:think|thinking)>[\s\S]*$/gi, '\n');
+}
+
+function normalizeLooseJsonLine(line: string) {
+  if (structuralLinePattern.test(line)) return '';
+  const candidate = line.replace(/,$/, '').trim();
+  if (!/^"[\s\S]*"$/.test(candidate)) return line;
+  try {
+    const parsed = JSON.parse(candidate);
+    return typeof parsed === 'string' ? parsed.trim() : line;
+  } catch {
+    return line;
+  }
+}
 
 function parsePairs(input = '') {
   const pairs: Record<string, string> = {};
@@ -74,12 +125,9 @@ function parseActionLine(line: string): WeChatAiParsedPart | null {
 }
 
 export function parseWeChatAiReply(reply: string): WeChatAiParsedPart[] {
-  const lines = reply
-    .replace(/\r/g, '\n')
-    .replace(/<think>[\s\S]*?<\/think>/gi, '\n')
-    .replace(/<thinking>[\s\S]*?<\/thinking>/gi, '\n')
-    .split('\n')
-    .map((line) => line.trim())
+  const lines = unwrapStructuredReply(reply)
+    .flatMap((value) => stripThinkingContent(value).replace(/\r/g, '\n').split('\n'))
+    .map((line) => normalizeLooseJsonLine(line.trim()))
     .filter((line) => line && !thinkingLinePattern.test(line));
 
   if (lines.length === 0) return [{ kind: 'text', content: '嗯，我看到了。' }];

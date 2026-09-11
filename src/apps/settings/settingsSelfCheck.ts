@@ -1,10 +1,11 @@
 import type { ImageGenerationConfig } from '../../lib/naiImage';
 import { isServerManagedNaiEndpoint } from '../../lib/naiImage';
 import type { TtsConfig } from '../../tts';
+import { getVoiceCallAudioIssue } from '../voice/voiceCallLogic';
 
 export type SettingsSelfCheckStatus = 'ok' | 'warn' | 'error';
 
-export type SettingsSelfCheckItemId = 'model' | 'tts' | 'image' | 'community';
+export type SettingsSelfCheckItemId = 'model' | 'tts' | 'image';
 
 export interface SettingsSelfCheckInput {
   apiBaseUrl: string;
@@ -12,8 +13,8 @@ export interface SettingsSelfCheckInput {
   selectedModel: string;
   ttsEnabled: boolean;
   ttsConfig: TtsConfig;
+  imageGenerationEnabled: boolean;
   imageGenerationConfig: ImageGenerationConfig;
-  communityBackdoorApiUrl: string;
 }
 
 export interface SettingsSelfCheckItem {
@@ -101,7 +102,7 @@ function checkTts(input: SettingsSelfCheckInput): SettingsSelfCheckItem {
       action: '填写本地 TTS 地址，例如 http://127.0.0.1:9880/tts。',
     };
   }
-  if ((ttsConfig.provider === 'openai' || ttsConfig.provider === 'gemini' || ttsConfig.provider === 'doubao') && isBlank(ttsConfig.apiKey)) {
+  if ((ttsConfig.provider === 'openai' || ttsConfig.provider === 'gemini' || ttsConfig.provider === 'minimax' || ttsConfig.provider === 'doubao') && isBlank(ttsConfig.apiKey)) {
     return {
       id: 'tts',
       label: 'TTS 语音',
@@ -116,20 +117,47 @@ function checkTts(input: SettingsSelfCheckInput): SettingsSelfCheckItem {
       label: 'TTS 语音',
       status: 'warn',
       detail: 'TTS 已开启，但音色 Voice ID 为空。',
-      action: '填写一个音色 ID，例如 alloy、Kore 或 default。',
+      action: ttsConfig.provider === 'doubao' ? '选择当前豆包服务下的公版音色，或填写复刻音色 Speaker ID。' : '填写该提供商支持的音色 ID。',
+    };
+  }
+  const issue = getVoiceCallAudioIssue({
+    ttsEnabled: input.ttsEnabled,
+    provider: ttsConfig.provider,
+    apiKey: ttsConfig.apiKey,
+    baseUrl: ttsConfig.baseUrl,
+    model: ttsConfig.model,
+    voiceId: ttsConfig.voiceId,
+    hasBrowserSpeechSynthesis: true,
+  });
+  if (issue) {
+    return {
+      id: 'tts',
+      label: 'TTS 语音',
+      status: 'error',
+      detail: issue,
+      action: '回到 TTS 页面重新选择匹配的服务和音色，再试听一次。',
     };
   }
   return {
     id: 'tts',
     label: 'TTS 语音',
     status: 'ok',
-    detail: `TTS 已开启，当前提供商：${ttsConfig.provider}。`,
-    action: '建议点“试听 TTS”确认声音正常。',
+    detail: `TTS 配置完整，当前提供商：${ttsConfig.provider}（尚未代表网络试听成功）。`,
+    action: '点“试听 TTS”；听到声音后再进入电话。',
   };
 }
 
 function checkImage(input: SettingsSelfCheckInput): SettingsSelfCheckItem {
   const config = input.imageGenerationConfig;
+  if (!input.imageGenerationEnabled) {
+    return {
+      id: 'image',
+      label: '生图配置',
+      status: 'warn',
+      detail: '生图总开关已关闭，所有软件都不会发送生图请求。',
+      action: '需要生图时在“生图配置”顶部开启总开关。',
+    };
+  }
   if (isBlank(config.baseUrl)) {
     return {
       id: 'image',
@@ -166,31 +194,11 @@ function checkImage(input: SettingsSelfCheckInput): SettingsSelfCheckItem {
   };
 }
 
-function checkCommunity(input: SettingsSelfCheckInput): SettingsSelfCheckItem {
-  if (isBlank(input.communityBackdoorApiUrl)) {
-    return {
-      id: 'community',
-      label: '社区验证',
-      status: 'warn',
-      detail: '后门服务地址为空；这不影响本地使用，但社区验证/后门码不可用。',
-      action: '需要发布给别人使用时，再填写独立后端服务地址。',
-    };
-  }
-  return {
-    id: 'community',
-    label: '社区验证',
-    status: 'ok',
-    detail: '社区验证后端地址已填写。',
-    action: '发布前建议用真机走一次验证流程。',
-  };
-}
-
 export function buildSettingsSelfCheckReport(input: SettingsSelfCheckInput): SettingsSelfCheckItem[] {
   return [
     checkModel(input),
     checkTts(input),
     checkImage(input),
-    checkCommunity(input),
   ];
 }
 

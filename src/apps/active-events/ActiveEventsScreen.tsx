@@ -1,18 +1,25 @@
-﻿import { Bell, Check, Clock, FileText, Image as ImageIcon, MessageCircle, Music, RefreshCw, Sparkles } from 'lucide-react';
+import { Bell, Check, Clock, FileText, Image as ImageIcon, MessageCircle, Music, RefreshCw, Save, Sparkles } from 'lucide-react';
 import type React from 'react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { cn, createId } from '../../lib/utils';
-import { buildChatImagePrompt, evaluateImageGenerationGate, requestNaiImage } from '../../lib/naiImage';
+import { requestAppImage } from '../../lib/appImageGeneration';
+import { buildChatImagePrompt, evaluateImageGenerationGate } from '../../lib/naiImage';
 import { useAppStore } from '../../store';
 import { Empty, Header, Panel } from '../shared/AppPrimitives';
 import {
   ACTIVE_EVENT_REFRESH_COOLDOWN_MS,
   buildActiveEventWrites,
+  buildCharacterProactiveReminderSetup,
   buildRandomProactiveMessageWrites,
   buildTodayLifeRefreshSuggestions,
   type ActiveEventSuggestion,
 } from './activeEventsLogic';
+import {
+  getProactiveReminderClientId,
+  registerBackendProactiveReminder,
+  scheduleNativeLocalProactiveReminder,
+} from './proactiveReminderClient';
 
 const actionLabels: Record<ActiveEventSuggestion['action'], string> = {
   send_message: '发消息',
@@ -96,17 +103,30 @@ export function ActiveEventsScreen() {
     addAppLog,
     addGalleryPhoto,
     imageGenerationConfig,
+    imageGenerationEnabled,
+    proactiveImageGenerationEnabled,
     generatedImageRecords,
     recordGeneratedImage,
     activeUserProfileId,
     userName,
+    addCalendarEvent,
+    updateCalendarEvent,
   } = state;
   const [suggestions, setSuggestions] = useState<ActiveEventSuggestion[]>([]);
   const [confirmedIds, setConfirmedIds] = useState<string[]>([]);
   const [status, setStatus] = useState('等待手动刷新');
+  const [scheduleDraft, setScheduleDraft] = useState({
+    characterId: state.characters[0]?.id || '',
+    time: '08:00',
+  });
   const [cooldownRemainingMs, setCooldownRemainingMs] = useState(() =>
     Math.max(0, ACTIVE_EVENT_REFRESH_COOLDOWN_MS - (Date.now() - activeEventLastRefreshAt)),
   );
+
+  useEffect(() => {
+    if (scheduleDraft.characterId || state.characters.length === 0) return;
+    setScheduleDraft((draft) => ({ ...draft, characterId: state.characters[0]?.id || '' }));
+  }, [scheduleDraft.characterId, state.characters]);
 
   const context = useMemo(() => ({
     characters: state.characters,
@@ -145,6 +165,16 @@ export function ActiveEventsScreen() {
     if (confirmedIds.includes(suggestion.id)) return;
     const writes = buildActiveEventWrites(suggestion);
     if (writes.chatTarget && writes.imagePrompt) {
+      if (!imageGenerationEnabled || !proactiveImageGenerationEnabled) {
+        addAppLog({
+          type: 'info',
+          title: 'char 主动生图已跳过',
+          detail: !imageGenerationEnabled ? '生图总开关已关闭。' : '主动生图开关已关闭。',
+        });
+        setConfirmedIds((ids) => [...ids, suggestion.id]);
+        setStatus('主动生图已关闭，本次没有消耗额度。');
+        return;
+      }
       setStatus(`正在生成图片：${suggestion.title}`);
       const now = Date.now();
       const imageId = createId('image');
@@ -174,9 +204,13 @@ export function ActiveEventsScreen() {
       }
       addAppLog({ type: 'image', title: 'char 主动生图开始', detail: logBase });
       try {
-        const imageUrl = await requestNaiImage({
+        const imageUrl = await requestAppImage({
           config: imageGenerationConfig,
           prompt: fullPrompt,
+          triggerType: 'proactive',
+          imageGenerationEnabled,
+          proactiveImageGenerationEnabled,
+          source: 'proactive',
         });
         addMessage(writes.chatTarget.characterId, writes.chatTarget.channel, {
           id: createId('msg'),
@@ -273,6 +307,63 @@ export function ActiveEventsScreen() {
     setStatus(`测试已写入：${writes[0].lifeEvent.title}`);
   };
 
+  const saveCharacterProactiveSchedule = async () => {
+    const character = state.characters.find((item) => item.id === scheduleDraft.characterId);
+    if (!character) {
+      setStatus('请先选择一个角色');
+      return;
+    }
+    const match = scheduleDraft.time.match(/^(\d{1,2}):(\d{2})$/);
+    if (!match) {
+      setStatus('时间格式需要是 HH:mm');
+      return;
+    }
+    const hour = Number(match[1]);
+    const minute = Number(match[2]);
+    if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+      setStatus('时间需要在 00:00 到 23:59 之间');
+      return;
+    }
+    const setup = buildCharacterProactiveReminderSetup({
+      character,
+      hour,
+      minute,
+      clientId: getProactiveReminderClientId(),
+    });
+    const existing = state.calendarEvents.find((event) => event.id === setup.calendarEvent.id);
+    if (existing) {
+      const { id: _id, createdAt: _createdAt, updatedAt: _updatedAt, ...updates } = setup.calendarEvent;
+      updateCalendarEvent(existing.id, updates);
+    } else {
+      addCalendarEvent(setup.calendarEvent);
+    }
+    setActiveReminderAutomationEnabled(true);
+    const localScheduled = scheduleNativeLocalProactiveReminder(setup.nativeLocalReminder);
+    try {
+      const result = await registerBackendProactiveReminder(setup.backendReminder);
+      addAppLog({
+        type: 'info',
+        title: '角色主动定时已保存',
+        detail: `character=${character.id}; time=${scheduleDraft.time}; backend=${result?.skipped ? 'skipped' : 'registered'}; native_local=${localScheduled ? 'scheduled' : 'unavailable'}`,
+      });
+      setStatus(result?.skipped
+        ? `已保存：${character.name} 每天 ${scheduleDraft.time} 主动联系；后端未配置`
+        : `已保存：${character.name} 每天 ${scheduleDraft.time} 主动联系`);
+    } catch (error) {
+      addAppLog({
+        type: 'error',
+        title: '角色主动后端注册失败',
+        detail: error instanceof Error ? error.message : String(error),
+      });
+      setStatus(`本地已保存，后端注册失败：${error instanceof Error ? error.message : '未知错误'}`);
+    }
+  };
+
+  const configuredSchedules = state.calendarEvents
+    .filter((event) => event.tags.includes('角色主动') && event.tags.includes('玩家设置'))
+    .slice()
+    .sort((a, b) => a.startAt - b.startAt);
+
   return (
     <section className="no-scrollbar h-full overflow-y-auto pb-8">
       <Header title="char 主动" subtitle={status} />
@@ -314,6 +405,54 @@ export function ActiveEventsScreen() {
           立即测试随机主动
         </button>
         <p className="mt-3 text-xs font-black opacity-55">再次刷新：{formatCooldown(cooldownRemainingMs)}</p>
+      </Panel>
+
+      <Panel>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-lg font-black">定时主动弹窗</p>
+            <p className="mt-1 text-sm font-bold opacity-60">到点后像微信消息一样浮到手机外层，点弹窗进入聊天。</p>
+          </div>
+          <span className="app-chip shrink-0">
+            <Bell />
+          </span>
+        </div>
+        <div className="mt-4 grid grid-cols-[1fr_auto] gap-2">
+          <select
+            value={scheduleDraft.characterId}
+            onChange={(event) => setScheduleDraft((draft) => ({ ...draft, characterId: event.target.value }))}
+            className="hand-input min-w-0"
+          >
+            {state.characters.length > 0 ? state.characters.map((character) => (
+              <option key={character.id} value={character.id}>{character.name}</option>
+            )) : (
+              <option value="">暂无角色</option>
+            )}
+          </select>
+          <input
+            type="time"
+            value={scheduleDraft.time}
+            onChange={(event) => setScheduleDraft((draft) => ({ ...draft, time: event.target.value }))}
+            className="hand-input w-[112px]"
+          />
+        </div>
+        <button type="button" onClick={saveCharacterProactiveSchedule} className="fetch-button mt-3" disabled={state.characters.length === 0}>
+          <Save className="h-5 w-5" />
+          保存主动时间
+        </button>
+        <div className="mt-4 space-y-2">
+          {configuredSchedules.length > 0 ? configuredSchedules.map((event) => {
+            const character = state.characters.find((item) => item.id === event.characterId);
+            const time = new Date(event.reminderAt || event.startAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+            return (
+              <div key={event.id} className="rounded-2xl border-[2px] border-[#111]/15 bg-white/60 px-3 py-2 text-sm font-black">
+                {character?.name || '未知角色'} · 每天 {time}
+              </div>
+            );
+          }) : (
+            <p className="text-xs font-black opacity-55">还没有玩家设置的定时主动。</p>
+          )}
+        </div>
       </Panel>
 
       <Panel>

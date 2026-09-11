@@ -1,4 +1,4 @@
-import { splitAssistantBubbles, type WeChatReplyStyle } from '../wechatChat';
+import { splitAssistantBubbles, type ChatBubbleChannel, type WeChatReplyStyle } from '../wechatChat';
 import { parseWeChatAiReply, type WeChatAiParsedPart } from './wechatAiMessages';
 
 export type ChatRequestPreviewMessage = {
@@ -17,8 +17,8 @@ export const weChatLifeActionInstruction = [
   '[transfer amount=188 note=晚饭钱] 表示主动转账。',
   '[red-packet amount=52 note=买点甜的] 表示主动发红包。',
   '[shopping item=奶茶 amount=18 note=我下单了] 表示买了东西或下单。',
-  '[image prompt="窗边一杯热茶"] 表示主动发图；当用户在聊照片、风景、穿搭、礼物、梦境、场景氛围，或你想把此刻画面发给对方时可以低频使用。',
-  '如果主动发图，一次回复最多 1 张，图片必须像聊天里角色真实想分享的视觉内容。',
+  '[image prompt="窗边一杯热茶"] 表示主动发图。只要聊天自然聊到照片、风景、穿搭、礼物、梦境、房间、路上、此刻氛围，或者你想把眼前画面发给对方看，就可以低频主动用。',
+  '主动发图一次回复最多 1 张。prompt 写自然画面描述，不要写接口、模型、标签说明，也不要说“我将生成图片”。',
   '生活动作必须有真实动机，不能刷屏，不能像客服或系统通知。',
 ].join('\n');
 
@@ -31,6 +31,11 @@ export function buildChatSystemPrompt({
   chatPresetPrompt,
   styleInstruction,
   isGroupChat,
+  replyStyle = 'auto',
+  allowProactiveImage = true,
+  structuredPresetActive = false,
+  structuredIdentityActive = false,
+  structuredReplyContractActive = false,
 }: {
   channel: 'wechat' | 'qq';
   characterPrompt: string;
@@ -40,22 +45,40 @@ export function buildChatSystemPrompt({
   chatPresetPrompt: string;
   styleInstruction: string;
   isGroupChat?: boolean;
+  replyStyle?: WeChatReplyStyle;
+  allowProactiveImage?: boolean;
+  structuredPresetActive?: boolean;
+  structuredIdentityActive?: boolean;
+  structuredReplyContractActive?: boolean;
 }) {
   const appName = channel === 'qq' ? 'QQ' : '微信';
   const fallback = `你是${characterName}，正在${appName}里自然聊天。`;
+  const singleReply = !isGroupChat && replyStyle === 'single';
+  const burstReply = !isGroupChat && replyStyle === 'burst';
   const outputRule = isGroupChat
     ? `输出只写群成员要发送的${appName}消息，每行必须用「成员名：消息内容」格式。不要写旁白、编号、解释、<think> 标签或 reasoning。普通消息每条尽量不超过 30 个字，像真实${appName}群聊里几个人自然接话。生活动作单独一行并放在成员名前缀后。`
-    : channel === 'qq'
-      ? '输出只写要发送的QQ消息内容，不要写角色名、引号、旁白、编号。不要输出思考过程、分析、解释、<think> 标签或 reasoning。普通消息每条尽量不超过 30 个字，像熟人 QQ 私聊短消息。生活动作单独一行。'
-      : '输出只写要发送的微信消息内容，不要写角色名、引号、旁白、编号。不要输出思考过程、分析、解释、<think> 标签或 reasoning。普通消息每条尽量不超过 30 个字，像真人微信短消息。生活动作单独一行。';
+    : structuredReplyContractActive
+      ? `这是${appName}应用层输出协议：只发送可见消息或受支持的生活动作，不输出分析、思考过程、<think> 标签、reasoning、角色名前缀或规则说明。短/长 RP、气泡数量和括号风格完全服从后续预设条目。`
+    : singleReply
+      ? `使用长 RP，只输出一条完整的${appName}消息，不要写角色名、引号、编号或解释。不要输出思考过程、分析、<think> 标签或 reasoning。内容较长时允许在同一条消息内自然分段，不要拆成多条气泡。生活动作单独一行。`
+      : burstReply
+        ? `使用短 RP，只输出要发送的${appName}消息内容，不要写角色名、引号、旁白、编号或解释。不要输出思考过程、分析、<think> 标签或 reasoning。根据语境回复一到四条自然短消息，每条单独一行。生活动作单独一行。`
+        : `根据情境在短 RP 和长 RP 之间自然选择，只输出要发送的${appName}消息内容，不要写角色名、引号、编号或解释。不要输出思考过程、分析、<think> 标签或 reasoning。短 RP 每条单独一行；长 RP 保持一条完整消息。括号动作或心理描写只能低频偶尔出现。生活动作单独一行。`;
+  const lifeActionInstruction = allowProactiveImage
+    ? weChatLifeActionInstruction
+    : weChatLifeActionInstruction
+        .split('\n')
+        .filter((line) => !line.includes('[image prompt=') && !line.startsWith('主动发图一次回复'))
+        .concat('当前主动生图已关闭，不要输出 [image] 动作。')
+        .join('\n');
 
   return [
-    characterPrompt || fallback,
+    structuredIdentityActive ? '' : characterPrompt || fallback,
     memberInstruction,
     userProfilePrompt,
-    chatPresetPrompt,
-    styleInstruction,
-    weChatLifeActionInstruction,
+    structuredPresetActive ? '' : chatPresetPrompt,
+    structuredReplyContractActive ? '' : styleInstruction,
+    lifeActionInstruction,
     outputRule,
   ].filter(Boolean).join('\n');
 }
@@ -82,17 +105,34 @@ export function getWeChatApiConnectionIssue({
 export function buildChatRequestPreview(messages: ChatRequestPreviewMessage[]) {
   return messages
     .map((message, index) => {
-      const content = message.content.replace(/\s+/g, ' ').trim();
-      const clipped = content.length > 1200 ? `${content.slice(0, 1200)}...` : content;
-      return `${index + 1}. ${message.role}\n${clipped}`;
+      const content = message.content.trim();
+      return `#${String(index + 1).padStart(3, '0')} ${message.role.toUpperCase()} · ${content.length} 字\n${content || '（空内容）'}`;
     })
-    .join('\n\n');
+    .join('\n\n────────────────────\n\n');
 }
 
-export function parseWeChatReplyParts(reply: string, style: WeChatReplyStyle, speakerName?: string): WeChatAiParsedPart[] {
-  return parseWeChatAiReply(reply).flatMap<WeChatAiParsedPart>((part) => {
+export function parseWeChatReplyParts(
+  reply: string,
+  style: WeChatReplyStyle,
+  speakerName?: string,
+  channel: ChatBubbleChannel = 'wechat',
+  isGroupChat = false,
+): WeChatAiParsedPart[] {
+  const parsed = parseWeChatAiReply(reply);
+  const normalized = style === 'single' && !isGroupChat
+    ? parsed.reduce<WeChatAiParsedPart[]>((parts, part) => {
+        const previous = parts[parts.length - 1];
+        if (part.kind === 'text' && previous?.kind === 'text') {
+          previous.content = `${previous.content}\n${part.content}`;
+        } else {
+          parts.push({ ...part });
+        }
+        return parts;
+      }, [])
+    : parsed;
+  return normalized.flatMap<WeChatAiParsedPart>((part) => {
     if (part.kind !== 'text') return [part];
-    return splitAssistantBubbles(part.content, style, speakerName).map((content) => ({ kind: 'text' as const, content }));
+    return splitAssistantBubbles(part.content, style, speakerName, channel).map((content) => ({ kind: 'text' as const, content }));
   });
 }
 

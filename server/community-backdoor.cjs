@@ -30,7 +30,6 @@ function createApp(options = {}) {
   const getEnv = (name) => options[name] ?? process.env[name] ?? '';
   const allowedOrigin = getEnv('COMMUNITY_BACKDOOR_ALLOWED_ORIGIN') || '*';
 
-  app.use(express.json({ limit: '16kb' }));
   app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -40,6 +39,14 @@ function createApp(options = {}) {
       return;
     }
     next();
+  });
+  app.use(express.json({ limit: '16kb' }));
+  app.use((error, req, res, next) => {
+    if (error?.type === 'entity.parse.failed' || error instanceof SyntaxError) {
+      res.status(400).json({ ok: false, message: 'invalid json' });
+      return;
+    }
+    next(error);
   });
 
   app.get('/api/community/backdoor/current', (req, res) => {

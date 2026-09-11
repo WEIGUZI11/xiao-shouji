@@ -6,9 +6,15 @@ import { File, Paths } from 'expo-file-system';
 import * as Notifications from 'expo-notifications';
 import * as Sharing from 'expo-sharing';
 import { WebView } from 'react-native-webview';
+import { fromByteArray } from 'base64-js';
 import { WEB_HTML } from './web-content';
 
 const EXPO_PROJECT_ID = '924a1d08-13eb-455e-88ee-f6910f7d70ee';
+// This URL is the permanent WebView storage origin. Changing it makes Android
+// WebView expose a different localStorage/IndexedDB namespace and makes an
+// upgrade look as if all user data disappeared.
+const SMALL_PHONE_STORAGE_ORIGIN = 'https://small-phone.local/';
+const BROKEN_V1161_STORAGE_ORIGIN = 'file:///android_asset/';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -63,7 +69,10 @@ export default function App() {
   const [loaded, setLoaded] = React.useState(false);
   const [error, setError] = React.useState('');
   const [nativePushToken, setNativePushToken] = React.useState('');
+  const [storageOrigin, setStorageOrigin] = React.useState(SMALL_PHONE_STORAGE_ORIGIN);
   const webViewRef = React.useRef(null);
+  const ttsRequestControllersRef = React.useRef(new Map());
+  const imageRequestControllersRef = React.useRef(new Map());
 
   const injectEvent = React.useCallback((name, detail) => {
     const payload = JSON.stringify(detail || {});
@@ -83,6 +92,19 @@ export default function App() {
 
   const sendDiscordCallbackToWeb = React.useCallback((url) => {
     injectEvent('small-phone-discord-callback', String(url || ''));
+  }, [injectEvent]);
+
+  const sendNativeTtsResponseToWeb = React.useCallback((id, detail) => {
+    if (!id) return;
+    injectEvent('small-phone-native-tts-response', {
+      id,
+      ...detail,
+    });
+  }, [injectEvent]);
+
+  const sendNativeImageResponseToWeb = React.useCallback((id, detail) => {
+    if (!id) return;
+    injectEvent('small-phone-native-image-response', { id, ...detail });
   }, [injectEvent]);
 
   const openExternalUrl = React.useCallback((url) => {
@@ -137,6 +159,96 @@ export default function App() {
       },
     });
   }, []);
+
+  const fetchTtsFromNative = React.useCallback(async (message) => {
+    const id = String(message?.id || '');
+    const url = String(message?.url || '');
+    const method = String(message?.init?.method || 'POST').toUpperCase();
+    if (!id || !/^https?:\/\//i.test(url) || !['GET', 'POST'].includes(method)) {
+      sendNativeTtsResponseToWeb(id, { ok: false, status: 400, error: 'Invalid native TTS request.' });
+      return;
+    }
+    const controller = new AbortController();
+    ttsRequestControllersRef.current.set(id, controller);
+    const timeout = setTimeout(() => controller.abort('timeout'), 45000);
+    try {
+      const response = await fetch(url, {
+        method,
+        headers: message?.init?.headers || {},
+        body: method === 'POST' && typeof message?.init?.body === 'string' ? message.init.body : undefined,
+        signal: controller.signal,
+      });
+      const headers = {};
+      response.headers?.forEach?.((value, key) => {
+        headers[key] = value;
+      });
+      const bodyText = await response.text();
+      sendNativeTtsResponseToWeb(id, {
+        ok: response.ok,
+        status: response.status,
+        headers,
+        bodyText,
+      });
+    } catch (reason) {
+      const aborted = controller.signal.aborted;
+      sendNativeTtsResponseToWeb(id, {
+        ok: false,
+        status: 0,
+        error: aborted
+          ? controller.signal.reason === 'timeout' ? 'APK TTS 请求超过 45 秒。' : 'APK TTS 请求已取消。'
+          : reason?.message || 'Native TTS request failed.',
+      });
+    } finally {
+      clearTimeout(timeout);
+      ttsRequestControllersRef.current.delete(id);
+    }
+  }, [sendNativeTtsResponseToWeb]);
+
+  const fetchImageFromNative = React.useCallback(async (message) => {
+    const id = String(message?.id || '');
+    const url = String(message?.url || '');
+    const method = String(message?.init?.method || 'GET').toUpperCase();
+    const maxBytes = Math.min(32 * 1024 * 1024, Math.max(1, Number(message?.maxBytes || 32 * 1024 * 1024)));
+    const timeoutMs = Math.min(150000, Math.max(1000, Number(message?.timeoutMs || 150000)));
+    if (!id || !/^https?:\/\//i.test(url) || !['GET', 'POST'].includes(method)) {
+      sendNativeImageResponseToWeb(id, { error: 'Invalid native image request.' });
+      return;
+    }
+    const controller = new AbortController();
+    imageRequestControllersRef.current.set(id, controller);
+    const timeout = setTimeout(() => controller.abort('timeout'), timeoutMs);
+    try {
+      const response = await fetch(url, {
+        method,
+        headers: message?.init?.headers || {},
+        body: method === 'POST' && typeof message?.init?.body === 'string' ? message.init.body : undefined,
+        signal: controller.signal,
+      });
+      const declaredLength = Number(response.headers?.get?.('content-length') || 0);
+      if (declaredLength > maxBytes) throw new Error(`Image response exceeds ${Math.round(maxBytes / 1024 / 1024)} MiB.`);
+      const buffer = await response.arrayBuffer();
+      if (buffer.byteLength > maxBytes) throw new Error(`Image response exceeds ${Math.round(maxBytes / 1024 / 1024)} MiB.`);
+      const headers = {};
+      response.headers?.forEach?.((value, key) => { headers[key] = value; });
+      sendNativeImageResponseToWeb(id, {
+        ok: response.ok,
+        status: response.status,
+        statusText: response.statusText || '',
+        headers,
+        bodyBase64: fromByteArray(new Uint8Array(buffer)),
+      });
+    } catch (reason) {
+      const aborted = controller.signal.aborted;
+      sendNativeImageResponseToWeb(id, {
+        error: aborted
+          ? controller.signal.reason === 'timeout' ? 'APK 生图请求超过 150 秒。' : 'APK 生图请求已取消。'
+          : reason?.message || 'Native image request failed.',
+      });
+    } finally {
+      clearTimeout(timeout);
+      imageRequestControllersRef.current.delete(id);
+    }
+  }, [sendNativeImageResponseToWeb]);
 
   React.useEffect(() => {
     const subscription = Linking.addEventListener('url', (event) => {
@@ -220,6 +332,31 @@ export default function App() {
         });
         return;
       }
+      if (message?.type === 'small-phone-switch-storage-origin') {
+        const nextOrigin = message.mode === 'broken-v1161'
+          ? BROKEN_V1161_STORAGE_ORIGIN
+          : SMALL_PHONE_STORAGE_ORIGIN;
+        setLoaded(false);
+        setError('');
+        setStorageOrigin(nextOrigin);
+        return;
+      }
+      if (message?.type === 'small-phone-tts-fetch') {
+        fetchTtsFromNative(message);
+        return;
+      }
+      if (message?.type === 'small-phone-tts-cancel') {
+        ttsRequestControllersRef.current.get(String(message.id || ''))?.abort('cancelled');
+        return;
+      }
+      if (message?.type === 'small-phone-image-fetch') {
+        fetchImageFromNative(message);
+        return;
+      }
+      if (message?.type === 'small-phone-image-cancel') {
+        imageRequestControllersRef.current.get(String(message.id || ''))?.abort('cancelled');
+        return;
+      }
       if (message?.type === 'small-phone-schedule-local-reminder') {
         scheduleLocalReminder(message).catch((reason) => {
           console.warn('small-phone local reminder schedule failed', reason?.message || reason);
@@ -228,15 +365,16 @@ export default function App() {
     } catch {
       // Ignore non-JSON messages from the WebView.
     }
-  }, [exportBackupToPhone, nativePushToken, openExternalUrl, scheduleLocalReminder, sendNativePushTokenToWeb]);
+  }, [exportBackupToPhone, fetchImageFromNative, fetchTtsFromNative, nativePushToken, openExternalUrl, scheduleLocalReminder, sendNativePushTokenToWeb]);
 
   return (
     <View style={styles.root}>
-      <StatusBar style="light" backgroundColor="#101010" />
+      <StatusBar style="dark" backgroundColor="#fffaf0" />
       <SafeAreaView style={styles.safe}>
         <WebView
+          key={storageOrigin}
           ref={webViewRef}
-          source={{ html: WEB_HTML, baseUrl: 'https://small-phone.local/' }}
+          source={{ html: WEB_HTML, baseUrl: storageOrigin }}
           style={styles.webview}
           originWhitelist={['*']}
           javaScriptEnabled
@@ -248,8 +386,8 @@ export default function App() {
           mediaPlaybackRequiresUserAction={false}
           setSupportMultipleWindows={false}
           bounces={false}
-          injectedJavaScriptBeforeContentLoaded={MOBILE_PATCH}
-          injectedJavaScript={MOBILE_PATCH}
+          injectedJavaScriptBeforeContentLoaded={`window.__SMALL_PHONE_BROKEN_ORIGIN_MODE__ = ${storageOrigin === BROKEN_V1161_STORAGE_ORIGIN ? 'true' : 'false'};\n${MOBILE_PATCH}`}
+          injectedJavaScript={`window.__SMALL_PHONE_BROKEN_ORIGIN_MODE__ = ${storageOrigin === BROKEN_V1161_STORAGE_ORIGIN ? 'true' : 'false'};\n${MOBILE_PATCH}`}
           onShouldStartLoadWithRequest={handleShouldStartLoad}
           onLoadEnd={() => setLoaded(true)}
           onMessage={handleMessage}
@@ -278,15 +416,15 @@ export default function App() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#101010',
+    backgroundColor: '#fffaf0',
   },
   safe: {
     flex: 1,
-    backgroundColor: '#101010',
+    backgroundColor: '#fffaf0',
   },
   webview: {
     flex: 1,
-    backgroundColor: '#101010',
+    backgroundColor: '#fffaf0',
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,

@@ -759,6 +759,352 @@
   text-shadow: 4px 4px 0 #d80f1f, 0 2px 16px rgba(0, 0, 0, 0.56);
 }
 
+/* Persona 5 reference desktop.
+ * The supplied reference is used as a sprite sheet for the real, clickable
+ * app buttons. User-selected app icons and image-bed artwork still win. */
+.theme-gothic .desktop-screen {
+  background: #08090a !important;
+}
+
+.theme-gothic .desktop-screen::before,
+.theme-gothic .desktop-screen::after {
+  content: "" !important;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  background: #d60c20;
+  opacity: 1 !important;
+  transform: none;
+}
+
+.theme-gothic .desktop-screen::before {
+  clip-path: polygon(0 0, 68% 0, 0 22%);
+}
+
+.theme-gothic .desktop-screen::after {
+  clip-path: polygon(100% 68%, 100% 100%, 0 100%);
+}
+
+.theme-gothic .desktop-screen > * {
+  z-index: 1;
+}
+
+.theme-gothic .phone-shell::before {
+  left: 40px;
+  top: 34px;
+  font-size: 16px;
+  font-weight: 1000;
+}
+
+.theme-gothic .phone-shell::after {
+  content: "▮ ▮ ▮  WiFi ▭";
+  right: 38px;
+  top: 34px;
+  font-size: 13px;
+  font-weight: 1000;
+}
+
+.theme-gothic .shell-notification-button {
+  left: 17px;
+  top: max(65px, calc(env(safe-area-inset-top, 0px) + 65px));
+  min-width: 76px;
+  min-height: 40px;
+  justify-content: center;
+  border: 3px solid #fff9ee;
+  border-radius: 14px;
+  background: #0a0a0b;
+  padding: 7px 10px;
+  color: #fff9ee;
+  box-shadow: 4px 4px 0 #d60c20;
+  transform: none;
+}
+
+.theme-gothic .desktop-screen .layout-controls {
+  top: max(99px, calc(env(safe-area-inset-top, 0px) + 99px));
+  right: 27px;
+}
+
+.theme-gothic .desktop-screen .layout-toggle {
+  width: 84px;
+  min-height: 44px;
+  border: 3px solid #fff9ee;
+  border-radius: 14px;
+  background: #0a0a0b;
+  padding: 8px 12px;
+  color: #fff9ee;
+  box-shadow: 5px 5px 0 #d60c20;
+}
+
+.theme-gothic .desktop-canvas {
+  overflow: visible;
+}
+
+.theme-gothic .app-button {
+  gap: 5px;
+}
+
+.theme-gothic .app-icon,
+.theme-gothic .dock-icon,
+.theme-gothic .app-button:nth-of-type(even) .app-icon,
+.theme-gothic .dock button:nth-child(even) .dock-icon {
+  overflow: hidden;
+  border: 3px solid #fff9ee;
+  border-radius: 17px;
+  background: #e30c1d;
+  color: #fff9ee;
+  box-shadow: 4px 4px 0 #d60c20;
+  transform: none;
+}
+
+.theme-gothic .app-icon.has-custom-app-icon,
+.theme-gothic .dock-icon.has-custom-app-icon {
+  background: #0b0b0c;
+}
+
+.theme-gothic .gothic-app-art {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: none;
+  background-image: url('/p5-reference-home.jpg');
+  background-repeat: no-repeat;
+  background-size: 390px 844px;
+}
+
+.theme-gothic :is(.app-icon, .dock-icon):is(
+  [data-screen="wechat"],
+  [data-screen="qq"],
+  [data-screen="gallery"],
+  [data-screen="calendar"],
+  [data-screen="diary"],
+  [data-screen="memo"],
+  [data-screen="peek"],
+  [data-screen="phone"],
+  [data-screen="settings"],
+  [data-screen="contacts"],
+  [data-screen="themes"]
+) > :is(.app-icon-default-glyph, .tidal-app-glyph) {
+  opacity: 0;
+}
+
+.theme-gothic :is(.app-icon, .dock-icon)[data-screen="wechat"] > .gothic-app-art {
+  display: block;
+  background-position: -58px -171px;
+}
+
+.theme-gothic :is(.app-icon, .dock-icon)[data-screen="qq"] > .gothic-app-art {
+  display: block;
+  background-position: -146px -171px;
+}
+
+.theme-gothic :is(.app-icon, .dock-icon)[data-screen="gallery"] > .gothic-app-art {
+  display: block;
+  background-position: -58px -280px;
+}
+
+.theme-gothic :is(.app-icon, .dock-icon)[data-screen="calendar"] > .gothic-app-art {
+  display: block;
+  background-position: -146px -280px;
+}
+
+.theme-gothic :is(.app-icon, .dock-icon)[data-screen="diary"] > .gothic-app-art {
+  display: block;
+  background-position: -71px -502px;
+}
+
+.theme-gothic :is(.app-icon, .dock-icon)[data-screen="memo"] > .gothic-app-art {
+  display: block;
+  background-position: -174px -502px;
+}
+
+.theme-gothic :is(.app-icon, .dock-icon)[data-screen="peek"] > .gothic-app-art {
+  display: block;
+  background-position: -278px -502px;
+}
+
+.theme-gothic .dock-icon[data-screen="phone"] > .gothic-app-art {
+  display: block;
+  background-position: -59px -720px;
+}
+
+.theme-gothic .dock-icon[data-screen="settings"] > .gothic-app-art {
+  display: block;
+  background-position: -132px -720px;
+}
+
+.theme-gothic .dock-icon[data-screen="contacts"] > .gothic-app-art {
+  display: block;
+  background-position: -204px -720px;
+}
+
+.theme-gothic .dock-icon[data-screen="themes"] > .gothic-app-art {
+  display: block;
+  background-position: -277px -720px;
+}
+
+.theme-gothic .app-label,
+.theme-gothic .dock button > span:last-child {
+  color: #fff9ee;
+  font-size: 12px;
+  font-weight: 1000;
+  line-height: 1.05;
+  text-shadow: 1px 2px 0 #050505, 2px 3px 0 #d60c20;
+}
+
+.theme-gothic .image-bed {
+  width: 132px;
+  height: 168px;
+  border: 0;
+  border-radius: 0;
+  background-image: url('/p5-reference-home.jpg');
+  background-position: -243px -187px;
+  background-repeat: no-repeat;
+  background-size: 390px 844px;
+  box-shadow: none;
+  transform: none;
+}
+
+.theme-gothic .image-bed:not(.has-image-bed) > * {
+  opacity: 0;
+}
+
+.theme-gothic .image-bed.has-image-bed {
+  border: 3px solid #050505;
+  background: #050505;
+  box-shadow: 5px 5px 0 #d60c20;
+}
+
+.theme-gothic .time-card {
+  width: 320px;
+  height: 90px;
+  border: 3px solid #fff9ee;
+  border-radius: 18px;
+  background:
+    linear-gradient(124deg, transparent 0 62%, #d60c20 62.4% 77%, transparent 77.4%),
+    #0a0a0b;
+  padding: 11px 15px 10px 20px;
+  color: #fff9ee;
+  box-shadow: 5px 6px 0 #d60c20;
+}
+
+.theme-gothic .time-text {
+  color: #fff9ee;
+  font-size: 36px;
+  font-style: italic;
+  font-weight: 1000;
+  letter-spacing: -2px;
+  text-shadow: 3px 3px 0 #d60c20;
+}
+
+.theme-gothic .date-text {
+  margin-top: 4px;
+  color: rgba(255, 249, 238, 0.76);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.theme-gothic .guide-mark {
+  min-width: 76px;
+  border-left-color: rgba(214, 12, 32, 0.46);
+  color: #fff9ee;
+  font-size: 42px;
+  text-shadow: 3px 3px 0 #d60c20, 0 0 15px rgba(255, 249, 238, 0.55);
+}
+
+.theme-gothic .dock {
+  left: 31px;
+  right: 23px;
+  bottom: max(18px, env(safe-area-inset-bottom, 0px));
+  min-height: 114px;
+  gap: 5px;
+  border: 3px solid #fff9ee;
+  border-radius: 22px;
+  background:
+    linear-gradient(124deg, transparent 0 72%, rgba(214, 12, 32, 0.88) 72.4%),
+    rgba(7, 7, 8, 0.96);
+  padding: 12px 10px 10px;
+  box-shadow: 6px 6px 0 #d60c20, 0 14px 28px rgba(0, 0, 0, 0.42);
+  transform: none;
+}
+
+.theme-gothic .dock > button {
+  gap: 4px !important;
+}
+
+.theme-gothic .dock-icon {
+  width: 52px;
+  height: 52px;
+}
+
+.theme-gothic .page-dots {
+  bottom: 124px;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+.theme-gothic .page-dots button {
+  position: relative;
+  overflow: visible;
+  border: 0;
+  background: transparent;
+  color: transparent;
+  font-size: 0;
+  box-shadow: none;
+}
+
+.theme-gothic .page-dots button::before {
+  content: "" !important;
+  display: block;
+  width: 42px;
+  height: 16px;
+  border-radius: 12px 12px 0 0;
+  background: #b9c7ef;
+}
+
+.theme-gothic .page-dots button:last-child::before {
+  background: #e7b7c0;
+}
+
+.theme-gothic .page-dots button.active {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.theme-gothic .page-dots button.active::before {
+  background: #b9c7ef;
+  transform: translateY(-3px);
+}
+
+.theme-gothic .page-dots button:last-child.active::before {
+  background: #e7b7c0;
+}
+
+@media (max-height: 760px) {
+  .theme-gothic .desktop-screen {
+    padding-top: 40px !important;
+  }
+
+  .theme-gothic .desktop-canvas {
+    transform: scale(0.88);
+    transform-origin: top center;
+  }
+
+  .theme-gothic .dock {
+    min-height: 92px;
+    padding-top: 8px;
+    padding-bottom: 6px;
+  }
+
+  .theme-gothic .dock-icon {
+    width: 46px;
+    height: 46px;
+  }
+}
+
 .theme-gothic .wechat-shell,
 .theme-gothic .wechat-chat-screen {
   --wechat-bg: var(--phone-bg);
@@ -1034,4 +1380,198 @@
 .theme-gothic .lock-screen.has-default-lock-art .lock-status-row {
   color: #fff8ee;
   text-shadow: 3px 3px 0 #d80f1f;
+}
+
+/* P5R desktop shapes are intentionally loud, but the preset editor is a long
+   utility form. Keep the red accent while giving every row one stable reading
+   surface; a panel-wide diagonal used to cut directly through entry text. */
+.theme-gothic .phone-shell.screen-presets {
+  background: #090a0c !important;
+  color: #fff8ee;
+}
+
+.theme-gothic .phone-shell.screen-presets header {
+  border-bottom: 3px solid #d80f1f;
+  background: #070708 !important;
+  color: #fff8ee;
+  box-shadow: 0 5px 0 rgba(216, 15, 31, 0.34), 0 12px 22px rgba(0, 0, 0, 0.42);
+  backdrop-filter: blur(12px);
+}
+
+.theme-gothic .phone-shell.screen-presets header h1 {
+  color: #fff8ee;
+  text-shadow: 3px 3px 0 #d80f1f;
+}
+
+.theme-gothic .phone-shell.screen-presets header p {
+  color: rgba(255, 248, 238, 0.72);
+  opacity: 1;
+}
+
+.theme-gothic .phone-shell.screen-presets .preset-manager-screen {
+  background: #090a0c;
+  color: #fff8ee;
+}
+
+.theme-gothic .phone-shell.screen-presets .hand-panel {
+  border: 2px solid rgba(216, 15, 31, 0.72);
+  border-left-width: 4px;
+  border-radius: 15px;
+  background: #070708 !important;
+  color: #fff8ee;
+  box-shadow: 4px 4px 0 rgba(216, 15, 31, 0.28), 0 10px 22px rgba(0, 0, 0, 0.34);
+}
+
+.theme-gothic .phone-shell.screen-presets .preset-entry-card {
+  border-color: rgba(216, 15, 31, 0.48);
+  background: #0b0b0c !important;
+  color: #fff8ee;
+  box-shadow: none;
+}
+
+.theme-gothic .phone-shell.screen-presets .preset-entry-card:hover,
+.theme-gothic .phone-shell.screen-presets .preset-entry-card:focus-within {
+  border-color: #d80f1f;
+  background: #12090b !important;
+}
+
+.theme-gothic .phone-shell.screen-presets .preset-entry-card strong {
+  color: #fff8ee;
+}
+
+.theme-gothic .phone-shell.screen-presets .preset-entry-card button > span,
+.theme-gothic .phone-shell.screen-presets .preset-entry-card button > strong + span {
+  color: rgba(255, 248, 238, 0.68);
+  opacity: 1;
+}
+
+.theme-gothic .phone-shell.screen-presets .hand-input {
+  border: 1.5px solid rgba(216, 15, 31, 0.78);
+  border-radius: 10px;
+  background: #030304 !important;
+  color: #fff8ee;
+  box-shadow: none;
+}
+
+.theme-gothic .phone-shell.screen-presets .hand-input::placeholder {
+  color: rgba(255, 248, 238, 0.52);
+  opacity: 1;
+}
+
+.theme-gothic .phone-shell.screen-presets :is(.preset-compact-button, .preset-icon-button) {
+  border-color: rgba(216, 15, 31, 0.92);
+  background: #09090a;
+  color: #fff8ee;
+  box-shadow: 2px 2px 0 #d80f1f;
+}
+
+.theme-gothic .phone-shell.screen-presets .preset-delete-button {
+  border-color: #ff6a74;
+  background: #251013;
+  color: #ff9ca3;
+  box-shadow: 2px 2px 0 #d80f1f;
+}
+
+.theme-gothic .phone-shell.screen-presets .preset-entry-kind.is-pinned {
+  color: #ff6a74;
+  background: rgba(216, 15, 31, 0.18);
+}
+
+.theme-gothic .phone-shell.screen-presets .preset-drag-handle,
+.theme-gothic .phone-shell.screen-presets .preset-entry-kind {
+  color: rgba(255, 248, 238, 0.58);
+}
+
+.theme-gothic .phone-shell.screen-presets .preset-role-button {
+  border-color: rgba(216, 15, 31, 0.62);
+  background: #09090a;
+  color: #fff8ee;
+}
+
+.theme-gothic .phone-shell.screen-presets .preset-role-button.is-selected,
+.theme-gothic .phone-shell.screen-presets .preset-icon-button.is-active {
+  border-color: #fff8ee;
+  background: #d80f1f;
+  color: #fff8ee;
+  box-shadow: 2px 2px 0 #fff8ee;
+}
+
+.theme-gothic .phone-shell.screen-presets :is(.preset-slot-notice, .preset-mode-notice) {
+  border-color: #d80f1f !important;
+  background: #09090a !important;
+  color: #fff8ee !important;
+  box-shadow: inset 4px 0 0 #d80f1f;
+}
+
+.theme-gothic .phone-shell.screen-presets .preset-slot-notice svg {
+  color: #ff5a65;
+}
+
+.theme-gothic .phone-shell.screen-presets .preset-parameter-panel {
+  border-color: rgba(216, 15, 31, 0.68) !important;
+  background: #09090a !important;
+  color: #fff8ee;
+}
+
+.theme-gothic .phone-shell.screen-presets .preset-entry-toggle {
+  border-color: rgba(216, 15, 31, 0.58);
+  background: #050506;
+}
+
+.theme-gothic .phone-shell.screen-presets .preset-entry-toggle > span {
+  background: rgba(255, 248, 238, 0.66);
+}
+
+.theme-gothic .phone-shell.screen-presets .preset-entry-toggle.is-enabled {
+  border-color: #ff6a74;
+  background: #d80f1f;
+}
+
+.theme-gothic .phone-shell.screen-presets .preset-entry-toggle.is-enabled > span {
+  background: #fff8ee;
+}
+
+/* Final comfort pass: keep the P5R geometry, but use a deeper crimson and
+   calmer reading surfaces so large red areas do not overpower labels. */
+.theme-gothic {
+  --accent: #a62a32;
+}
+
+.theme-gothic .desktop-screen::before,
+.theme-gothic .desktop-screen::after {
+  background: #a62a32;
+}
+
+.theme-gothic :is(.app-icon, .dock-icon),
+.theme-gothic .app-button:nth-of-type(even) .app-icon,
+.theme-gothic .dock button:nth-child(even) .dock-icon {
+  background-color: #b12a32;
+  box-shadow: 4px 4px 0 #7c1f27;
+}
+
+.theme-gothic :is(.shell-notification-button, .layout-toggle, .time-card, .dock) {
+  box-shadow: 4px 5px 0 #7c1f27, 0 12px 24px rgba(0, 0, 0, 0.34);
+}
+
+.theme-gothic .qq-home-screen,
+.theme-gothic .qq-chat-screen {
+  --qq-bg: linear-gradient(180deg, #111114, #08080a);
+  --qq-header-bg: rgba(10, 10, 12, 0.96);
+  --qq-accent: #b13a42;
+  --qq-accent-soft: rgba(177, 58, 66, 0.16);
+  --qq-surface: rgba(22, 22, 25, 0.96);
+  --qq-surface-strong: #19191c;
+  --qq-line: rgba(255, 248, 238, 0.14);
+  --qq-shadow: 0 7px 18px rgba(0, 0, 0, 0.28);
+  --qq-active-shadow: 0 8px 20px rgba(0, 0, 0, 0.34);
+  --qq-badge: #b13a42;
+}
+
+.theme-gothic :is(.qq-home-avatar, .qq-header-action, .qq-search-bar, .qq-quick-action, .qq-row, .qq-empty-state) {
+  border-width: 1px;
+  border-color: rgba(255, 248, 238, 0.18);
+}
+
+.theme-gothic :is(.qq-home-profile h1, .qq-section-heading) {
+  text-shadow: 2px 2px 0 #7c1f27;
 }
