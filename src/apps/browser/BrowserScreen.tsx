@@ -135,7 +135,7 @@ export function BrowserScreen() {
   const [browserPanel, setBrowserPanel] = useState<'results' | 'bookmarks' | 'history' | 'settings'>('results');
   const [isSearching, setIsSearching] = useState(false);
   const [status, setStatus] = useState('');
-  const activeRecord = browserSearches.find((record) => record.id === activeId) || browserSearches[0];
+  const activeRecord = browserSearches.find((record) => record.id === activeId);
 
   const runSearch = async (overrideQuery?: string) => {
     const clean = (overrideQuery ?? query).trim();
@@ -270,10 +270,10 @@ export function BrowserScreen() {
     <section className="browser-app no-scrollbar h-full overflow-y-auto">
       <div className="browser-tabs">
         <div className="browser-tab active"><Search className="h-3.5 w-3.5" />新标签页</div>
-        <button onClick={goBrowserBack} className="browser-window-button"><ChevronLeft className="h-4 w-4" /></button>
+        <button type="button" onClick={() => useAppStore.getState().setScreen('desktop')} className="browser-window-button" aria-label="返回桌面" title="返回桌面"><ChevronLeft className="h-4 w-4" /></button>
       </div>
       <div className="browser-toolbar">
-        <button onClick={goBrowserBack} className="browser-tool"><ChevronLeft className="h-4 w-4" /></button>
+        <button type="button" onClick={goBrowserBack} className="browser-tool" aria-label="浏览器返回" title="返回上一页"><ChevronLeft className="h-4 w-4" /></button>
         <button onClick={refreshBrowser} className="browser-tool"><RefreshCw className={cn('h-4 w-4', isSearching && 'animate-spin')} /></button>
         <div className="browser-address">
           <Shield className="h-4 w-4 text-[#188038]" />
@@ -283,7 +283,7 @@ export function BrowserScreen() {
         <button onClick={() => setBrowserPanel(browserPanel === 'settings' ? 'results' : 'settings')} className="browser-tool"><MoreHorizontal className="h-4 w-4" /></button>
       </div>
 
-      {!activeRecord && (
+      {!openedResult && browserPanel === 'results' && !activeRecord && (
         <div className="browser-home">
           <div className="browser-logo"><span>Edge</span> Search</div>
           <div className="browser-home-search">
