@@ -50,6 +50,7 @@ import { Header, Panel, Pill, Field, Row, Empty, EmptyScreen, Avatar } from '../
 import { buildMemoWorldContext, delay, describeChatMessage, getCharacterPrompt, requestChatCompletion, requestChatCompletionStream } from '../shared/aiText';
 import type { BrowserSearchResult } from '../../store';
 import { useAppStore } from '../../store';
+import { parseBrowserResults } from './browserResults';
 function repairMojibake(text: string) {
   try {
     const decoded = decodeURIComponent(escape(text));
@@ -129,6 +130,7 @@ export function BrowserScreen() {
     browserPresetPrompt,
   } = useAppStore();
   const worldBookInputRef = useRef<HTMLInputElement>(null);
+  const searchInFlight = useRef(false);
   const [query, setQuery] = useState('');
   const [activeId, setActiveId] = useState<string | null>(browserSearches[0]?.id || null);
   const [openedResult, setOpenedResult] = useState<BrowserSearchResult | null>(null);
@@ -138,28 +140,31 @@ export function BrowserScreen() {
   const activeRecord = browserSearches.find((record) => record.id === activeId);
 
   const runSearch = async (overrideQuery?: string) => {
+    if (searchInFlight.current) return;
     const clean = (overrideQuery ?? query).trim();
     if (!clean) {
       setStatus('先输入要搜索的内容。');
       return;
     }
+    searchInFlight.current = true;
     setIsSearching(true);
     setOpenedResult(null);
     setBrowserPanel('results');
     setStatus('正在生成浏览器搜索页...');
-    const context = buildMemoWorldContext({
-      characters,
-      chatSessions,
-      wechatMoments,
-      purchaseRecords: [],
-      diaries,
-      calendarEvents,
-      galleryPhotos,
-      memos,
-      xiaohongshuNotes,
-      characterId: characters[0]?.id,
-    });
+    let context = '';
     try {
+      context = buildMemoWorldContext({
+        characters,
+        chatSessions,
+        wechatMoments,
+        purchaseRecords: [],
+        diaries,
+        calendarEvents,
+        galleryPhotos,
+        memos,
+        xiaohongshuNotes,
+        characterId: characters[0]?.id,
+      });
       let payload = makeFallbackBrowserResults(clean, context);
       const activeApiBaseUrl = browserApiBaseUrl || apiBaseUrl;
       const activeApiKey = browserApiKey || apiKey;
@@ -189,13 +194,7 @@ export function BrowserScreen() {
             },
           ],
         });
-        const parsed = JSON.parse(reply) as Partial<{ summary: string; results: BrowserSearchResult[] }>;
-        if (parsed.summary && Array.isArray(parsed.results) && parsed.results.length > 0) {
-          const results = parsed.results
-            .filter((item) => item && item.title && item.url && item.snippet)
-            .slice(0, 5);
-          payload = { summary: parsed.summary, results };
-        }
+        payload = parseBrowserResults(reply);
       }
       const id = addBrowserSearch({
         query: clean,
@@ -217,8 +216,14 @@ export function BrowserScreen() {
       setActiveId(id);
       setStatus('模型生成失败，已使用本地搜索页。');
     } finally {
+      searchInFlight.current = false;
       setIsSearching(false);
     }
+  };
+
+  const showBrowserPanel = (panel: typeof browserPanel) => {
+    setOpenedResult(null);
+    setBrowserPanel(panel);
   };
 
   const goBrowserBack = () => {
@@ -239,7 +244,7 @@ export function BrowserScreen() {
 
   const refreshBrowser = () => {
     const target = openedResult?.title || activeRecord?.query || query;
-    if (target.trim()) void runSearch(target);
+    if (target.trim()) return runSearch(target);
   };
 
   const openResult = (result: BrowserSearchResult) => {
@@ -274,14 +279,16 @@ export function BrowserScreen() {
       </div>
       <div className="browser-toolbar">
         <button type="button" onClick={goBrowserBack} className="browser-tool" aria-label="浏览器返回" title="返回上一页"><ChevronLeft className="h-4 w-4" /></button>
-        <button onClick={refreshBrowser} className="browser-tool"><RefreshCw className={cn('h-4 w-4', isSearching && 'animate-spin')} /></button>
+        <button onClick={refreshBrowser} disabled={isSearching} aria-label="刷新搜索" className="browser-tool"><RefreshCw className={cn('h-4 w-4', isSearching && 'animate-spin')} /></button>
         <div className="browser-address">
           <Shield className="h-4 w-4 text-[#188038]" />
           <input value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => event.key === 'Enter' && runSearch()} placeholder="搜索或输入网址" />
           <button onClick={() => runSearch()} disabled={isSearching}>{isSearching ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}</button>
         </div>
-        <button onClick={() => setBrowserPanel(browserPanel === 'settings' ? 'results' : 'settings')} className="browser-tool"><MoreHorizontal className="h-4 w-4" /></button>
+        <button onClick={() => showBrowserPanel(browserPanel === 'settings' ? 'results' : 'settings')} aria-label="浏览器设置" className="browser-tool"><MoreHorizontal className="h-4 w-4" /></button>
       </div>
+
+      {status && <p role="status" className="browser-status">{status}</p>}
 
       {!openedResult && browserPanel === 'results' && !activeRecord && (
         <div className="browser-home">
@@ -290,7 +297,6 @@ export function BrowserScreen() {
             <Search className="h-5 w-5" />
             <input value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => event.key === 'Enter' && runSearch()} placeholder="搜索世界观、最近事件或网址" />
           </div>
-          {status && <p className="browser-status">{status}</p>}
         </div>
       )}
 
@@ -401,11 +407,11 @@ export function BrowserScreen() {
       )}
 
       <div className="browser-history">
-        <button onClick={() => setBrowserPanel('bookmarks')} className={cn(browserPanel === 'bookmarks' && 'active')}>
+        <button onClick={() => showBrowserPanel('bookmarks')} className={cn(browserPanel === 'bookmarks' && 'active')}>
           <Star className="h-4 w-4" />
           <span>书签</span>
         </button>
-        <button onClick={() => setBrowserPanel('history')} className={cn(browserPanel === 'history' && 'active')}>
+        <button onClick={() => showBrowserPanel('history')} className={cn(browserPanel === 'history' && 'active')}>
           <Clock className="h-4 w-4" />
           <span>历史</span>
         </button>
