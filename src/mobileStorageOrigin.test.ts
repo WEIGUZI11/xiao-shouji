@@ -29,9 +29,9 @@ assert.doesNotMatch(
   'file:///android_asset/ must never replace the historical storage origin.',
 );
 assert.match(app, /message\?\.type === 'small-phone-switch-storage-origin'/, 'APK must expose explicit recovery access to the broken 1.16.1 origin.');
-assert.equal(appConfig.expo.version, '1.16.4');
-assert.equal(appConfig.expo.android.versionCode, 38);
-assert.match(androidGradle, /versionCode 38/);
-assert.match(androidGradle, /versionName "1\.16\.4"/);
+assert.equal(appConfig.expo.version, '1.16.5');
+assert.equal(appConfig.expo.android.versionCode, 39);
+assert.match(androidGradle, /versionCode 39/);
+assert.match(androidGradle, /versionName "1\.16\.5"/);
 
 console.log('mobile storage origin and Android version guard ok');
